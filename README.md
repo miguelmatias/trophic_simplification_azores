@@ -5,6 +5,8 @@ This repository contains data, analysis code, and figures for the manuscript "Hu
 
 This repository contains data, analysis code, and figures for the manuscript **"Humans simplified lake trophic structures over the past millennium across the Azorean archipelago"** submitted to _Nature Ecology & Evolution_.
 
+![Alt text](figures/plot_ce_chclusts_bstick_diatoms.png)
+
 ## Contents
 
 - `data/`: Raw and processed data files
