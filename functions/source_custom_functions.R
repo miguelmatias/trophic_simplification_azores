@@ -11,6 +11,43 @@ library(grid)
 library(ggridges)
 library(earth)
 
+#' Flip DCA1 Axis for Temporal Interpretability
+#'
+#' This function ensures that the DCA1 axis is temporally interpretable
+#' by checking whether more recent samples (younger ages) have lower DCA1
+#' values than older ones. If not, the DCA1 axis is flipped.
+#'
+#' @param data A data frame containing at least the columns `age_ce` and `DCA1`.
+#'        `age_ce` should represent calendar age in CE (Common Era), and
+#'        `DCA1` the first Detrended Correspondence Analysis axis.
+#'
+#' @return A data frame with DCA1 possibly flipped (multiplied by -1)
+#'         to ensure interpretability in time series.
+#'
+#' @details The function splits the dataset into two halves based on age:
+#' recent (younger than midpoint) and past (older than midpoint). If the mean
+#' DCA1 in the past is greater than in the recent samples, the DCA1 axis is
+#' flipped. Otherwise, it is returned unchanged.
+#'
+#' @export
+convert_DCA <- function(data) {
+  cut_off <- max(data$age_ce, na.rm = TRUE) - 
+    ((max(data$age_ce, na.rm = TRUE) - min(data$age_ce, na.rm = TRUE)) / 2)
+  
+  # Mean DCA1 for recent and past halves of the core
+  m_recent <- data[data$age_ce > cut_off & !is.na(data$age_ce), "DCA1"] %>%
+    unlist() %>% mean()
+  m_past <- data[data$age_ce < cut_off & !is.na(data$age_ce), "DCA1"] %>%
+    unlist() %>% mean()
+  
+  # Flip sign of DCA1 if older samples have higher values than recent ones
+  if (m_past > m_recent) {
+    data <- data %>% mutate(DCA1 = DCA1 * -1)
+  }
+  return(data)
+}
+
+
 #' Subsample Time Series to Balance Timepoints Across Bins
 #'
 #' This function subsamples a time series to balance the number of timepoints across bins of a specified width. It randomly samples a defined number of data points from each bin.
