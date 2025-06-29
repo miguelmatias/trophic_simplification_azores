@@ -77,7 +77,6 @@ library(scam)           # Shape-constrained additive models (special case of GAM
 library(gratia)         # Visualization and diagnostics for GAMs
 library(rshift)         # Detect changepoints and shifts in time series
 
-
 # -------------------------------
 # 🔗 Network & Graph Analysis
 # -------------------------------
@@ -109,7 +108,7 @@ library(sf)             # Spatial vector data support using simple features
 # -------------------------------
 # 📂 Project-Specific Functions
 # -------------------------------
-source(file = "../functions/source_custom_functions.R")  # Custom functions for paleoecological workflows
+source(file = "functions/source_custom_functions.R")  # Custom functions for paleoecological workflows
 
 
 # override mass dplyr select conflict 
@@ -128,18 +127,52 @@ env <- readxl::read_excel(path = "~/Dropbox/analysis/paleo_trophic_structures/ta
 # LOAD DATA
 ```{r}
 
-(load("../data/data_files.R"))
+# ------------------------------------------------------------------------------
+# Load local pre-saved RData files (contains trophic data and clustering outputs)
+# ------------------------------------------------------------------------------
+load("data/data_files.R")
+load("data/data_files_comm_amd_globi.R")
+load("data/data_files_guilds_globi_merged.R")
 
-(load("../data/data_files_comm_amd_globi.R"))
-
-(load("../data/data_files_guilds_globi_merged.R"))
-
+# Define functional groups (used throughout trophic structure analyses)
 alternative_functional_groups_guilds_globi_merged <- c(
   "high_profile", "low_profile", "motile", "euplanktonic",
-  "algivore", "detritivore", "plantivore", "predator")
+  "algivore", "detritivore", "plantivore", "predator"
+)
+
+# ------------------------------------------------------------------------------
+# Load lake metadata
+# ------------------------------------------------------------------------------
+env <- readxl::read_excel(path = "data/table_lake_metadata.xlsx")  # lake coordinates, area, etc.
+
+# ------------------------------------------------------------------------------
+# Load guild relative abundances and diversity tables
+# ------------------------------------------------------------------------------
+norm_abund_guilds <- read.table("data/table_abundance_guilds.csv",header = TRUE, sep = ",", dec = ".")
+div_guilds <- read.table("data/table_diversity_guilds.csv", header = TRUE, sep = ",", dec = ".")
+
+# ------------------------------------------------------------------------------
+# Load climate and environmental reconstructions
+# ------------------------------------------------------------------------------
+nao_hernandez <- read.table("data/table_nao_hernandez.csv", header = TRUE, sep = ",", dec = ".")
+nhst_buntgen <- read.table("data/table_nhst_buntgen.csv", header = TRUE, sep = ",", dec = ".")
+sst_jiang <- read.table("data/table_sst_jiang.csv", header = TRUE, sep = ",", dec = ".")
+sst_abrantes <- read.table("data/table_sst_abrantes.csv", header = TRUE, sep = ",", dec = ".")
+
+# ------------------------------------------------------------------------------
+# Load pollen group data
+# ------------------------------------------------------------------------------
+pollen <- read.table("data/table_pollen_counts_azores.csv", header = TRUE, sep = ",", dec = ".")
+
+# ------------------------------------------------------------------------------
+# Load vegetation turnover model output (regional smooth)
+# ------------------------------------------------------------------------------
+hgam <- read.csv("data/table_azores_HGAM_output.csv") %>%
+  filter(is.na(sitename)) %>%
+  mutate(age = 1950 - age)  # Convert from BP to CE
+
 
 ```
-
 
 #### LIST OF OBJECTS FROM UPSTREAM ANALYSES
 ls_df_diat_wide_codes
@@ -213,9 +246,6 @@ ls_df_all_scores_chiro_amd_globi <- NULL
 for (i in 1:length(ls_df_pcoa_scores_chiro_hellinger)) {
   ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(df_chiro_codes[[i]], ls_df_pcoa_scores_chiro_hellinger[[i]])
 }
-# fix missing decimal in dec_depth
-# ls_df_pcoa_scores_chiro_hellinger <- ls_df_pcoa_scores_chiro_hellinger %>%
-#  map(., ~.x %>% mutate(dec_depth = as.numeric(str_replace(dec_depth, ",", "."))))
 
 # set names to lists
 names(ls_df_all_scores_chiro_amd_globi) <- unlist(get_names_list(ls_df_all_scores_chiro_amd_globi))
@@ -462,8 +492,6 @@ ls_plots_chclusts_diatoms <- ls_plots_dca_chclusts_ce_diatoms[c("Azul", "Caldeir
 
 plot_chclusts_diatoms <- gridExtra::grid.arrange(grobs = ls_plots_chclusts_diatoms, top = grid::textGrob("COMPOSITIONAL CHANGE [CONISS clusters]"))
 
-ggsave("../figures/plot_chclusts_diatoms.png", plot_chclusts_diatoms, width = 14, height = 14)
-
 ```
 
 ## BROKENSTICKS DIATOMS
@@ -537,8 +565,6 @@ ls_plots_dca_chclusts_ce_diatoms <- ls_df_all_scores_diatoms_amd_globi %>%
 
 plot_ce_chclusts_bstick_diatoms <- gridExtra::grid.arrange(grobs = ls_plots_dca_chclusts_ce_diatoms, top = grid::textGrob("COMPOSITIONAL CHANGE [CONISS clusters]"))
 
-ggsave("../figures/plot_ce_chclusts_bstick_diatoms.png", plot_ce_chclusts_bstick_diatoms, width = 14, height = 14)
-
 ```
 
 ## AMD LAKE-SPECIFIC CLUSTERS [PCOA, SORENSEN] DIATOMS
@@ -604,50 +630,9 @@ ls_plots_amd <- ls_df_all_scores_diatoms_amd_globi %>%
 
 plot_dca_amd_diatoms <- gridExtra::grid.arrange(grobs = ls_plots_amd, top = grid::textGrob("COMPOSITIONAL CHANGE [PCOA, SORENSEN + AMD LAKE-SPECIFIC CLUSTERS]"))
 
-ggsave("../figures/plot_dca_amd_diatoms.png", plot_dca_amd_diatoms, width = 14, height = 14)
-
-```
-
-# COMPARISON TYPE OF CLUSTERS DIATOMS
-
-```{r fig.asp = 1, fig.width = 12}
-#plot_comparison_type_cluster <- 
-#  gridExtra::grid.arrange(
-#  grobs = list(
-#    hclusts_ls_plots_2[[5]] + labs(title = "Funda [PCoA + Hierarchical clustering]") + scale_x_reverse(),
-#    hclusts_ls_plots_ce[[5]] + labs(title = "Funda [Hierarchical clustering over time]"),
-#    chclusts_ls_plots_2[[5]] + labs(title = "Funda [PCoA + time-constrained Hierarchical clustering]") + scale_x_reverse(),
-#    ls_plots_dca_chclusts_ce_diatoms[[5]] + labs(title = "Funda [time-constrained Hierarchical clustering over time]"),
-#    ls_plots_amd_2[[5]] + labs(title = "Funda [PCoa + Fuzzy-clustering]") + scale_x_reverse(),
-#    ls_plots_amd_ce[[5]] + labs(title = "Funda [Fuzzy-clustering over time]")
-#  ),
-#  top = grid::textGrob("COMPARISON TYPE OF CLUSTERING")
-#)
-#
-#ggsave("../figures/plot_comparison_type_cluster.png", plot_comparison_type_cluster, width = 14, height = 14)
-
-```
-
-## TEST SIMPROF
-
-```{r}
-# par(cex = 0.8)
-#
-# funda_dat <- select(ls_df_diat_wide_codes[[6]], -c(lake:core_depth_id))
-# s_dta <- clustsig::simprof(data = funda_dat, method.distance = "braycurtis", num.simulated = #100, method.cluster = "average", alpha = 0.001)
-#
-## extract groups with similarity > 0.6 between
-# group_clus <- cutree(s_dta$hclust, k = 6)
-#
-# nmds <- metaMDS(funda_dat)
-#
-## plot those 4 groups
-# plot(nmds, display = "sites", type = "text")
-# ordihull(nmds, groups = group_clus)
 ```
 
 # CLUSTERING CHIRO [MODIFIED]
-
 ## LAKE-SPECIFIC STANDARD CLUSTERS [PCOA, HELLINGER] chiro
 
 ```{r fig.asp = 1, fig.width = 12}
@@ -760,8 +745,6 @@ ls_plots_chclusts_chiro <- ls_plots_dca_chclusts_ce_chiro[c("Azul", "Caldeirao",
 
 plot_chclusts_chiro <- gridExtra::grid.arrange(grobs = ls_plots_chclusts_chiro, top = grid::textGrob("COMPOSITIONAL CHANGE [CONISS clusters]"))
 
-ggsave("../figures/plot_chclusts_chiro.png", plot_chclusts_chiro, width = 14, height = 14)
-
 ```
 
 ## BROKENSTICKS chiro
@@ -834,8 +817,6 @@ ls_plots_dca_chclusts_ce_chiro <- ls_df_all_scores_chiro_amd_globi %>%
   )
 
 plot_ce_chclusts_bstick_chiro <- gridExtra::grid.arrange(grobs = ls_plots_dca_chclusts_ce_chiro, top = grid::textGrob("COMPOSITIONAL CHANGE [CONISS clusters]"))
-
-ggsave("../figures/plot_ce_chclusts_bstick_chiro.png", plot_ce_chclusts_bstick_chiro, width = 14, height = 14)
 
 ```
 
@@ -965,8 +946,6 @@ ls_plots_hclusts_fgroups <- ls_df_all_scores_fgroups_amd_globi %>%
 
 plot_hclusts_fgroups <- gridExtra::grid.arrange(grobs = ls_plots_hclusts_fgroups, top = grid::textGrob("COMPOSITIONAL CHANGE [PCOA, SORENSEN + LAKE-SPECIFIC CLUSTERS] FGROUPS"))
 
-ggsave("../figures/plot_hclusts_fgroups.png", plot_hclusts_fgroups, width = 14, height = 14)
-
 ```
 
 ## LAKE-SPECIFIC CONISS CLUSTERS [PCOA, HELLINGER] FGROUPS
@@ -1017,8 +996,6 @@ ls_plots_chclusts_fgroups <- ls_df_all_scores_fgroups_amd_globi %>%
   )
 
 plot_coniss_fgroups <- gridExtra::grid.arrange(grobs = ls_plots_chclusts_fgroups, top = grid::textGrob("COMPOSITIONAL CHANGE [PCOA, SORENSEN + CONISS LAKE-SPECIFIC CLUSTERS]"))
-
-ggsave("../figures/plot_coniss_fgroups.png", plot_coniss_fgroups, width = 14, height = 14)
 
 ```
 
@@ -1098,8 +1075,6 @@ ls_plots_dca_chclusts_ce_fgroups <- ls_df_all_scores_fgroups_2_amd_globi %>%
 
 plot_dca_ce_chclusts_bstick_fgroups <- gridExtra::grid.arrange(grobs = ls_plots_dca_chclusts_ce_fgroups, top = grid::textGrob("COMPOSITIONAL CHANGE [CONISS clusters]"))
 
-ggsave("../figures/plot_dca_ce_chclusts_bstick_fgroups.png", plot_dca_ce_chclusts_bstick_fgroups, width = 14, height = 14)
-
 ```
 
 ## AMD LAKE-SPECIFIC CLUSTERS [PCOA, SORENSEN] FGROUPS
@@ -1159,8 +1134,6 @@ ls_plots_amd_2 <- ls_df_all_scores_fgroups_2_amd_globi %>%
   )
 
 plot_pcoa_amd_fgroups <- gridExtra::grid.arrange(grobs = ls_plots_amd_2, top = grid::textGrob("COMPOSITIONAL CHANGE [PCOA, SORENSEN + AMD LAKE-SPECIFIC CLUSTERS] - fgroups"))
-
-ggsave("../figures/plot_pcoa_amd_fgroups.png", plot_pcoa_amd_fgroups, width = 14, height = 14)
 
 ```
 
@@ -1730,52 +1703,6 @@ print(plot_density_fclusts_time_lines_1B)
 ```
 
 ```{r fig.asp = 0.5, fig.width = 12}
-binsy <- seq(from = -5000, to = 2100, by = 100)
-
-#ls_all_hclusts_complete %>% 
-#  map(~.x %>% as.data.frame()) %>% 
-#  bind_rows() %>%
-#  mutate(., x_bins = cut(age_ce, breaks = binsy)) %>% 
-#  ggplot(aes(x = x_bins)) +
-#  geom_histogram(stat = "count")
-#
-# subsample code to balance samples
-#ls_all_hclusts_complete <- 
-#  ls_all_hclusts_complete %>% 
-#  map(~.x %>% as.data.frame()) %>% 
-#  map(~.x %>% subsample_time_series(x = "age_ce", y = "DCA1", binwidth = 100, n_samples_per_bin = 3)
-#        )
-
-#labels <- 
-#  ls_all_hclusts_complete %>%
-#  map(~.x %>% as.data.frame()) %>% 
-#  bind_rows() %>% 
-#  group_by(amd_clusts) %>%  
-#  summarise(xPos = max(age_ce),
-#            yPos = max((density(age_ce))$y))
-
-ls_all_hclusts_complete_paleo %>%
-  map(~.x %>% as.data.frame()) %>% 
-  bind_rows() %>%
-  ggplot(aes(amd_clusts)) +
-  #facet_wrap(~amd_clusts, scales = "free")+
-  ggridges::geom_density_ridges(aes(x = age_ce, y = as.factor(amd_clusts), fill = as.factor(amd_clusts)), size = 2, scale = 5, alpha = 0.7) +
-  scale_fill_viridis_d(name = "Community Trophic \nstructures", option = "viridis", direction = -1) +
-      theme(plot.background = NULL) +
-      theme_minimal() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-```
-
-
-```{r fig.asp = 0.5, fig.width = 12}
 
 # Create the plot
 plot_stacked_fclusts_time_lines <- 
@@ -2131,15 +2058,6 @@ diag(round(100 * (prop.table(tabrp_paleo, 1)), 0))
 # Variable Importance and Partial Dependence Profiles (PDPs)
 # ----------------------------
 
-# Set PNG output for saving the tree plot
-png("../figures/supplementary_figure_5_decision_tree.png", width = 7.29, height = 4.51, units = "in", res = 600)
-
-# Plot variable importance from random forest
-varImpPlot(RFfit_paleo)
-
-# Close the graphics device
-dev.off()
-
 # Use DALEX to explain model behavior
 explainer_paleo <- explain(model = RFfit_paleo, datRF_paleo[, -c(1:2)], datRF_paleo$amd_clusts)
 
@@ -2171,14 +2089,10 @@ decision_tree_paleo <- rpart(
 # Display complexity parameter table
 printcp(decision_tree_paleo)
 
-# ----------------------------
-# Save Decision Tree to File
-# ----------------------------
-
 # --------------------------------------------
 # Save the decision tree as a high-resolution PNG image
 # --------------------------------------------
-png("../figures/decision_tree_paleo.png", width = 2000, height = 1400, res = 300)
+png("figures/decision_tree_paleo.png", width = 2000, height = 1400, res = 300)
 rpart.plot::rpart.plot(
   decision_tree_paleo, 
   type = 5, 
@@ -3178,11 +3092,14 @@ ls_df_env_wide_full %>%
 ```
 
 
-# ANALYSIS - REDUNDANCY ANALYSIS AND VARIANCE PARTITIONING
+# MULTIVARIATE ANALYSIS - REDUNDANCY ANALYSIS AND VARIANCE PARTITIONING
+## Data prep Environmetal Variables
+```{r fig.width = 12, fig.asp = 1.2}
 
-## Rescaling Environmental variables
+# ------------------------------------------------------------------------------
+# Rescaling Environmental variables
+# ------------------------------------------------------------------------------
 
-```{r}
 df_env <- 
   ls_df_env_wide_full %>% 
   bind_rows() %>% 
@@ -3191,40 +3108,13 @@ df_env <-
   group_by(lake) %>%
   mutate(across(c(tc, tn, toc_tn, d13c, d15n), ~ scale(.) %>% as.numeric())) %>%
   ungroup()
-```
 
-## Load data
-```{r fig.width = 12, fig.asp = 1.2}
-norm_abund_guilds <- read.table("https://docs.google.com/spreadsheets/d/e/2PACX-1vRpcCqR0flfd0DIiWZCbm4pwgKBwSTYUeeqOWPht63SDurOCYA2BBmk_sdXf1D6ICiEXPDnUBJNZqqa/pub?gid=1615246103&single=true&output=csv", header = TRUE, sep = ",", dec = ".")
+# ------------------------------------------------------------------------------
+# Interpolate vegetation smooth (HGAM output)
+# ------------------------------------------------------------------------------
 
-div_guilds <- read.table("https://docs.google.com/spreadsheets/d/e/2PACX-1vRpcCqR0flfd0DIiWZCbm4pwgKBwSTYUeeqOWPht63SDurOCYA2BBmk_sdXf1D6ICiEXPDnUBJNZqqa/pub?gid=0&single=true&output=csv", header = TRUE, sep = ",", dec = ".")
-
-nao_armand <- read.table("https://docs.google.com/spreadsheets/d/e/2PACX-1vRpcCqR0flfd0DIiWZCbm4pwgKBwSTYUeeqOWPht63SDurOCYA2BBmk_sdXf1D6ICiEXPDnUBJNZqqa/pub?gid=1506640799&single=true&output=csv", header = TRUE, sep = ",", dec = ".")
-
-pnas <- read.table("https://docs.google.com/spreadsheets/d/e/2PACX-1vRpcCqR0flfd0DIiWZCbm4pwgKBwSTYUeeqOWPht63SDurOCYA2BBmk_sdXf1D6ICiEXPDnUBJNZqqa/pub?gid=586812742&single=true&output=csv", header = TRUE, sep = ",", dec = ".")
-
-jiang <- read.table("https://docs.google.com/spreadsheets/d/e/2PACX-1vRpcCqR0flfd0DIiWZCbm4pwgKBwSTYUeeqOWPht63SDurOCYA2BBmk_sdXf1D6ICiEXPDnUBJNZqqa/pub?gid=1486017218&single=true&output=csv", header = TRUE, sep = ",", dec = ".")
-
-abrantes <- read.table("https://docs.google.com/spreadsheets/d/e/2PACX-1vRpcCqR0flfd0DIiWZCbm4pwgKBwSTYUeeqOWPht63SDurOCYA2BBmk_sdXf1D6ICiEXPDnUBJNZqqa/pub?gid=1960550797&single=true&output=csv", header = TRUE, sep = ",", dec = ".")
-
-buntgen <- read.table("https://docs.google.com/spreadsheets/d/e/2PACX-1vRpcCqR0flfd0DIiWZCbm4pwgKBwSTYUeeqOWPht63SDurOCYA2BBmk_sdXf1D6ICiEXPDnUBJNZqqa/pub?gid=1742262849&single=true&output=csv", header = TRUE, sep = ",", dec = ".")
-
-pollen <- read.table("https://docs.google.com/spreadsheets/d/e/2PACX-1vRpcCqR0flfd0DIiWZCbm4pwgKBwSTYUeeqOWPht63SDurOCYA2BBmk_sdXf1D6ICiEXPDnUBJNZqqa/pub?gid=1299257710&single=true&output=csv", header = TRUE, sep = ",", dec = ".")
-
-pollen <- read.table("https://docs.google.com/spreadsheets/d/e/2PACX-1vRpcCqR0flfd0DIiWZCbm4pwgKBwSTYUeeqOWPht63SDurOCYA2BBmk_sdXf1D6ICiEXPDnUBJNZqqa/pub?gid=1196428615&single=true&output=csv", header = TRUE, sep = ",", dec = ".")
-
-hgam <- read.csv("../data/Azores_HGAM_output.csv") %>% 
-  filter(is.na(sitename)) %>% 
-  mutate(age = 1950 - age)
-
-```
-
-## Data prep
-```{r fig.width = 12, fig.asp = 1.2}
-# Step 1: Define the regular sequence of CE years
 interp_years <- 0:2010
 
-# Step 2: Interpolate .estimate, .lower_ci, and .upper_ci separately
 interp_est <- approx(
   x = hgam$age,
   y = hgam$.estimate,
@@ -3246,7 +3136,6 @@ interp_upper <- approx(
   method = "linear"
 )
 
-# Step 3: Combine into one interpolated data frame
 interpolated_df <- data.frame(
   age_ce = interp_years,
   estimate = interp_est$y,
@@ -3254,17 +3143,21 @@ interpolated_df <- data.frame(
   upper_ci = interp_upper$y
 )
 
-# Define years
+# ------------------------------------------------------------------------------
+# Helper function for global smooth predictions
+# ------------------------------------------------------------------------------
+
 years <- data.frame(age_ce = 0:2010)
 
-# Helper function for global smooth predictions
 get_global_smooth <- function(model, term_name = "s(age_ce)") {
-  pred <- predict(model,
-                  newdata = years,
-                  type = "terms",
-                  terms = term_name,
-                  se.fit = TRUE,
-                  newdata.guaranteed = TRUE)
+  pred <- predict(
+    model,
+    newdata = years,
+    type = "terms",
+    terms = term_name,
+    se.fit = TRUE,
+    newdata.guaranteed = TRUE
+  )
   
   fit_vals <- pred$fit[, term_name]
   se_vals  <- pred$se.fit[, term_name]
@@ -3277,120 +3170,119 @@ get_global_smooth <- function(model, term_name = "s(age_ce)") {
   )
 }
 
-colnames(nao_armand)[2] <- "age_ce"
-colnames(nao_armand)[3] <- "nao_lower_ci"
-colnames(nao_armand)[7] <- "nao_upper_ci"
-colnames(nao_armand)[5] <- "NAO_Median_Value"
+# ------------------------------------------------------------------------------
+# Prepare and interpolate NAO Hernandez
+# ------------------------------------------------------------------------------
 
-# Label each row by whether it's above/below 0
-nao_armand <- 
-  nao_armand %>%
-  filter(age_ce >= 0) %>% 
-  mutate(
-    sign = ifelse(NAO_Median_Value >= 0, "positive", "negative")
-  )
+colnames(nao_hernandez)[2] <- "age_ce"
+colnames(nao_hernandez)[3] <- "nao_lower_ci"
+colnames(nao_hernandez)[5] <- "NAO_Median_Value"
+colnames(nao_hernandez)[7] <- "nao_upper_ci"
 
-nao_armand_interpolated <- approx(
-  x = nao_armand$age_ce,
-  y = nao_armand$NAO_Median_Value,
+nao_hernandez <- nao_hernandez %>%
+  filter(age_ce >= 0) %>%
+  mutate(sign = ifelse(NAO_Median_Value >= 0, "positive", "negative"))
+
+nao_hernandez_interpolated <- approx(
+  x = nao_hernandez$age_ce,
+  y = nao_hernandez$NAO_Median_Value,
   xout = interp_years,
   method = "linear"
 )
 
-nao_armand_interpolated <- as.data.frame(nao_armand_interpolated)
-colnames(nao_armand_interpolated) <- c("age_ce", "NAO_Median_Value")
+nao_hernandez_interpolated <- as.data.frame(nao_hernandez_interpolated)
+colnames(nao_hernandez_interpolated) <- c("age_ce", "NAO_Median_Value")
 
-# Create a 50-year bin column
-nao_binned <- nao_armand_interpolated %>%
+nao_binned <- nao_hernandez_interpolated %>%
   mutate(bin_50yr = floor(age_ce / 30) * 30) %>%
   group_by(bin_50yr) %>%
-  summarise(
-    avg_value = mean(NAO_Median_Value, na.rm = TRUE),
-    .groups = "drop"
-  )
+  summarise(avg_value = mean(NAO_Median_Value, na.rm = TRUE), .groups = "drop")
 
-nao_armand <- 
-  nao_armand %>% 
-  mutate(age_ce = round(age_ce))
+nao_hernandez <- nao_hernandez %>% mutate(age_ce = round(age_ce))
 
-jiang_interpolated <- approx(
-  x = jiang$age_ce,
-  y = jiang$SST.DTF,
+# ------------------------------------------------------------------------------
+# Interpolate SST Jiang
+# ------------------------------------------------------------------------------
+
+sst_jiang_interpolated <- approx(
+  x = sst_jiang$age_ce,
+  y = sst_jiang$SST.DTF,
   xout = interp_years,
   method = "linear"
 )
 
-jiang <- as.data.frame(jiang_interpolated)
-colnames(jiang) <- c("age_ce", "SST.DTF")
+sst_jiang <- as.data.frame(sst_jiang_interpolated)
+colnames(sst_jiang) <- c("age_ce", "SST.DTF")
 
-abrantes_interpolated <- approx(
-  x = abrantes$age_ce,
-  y = abrantes$SST,
+# ------------------------------------------------------------------------------
+# Interpolate and normalize SST Abrantes
+# ------------------------------------------------------------------------------
+
+sst_abrantes_interpolated <- approx(
+  x = sst_abrantes$age_ce,
+  y = sst_abrantes$SST,
   xout = interp_years,
   method = "linear"
 )
 
-# Min-max normalization
-abrantes_interpolated$y <- (abrantes_interpolated$y - min(abrantes_interpolated$y, na.rm = TRUE)) /
-                           (max(abrantes_interpolated$y, na.rm = TRUE) - min(abrantes_interpolated$y, na.rm = TRUE))
+sst_abrantes_interpolated$y <- (
+  sst_abrantes_interpolated$y - min(sst_abrantes_interpolated$y, na.rm = TRUE)
+) / (
+  max(sst_abrantes_interpolated$y, na.rm = TRUE) - min(sst_abrantes_interpolated$y, na.rm = TRUE)
+)
 
-abrantes <- as.data.frame(abrantes_interpolated)
-colnames(abrantes) <- c("age_ce", "SST")
+sst_abrantes <- as.data.frame(sst_abrantes_interpolated)
+colnames(sst_abrantes) <- c("age_ce", "SST")
 
-# Create a 30-year bin column
-abrantes_binned <- abrantes %>%
+sst_abrantes_binned <- sst_abrantes %>%
   mutate(bin_50yr = floor(age_ce / 50) * 50) %>%
   group_by(bin_50yr) %>%
-  summarise(
-    avg_value = mean(SST, na.rm = TRUE),
-    .groups = "drop"
-  )
+  summarise(avg_value = mean(SST, na.rm = TRUE), .groups = "drop")
 
-buntgen_interpolated <- approx(
-  x = buntgen$age_ce,
-  y = buntgen$Rmean,
+# ------------------------------------------------------------------------------
+# Interpolate NH summer temperatures (Büntgen et al.)
+# ------------------------------------------------------------------------------
+
+nhst_buntgen_interpolated <- approx(
+  x = nhst_buntgen$age_ce,
+  y = nhst_buntgen$Rmean,
   xout = interp_years,
   method = "linear"
-) 
+)
 
-buntgen <- as.data.frame(buntgen_interpolated)
-colnames(buntgen) <- c("age_ce", "Rmean")
+nhst_buntgen <- as.data.frame(nhst_buntgen_interpolated)
+colnames(nhst_buntgen) <- c("age_ce", "Rmean")
 
-buntgen <-
-  buntgen %>%
-  mutate(
-    sign = ifelse(Rmean >= 0, "positive", "negative")
-  )
+nhst_buntgen <- nhst_buntgen %>%
+  mutate(sign = ifelse(Rmean >= 0, "positive", "negative"))
 
-# Create a 30-year bin column
-buntgen_binned <- buntgen %>%
+nhst_buntgen_binned <- nhst_buntgen %>%
   mutate(bin_50yr = floor(age_ce / 50) * 50) %>%
   group_by(bin_50yr) %>%
-  summarise(
-    avg_value = mean(Rmean, na.rm = TRUE),
-    .groups = "drop"
-  )
+  summarise(avg_value = mean(Rmean, na.rm = TRUE), .groups = "drop")
 
-# Abundance guilds
-norm_abund_guilds <- 
-  norm_abund_guilds %>% 
+# ------------------------------------------------------------------------------
+# Prepare normalized guild abundances and community matrix
+# ------------------------------------------------------------------------------
+
+norm_abund_guilds <- norm_abund_guilds %>%
   mutate(age_ce = round(age_ce))
 
-# Select the community matrix (columns high_profile to predator)
 comm_matrix <- norm_abund_guilds %>%
   select(high_profile:predator)
 
-# If you want to bind this back to the original data (e.g., for predictors)
 norm_abund_guilds <- norm_abund_guilds %>%
   select(-high_profile:-predator) %>%
   bind_cols(comm_matrix)
 
-# Step 1: Combine all data
+# ------------------------------------------------------------------------------
+# Estimate temporal density and relative proportions of CTS clusters
+# ------------------------------------------------------------------------------
+
 combined_data <- ls_all_hclusts_complete_paleo %>%
   map(~as.data.frame(.x)) %>%
   bind_rows()
 
-# Step 2: Compute density for each amd_clusts group
 densities <- combined_data %>%
   group_by(amd_clusts) %>%
   do({
@@ -3399,7 +3291,6 @@ densities <- combined_data %>%
   }) %>%
   ungroup()
 
-# Step 2: Normalize by age_ce to get proportions ("fill" mode)
 proportions_df <- densities %>%
   group_by(age_ce) %>%
   mutate(
@@ -3408,7 +3299,6 @@ proportions_df <- densities %>%
   ) %>%
   ungroup()
 
-# Step 3: Round age_ce to nearest integer and average
 proportions_long <- proportions_df %>%
   mutate(age_ce = round(age_ce)) %>%
   filter(age_ce >= 0, age_ce <= 2010) %>%
@@ -3418,32 +3308,19 @@ proportions_long <- proportions_df %>%
     .groups = "drop"
   )
 
-# View output
-print(proportions_long)
+# ------------------------------------------------------------------------------
+# Convert CTS proportions to wide matrix format
+# ------------------------------------------------------------------------------
 
-ggplot(proportions_long, aes(x = age_ce, y = average_proportion, fill = amd_clusts)) +
-  geom_area(position = "stack", colour = "white") +
-  scale_fill_viridis_d(
-    name = "Community Trophic\nStructures",
-    option = "viridis",
-    direction = -1
-  ) +
-  lims(x = c(0, 2010)) +
-  theme_minimal() +
-  labs(
-    x = "Year (CE)",
-    y = "Proportion"
-  )
-
-# Step 1: Pivot community proportions to wide format
 prop_comm_matrix <- proportions_long %>%
   tidyr::pivot_wider(
     names_from = amd_clusts,
     values_from = average_proportion
   )
+
 ```
 
-## DATA PREP - Vegetation Change - Pollen
+## Data prep - Vegetation Change - Pollen
 ```{r fig.width = 12, fig.asp = 1.2}
 # --- Clean and normalize pollen data ---
 
@@ -3565,33 +3442,36 @@ combined_df_pollen <- bind_rows(aug_tree, aug_herb)
 
 ```
 
-## Prepare and align datasets using 30y windows
+## Align datasets using 30y windows
 ```{r fig.width = 10, fig.asp = 0.5}
 
+# ------------------------------------------------------------------------------
+# Prepare and align datasets using 30-year windows
+# ------------------------------------------------------------------------------
+
 joined_df <- cbind(age_ce = norm_abund_guilds$age_ce, comm_matrix) %>%
-  left_join(nao_armand_interpolated, by = "age_ce") %>%
-  left_join(interpolated_df, by = "age_ce") %>% 
-  #left_join(abrantes, by = "age_ce") %>% 
-  left_join(buntgen, by = "age_ce") %>% 
+  left_join(nao_hernandez_interpolated, by = "age_ce") %>%
+  left_join(interpolated_df, by = "age_ce") %>%
+  # left_join(sst_abrantes, by = "age_ce") %>%  # optional if dataset is needed
+  left_join(nhst_buntgen, by = "age_ce") %>%
   left_join(prop_comm_matrix, by = "age_ce")
 
 joined_df_30yr <- joined_df %>%
-  filter(age_ce>0) %>% 
-  # Create a 50-year bin column
-  mutate(age_bin = floor(age_ce / 30) * 30) %>%
-  
-  # Group by the 50-year bin
+  filter(age_ce > 0) %>%
+  mutate(age_bin = floor(age_ce / 30) * 30) %>%  # define 30-year bins
   group_by(age_bin) %>%
-  
-  # Average all numeric columns EXCEPT age_ce
-  summarise(across(where(is.numeric) & !all_of("age_ce"), mean, na.rm = TRUE), .groups = "drop") %>%
-  
-  # Rename age_bin to age_ce for clarity
-  rename(age_ce = age_bin)
+  summarise(
+    across(where(is.numeric) & !all_of("age_ce"), mean, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  rename(age_ce = age_bin)  # unify time axis for modeling
 
-# scale environmental variables
-joined_df_30yr <- joined_df_30yr %>% mutate(across(NAO_Median_Value:Rmean, scale))
+# ------------------------------------------------------------------------------
+# Scale environmental variables
+# ------------------------------------------------------------------------------
 
+joined_df_30yr <- joined_df_30yr %>%
+  mutate(across(NAO_Median_Value:Rmean, scale))
 
 ```
 
@@ -3696,45 +3576,6 @@ gam_kcheck_summary <- imap_dfr(gam_models, function(model, name) {
     mutate(model_name = name, .before = 1)
 })
 
-# ------------------------------------------------------------------------------
-# Create partial effect plots for each guild
-# ------------------------------------------------------------------------------
-
-gam_smooth_plots <- map2(gam_models, guilds, function(model, g) {
-  
-  # Get partial residuals
-  df_res <- g_norm_abund_guilds %>%
-    filter(guild == g) %>%
-    mutate(lake = as.factor(lake)) %>%
-    add_partial_residuals(model)
-
-  # Get global smooth and confidence intervals
-  smooths <- smooth_estimates(model) %>%
-    add_confint() %>%
-    filter(.smooth == "s(age_ce)")
-
-  # Model summary for annotation
-  sum_g <- summary(model)
-  lab <- paste("AdjRsq = ", round(sum_g$r.sq, 2),
-               "\nDevExpl = ", round(sum_g$dev.expl, 2))
-
-  # Plot partial smooth effect
-  ggplot(smooths) +
-    geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci), alpha = 0.2) +
-    geom_line(aes(x = age_ce, y = .estimate), linewidth = 1) +
-    geom_point(data = df_res, aes(x = age_ce, y = `s(age_ce)`, color = lake),
-               alpha = 0.5, size = 1) +
-    geom_rug(data = df_res, aes(x = age_ce), sides = "b", length = grid::unit(0.02, "npc")) +
-    labs(
-      title = g,
-      x = "Year (CE)",
-      y = "Partial effect of age_ce"
-    ) +
-    annotate("text", x = Inf, y = Inf, hjust = 1.1, vjust = 1.5, label = lab, size = 3.5) +
-    theme_classic(base_size = 12) +
-    theme(legend.position = "none")
-})
-
 
 ```
 
@@ -3742,59 +3583,52 @@ gam_smooth_plots <- map2(gam_models, guilds, function(model, g) {
 ## Global RDA model
 ```{r fig.width = 12, fig.asp = 1}
 
+# ------------------------------------------------------------------------------
+# Prepare community and environmental matrices
+# ------------------------------------------------------------------------------
+
 vars_to_test <- c("NAO_Median_Value", "Rmean")
 
-# Define your community and environmental matrices
 comm <- joined_df_30yr %>%
   select(`high_profile`:predator)
 
 env <- joined_df_30yr %>%
-  select(c(age_ce, vars_to_test,
-           estimate)
-         )
-# Function to check collinearity using VIFs
+  select(c(age_ce, vars_to_test, estimate))
+
+# ------------------------------------------------------------------------------
+# Check for collinearity using VIF
+# ------------------------------------------------------------------------------
+
 check_collinearity <- function(vars, threshold = 10) {
-  # Dummy response matrix (1 column of random numbers)
   dummy_response <- matrix(rnorm(nrow(vars)), ncol = 1)
   rda_model <- rda(dummy_response ~ ., data = vars)
   vif_values <- vif.cca(rda_model)
-  
   cat("\nCollinearity check (VIF):\n")
   print(round(vif_values, 2))
-  
   if (any(vif_values > threshold)) {
     warning("High collinearity detected (VIF > ", threshold, "): ",
             paste(names(vif_values[vif_values > threshold]), collapse = ", "))
   }
-  
   return(vif_values)
 }
 
-# Optional: separate conditioning variable (like age)
-cond_vars <- env %>%
-  select(age_ce)
+cond_vars <- env %>% select(age_ce)
+explanatory_vars <- env %>% select(-age_ce)
 
-explanatory_vars <- env %>%
-  select(-age_ce)
-
-# Combine all relevant data into one for NA filtering
 all_data <- bind_cols(comm, explanatory_vars, cond_vars)
+complete_data <- all_data %>% filter(complete.cases(.))
 
-# Remove rows with any NA
-complete_data <- all_data %>%
-  filter(complete.cases(.))
-
-# Re-split the clean data
 comm_clean <- complete_data %>% select(colnames(comm))
 explanatory_clean <- complete_data %>% select(colnames(explanatory_vars))
 cond_clean <- complete_data %>% select(colnames(cond_vars))
 
-# 1. Fit initial full CCA model
-cca_full <- capscale(comm_clean ~ ., data = explanatory_clean, 
-                          conditioning = cond_clean, permutations = 9999)
+# ------------------------------------------------------------------------------
+# Fit initial CCA model and filter collinear variables
+# ------------------------------------------------------------------------------
 
-# 2. Remove collinear variables using VIF
-vif_cutoff <- 10  # you can set to 5 or 20 depending on tolerance
+rda_full <- capscale(comm_clean ~ ., data = explanatory_clean, conditioning = cond_clean, permutations = 9999)
+
+vif_cutoff <- 10
 keep_vars <- names(explanatory_clean)
 
 repeat {
@@ -3806,29 +3640,28 @@ repeat {
   keep_vars <- setdiff(keep_vars, var_to_remove)
 }
 
-# Final CCA model after removing collinear variables
-cca_clean <- capscale(comm_clean ~ ., data = explanatory_clean[, keep_vars, drop = FALSE])
+rda_clean <- capscale(comm_clean ~ ., data = explanatory_clean[, keep_vars, drop = FALSE])
 
-# 3. Permutation tests
+# ------------------------------------------------------------------------------
+# Permutation tests for significance
+# ------------------------------------------------------------------------------
 
 cat("\nGlobal model significance:\n")
-print(anova(cca_clean, permutations = 999))
+print(anova(rda_clean, permutations = 999))
 
 cat("\nAxis-wise significance:\n")
-print(anova(cca_clean, by = "axis", permutations = 999))
+print(anova(rda_clean, by = "axis", permutations = 999))
 
 cat("\nTerm-wise (variable) significance:\n")
-term_test <- anova(cca_clean, by = "term", permutations = 999)
+term_test <- anova(rda_clean, by = "term", permutations = 999)
 print(term_test)
 
-# 4. Extract significant variables (p < 0.05)
 sig_terms <- rownames(term_test)[which(term_test$`Pr(>F)` < 0.05)]
-sig_terms <- gsub(".*\\)", "", sig_terms)  # Clean up interaction terms if any
+sig_terms <- gsub(".*\\)", "", sig_terms)
 
 cat("\nSignificant predictors (p < 0.05):\n")
 print(sig_terms)
 
-# Optional: Refit model with only significant terms
 if (length(sig_terms) > 0) {
   cca_sig <- cca(comm_clean ~ ., data = explanatory_clean[, sig_terms, drop = FALSE])
   cat("\nRefit CCA with significant variables only:\n")
@@ -3837,30 +3670,23 @@ if (length(sig_terms) > 0) {
   cat("\nNo significant predictors found at p < 0.05\n")
 }
 
-# 5. Optional: Forward selection
+# ------------------------------------------------------------------------------
+# Forward selection with ordistep
+# ------------------------------------------------------------------------------
+
 cat("\nForward selection with ordistep:\n")
 null <- capscale(comm_clean ~ 1, data = explanatory_clean[, keep_vars, drop = FALSE])
 full <- capscale(comm_clean ~ ., data = explanatory_clean[, keep_vars, drop = FALSE])
 
-fwd <- ordistep(null,
-                scope = formula(full),
-                direction = "forward",
-                permutations = 9999,
-                trace = TRUE)
+fwd <- ordistep(null, scope = formula(full), direction = "forward", permutations = 9999, trace = TRUE)
 
 cat("Selected model from forward selection:\n")
 print(fwd$call)
 
-# Get the formula from the selected model
 selected_formula <- formula(fwd)
-
-# Extract the right-hand side of the formula (i.e., the variables)
-selected_vars <- all.vars(selected_formula[[3]])
-
-# Refit the model using the final formula selected by ordistep
+selected_variables <- all.vars(selected_formula[[3]])
 fwd_model <- eval(fwd$call)
 
-# Extract biplot scores of the explanatory variables (loadings)
 biplot_scores <- scores(fwd_model, display = "bp", scaling = 2)
 
 cat("\nCorrelations of variables with each RDA axis (biplot scores):\n")
@@ -3869,111 +3695,77 @@ print(round(biplot_scores, 3))
 biplot_df <- as_tibble(biplot_scores, rownames = "Variable")
 print(biplot_df)
 
-# Now you can do anything with it
-summary(fwd_model)
-anova(fwd_model)
+# ------------------------------------------------------------------------------
+# Plot RDA variable correlation heatmap
+# ------------------------------------------------------------------------------
 
-# Plot the result
-#plot(fwd_model, display = c("sites", "species", "bp"), scaling = 2)
-
-# 1. Get biplot scores (correlations with axes)
-biplot_scores <- scores(fwd_model, display = "bp", scaling = 2)
-
-# 2. Get p-values from your earlier term test
 term_test <- anova(fwd_model, by = "term", permutations = 999)
 term_pvals <- as.data.frame(term_test)
 term_pvals$Variable <- rownames(term_pvals)
-
-selected_variables <- term_pvals$Variable[1:(length(term_pvals$Variable)-1)]
-
-# Clean variable names if they have formatting
 term_pvals$Variable <- gsub("`", "", term_pvals$Variable)
 
-# 3. Prepare combined tidy data
 biplot_df <- as.data.frame(biplot_scores) %>%
   rownames_to_column("Variable") %>%
   pivot_longer(-Variable, names_to = "Axis", values_to = "Correlation") %>%
   left_join(term_pvals, by = "Variable") %>%
   mutate(Significance = ifelse(`Pr(>F)` < 0.05, "*", ""))
 
-# 4. Plot as heatmap
 ggplot(biplot_df, aes(x = Axis, y = Variable, fill = Correlation)) +
   geom_tile(color = "white") +
   geom_text(aes(label = Significance), color = "black", size = 6, vjust = 0.5) +
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0,
-                       name = "Correlation") +
-  labs(title = "Correlation of Variables with RDA Axes",
-       subtitle = "* = p < 0.05 (from term-wise test)",
-       x = "RDA Axis",
-       y = "Environmental Variable") +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, name = "Correlation") +
+  labs(title = "Correlation of Variables with RDA Axes", subtitle = "* = p < 0.05 (from term-wise test)",
+       x = "RDA Axis", y = "Environmental Variable") +
   theme_minimal(base_size = 13)
 
-# Step 1: Get ordination scores
-# Calculate proportion of variance explained by CAP1 and CAP2
-eig_vals <- fwd_model$CCA$eig  # For constrained axes in capscale/RDA
+# ------------------------------------------------------------------------------
+# Final RDA biplot figure
+# ------------------------------------------------------------------------------
 
-# Calculate percentages
+eig_vals <- fwd_model$CCA$eig
 var_exp <- eig_vals / sum(eig_vals) * 100
 axis1_lab <- paste0("CAP1 (", round(var_exp[1], 1), "% explained variance)")
 axis2_lab <- paste0("CAP2 (", round(var_exp[2], 1), "% explained variance)")
 
-# Site scores (points)
 site_scores <- scores(fwd_model, display = "sites", scaling = 2)
 site_df <- as.data.frame(site_scores)
-site_df$age_ce <- cond_clean$age_ce  # Make sure row order matches!
+site_df$age_ce <- cond_clean$age_ce
 
-# Species scores (text labels)
 species_df <- as.data.frame(scores(fwd_model, display = "species", scaling = 2))
+species_df <- species_df %>%
+  tibble::rownames_to_column("Guild") %>%
+  mutate(Label = recode(Guild,
+    "high_profile" = "High Profile", "low_profile" = "Low Profile",
+    "motile" = "Motile", "euplanktonic" = "Euplanktonic",
+    "algivore" = "Algivore", "detritivore" = "Detritivore",
+    "plantivore" = "Plantivore", "predator" = "Predator"))
 
-# Biplot (environmental variable) arrows
 bp_df <- as.data.frame(scores(fwd_model, display = "bp", scaling = 2))
-
 bp_df <- bp_df %>%
   tibble::rownames_to_column("Variable") %>%
   mutate(Label = recode(Variable,
     "estimate" = "Veg. Change",
     "NAO_Median_Value" = "NAO",
-    "Rmean" = "NHST"
-  ))
+    "Rmean" = "NHST"))
 
-species_df <- species_df %>%
-  tibble::rownames_to_column("Guild") %>%
-  mutate(Label = recode(Guild,
-    "high_profile" = "High Profile",
-    "low_profile" = "Low Profile",
-    "motile" = "Motile",
-    "euplanktonic" = "Euplanktonic",
-    "algivore" = "Algivore",
-    "detritivore" = "Detritivore",
-    "plantivore" = "Plantivore",
-    "predator" = "Predator"
-  ))
-
-
-
-global_rda <- 
-  ggplot() +
+global_rda <- ggplot() +
   geom_point(data = site_df, aes(x = CAP1, y = CAP2, color = age_ce), size = 4, alpha = 0.9) +
-
   geom_text_repel(data = species_df, aes(x = CAP1, y = CAP2, label = Label),
                   color = "red", size = 3.5, fontface = "italic", max.overlaps = Inf) +
-
   geom_segment(data = bp_df,
                aes(x = 0, y = 0, xend = CAP1, yend = CAP2),
                arrow = arrow(length = unit(0.2, "cm")), color = "black", linewidth = 0.7) +
-
   geom_text_repel(data = bp_df,
                   aes(x = CAP1, y = CAP2, label = Label),
                   size = 3.5, color = "black", max.overlaps = Inf) +
-
   scale_color_viridis_c(option = "D", name = "Age (CE)") +
   labs(x = axis1_lab, y = axis2_lab, title = "") +
   coord_fixed() +
   theme_minimal(base_size = 14) +
   theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1))
 
-
 global_rda
+
 ```
 
 
@@ -4376,11 +4168,6 @@ effect_diff <- r2_windowed %>%
 ```{r fig.asp=0.9, fig.width=12}
 
 # --------------------------------------------
-# Load lake metadata (lat/lon) from Excel
-# --------------------------------------------
-env <- readxl::read_excel(path = "../data/tab_lake_metadata.xlsx")
-
-# --------------------------------------------
 # Define custom plot titles with island abbreviations
 # --------------------------------------------
 custom_titles <- c(
@@ -4442,7 +4229,7 @@ azores_bbox <- st_as_sfc(st_bbox(c(xmin = xmin, xmax = xmax, ymin = ymin, ymax =
 # --------------------------------------------
 # Load and crop coastline shapefile
 # --------------------------------------------
-coastline_shapefile <- st_read("../data/ne_10m_coastline/ne_10m_coastline.shp")
+coastline_shapefile <- st_read("data/ne_10m_coastline/ne_10m_coastline.shp")
 azores_coastline <- st_crop(coastline_shapefile, azores_bbox)
 north_atlantic_coastline <- st_crop(coastline_shapefile, north_atlantic_bbox)
 
@@ -4552,7 +4339,7 @@ print(combined_plot_map)
 # Export figure to file
 # --------------------------------------------
 ggsave(
-  "../figures/FIGURE_1_azores_map_DCA_all_types_two_panels.svg",
+  "figures/FIGURE_1_azores_map_DCA_all_types_two_panels.svg",
   plot = combined_plot_map,
   dpi = 600, width = 12, height = 12
 )
@@ -4647,160 +4434,6 @@ ggpubr::ggarrange(
 )
 
 ```
-### FIGURE 3 - Diversity Dynamics by Functional Group (Standardized Species Richness)
-```{r fig.asp = 0.5, fig.width = 10}
-
-# --------------------------------------------
-# Set common visual parameters (edit these to update all plots)
-# --------------------------------------------
-axis_title_size <- 13
-axis_text_size  <- 11
-legend_text_size <- 10
-plot_title_size <- 14
-
-# --------------------------------------------
-# Helper: Standardize and summarize species richness
-# --------------------------------------------
-summarize_richness <- function(df, producer = TRUE) {
-  df %>%
-    select(-name) %>%
-    group_by(lake, core_depth_id, fgroup) %>%
-    summarise(
-      species_richness = sum(value > 0, na.rm = TRUE),
-      total_abundance  = sum(value, na.rm = TRUE),
-      .groups = "drop"
-    ) %>%
-    group_by(lake, fgroup) %>%
-    mutate(
-      standardized_species_richness = (species_richness - min(species_richness, na.rm = TRUE)) / 
-                                      (max(species_richness, na.rm = TRUE) - min(species_richness, na.rm = TRUE))
-    ) %>%
-    left_join(df_age_model, by = "core_depth_id") %>%
-    filter(if (producer) !fgroup %in% c("algivore", "detritivore", "plantivore", "predator") else fgroup %in% c("algivore", "detritivore", "plantivore", "predator"))
-}
-
-# --------------------------------------------
-# Global consumer richness trend
-# --------------------------------------------
-cons_glob_div_plt <- summarize_richness(df_comm, producer = FALSE) %>%
-  ggplot(aes(age_ce, standardized_species_richness)) +
-  geom_smooth(aes(color = fgroup), se = TRUE) +
-  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
-  scale_color_viridis_d(name = "Consumer guilds", option = "B", direction = -1, alpha = 0.5) +
-  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
-  labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    panel.grid.minor = element_blank(),
-    axis.title = element_text(size = axis_title_size),
-    axis.text  = element_text(size = axis_text_size),
-    plot.title = element_text(size = plot_title_size, face = "bold")
-  ) +
-  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
-  lims(x = c(0, 2010))
-
-# --------------------------------------------
-# Per-lake consumer richness trends
-# --------------------------------------------
-cons_lake_div_plt <- summarize_richness(df_comm, producer = FALSE) %>%
-  ggplot(aes(age_ce, standardized_species_richness)) +
-  facet_wrap(~lake, scales = "free", nrow = 3) +
-  geom_point(aes(color = fgroup), alpha = 0.6) +
-  geom_smooth(aes(color = fgroup), se = FALSE) +
-  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
-  scale_color_viridis_d(name = "Consumer guilds", option = "B", direction = -1, alpha = 0.5) +
-  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
-  labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    panel.grid.minor = element_blank(),
-    axis.title = element_text(size = axis_title_size),
-    axis.text  = element_text(size = axis_text_size),
-    plot.title = element_text(size = plot_title_size, face = "bold")
-  ) +
-  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
-  lims(x = c(0, 2010))
-
-# --------------------------------------------
-# Global producer richness trend
-# --------------------------------------------
-prod_glob_div_plt <- summarize_richness(df_comm, producer = TRUE) %>%
-  ggplot(aes(age_ce, standardized_species_richness)) +
-  geom_smooth(aes(color = fgroup), se = TRUE) +
-  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
-  scale_color_viridis_d(name = "Producer guilds", option = "D", direction = -1, alpha = 0.5) +
-  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
-  labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    panel.grid.minor = element_blank(),
-    axis.title = element_text(size = axis_title_size),
-    axis.text  = element_text(size = axis_text_size),
-    plot.title = element_text(size = plot_title_size, face = "bold")
-  ) +
-  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
-  lims(x = c(0, 2010))
-
-# --------------------------------------------
-# Per-lake producer richness trends
-# --------------------------------------------
-prod_lake_div_plt <- summarize_richness(df_comm, producer = TRUE) %>%
-  ggplot(aes(age_ce, standardized_species_richness)) +
-  facet_wrap(~lake, scales = "free", nrow = 3) +
-  geom_point(aes(color = fgroup), alpha = 0.6) +
-  geom_smooth(aes(color = fgroup), se = FALSE) +
-  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
-  scale_color_viridis_d(name = "Producer guilds", option = "D", direction = -1, alpha = 0.5) +
-  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
-  labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    panel.grid.minor = element_blank(),
-    axis.title = element_text(size = axis_title_size),
-    axis.text  = element_text(size = axis_text_size),
-    plot.title = element_text(size = plot_title_size, face = "bold")
-  ) +
-  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
-  lims(x = c(0, 2010))
-
-# --------------------------------------------
-# Optional: Remove y-axis for consumer global plot to align with producer
-# --------------------------------------------
-cons_glob_div_plt <- cons_glob_div_plt +
-  theme(
-    axis.title.y = element_blank(),
-    axis.text.y  = element_blank()
-  )
-
-# --------------------------------------------
-# Combine producer and consumer global plots
-# --------------------------------------------
-plot_div_per_fgroup_regional_scale <- 
-  prod_glob_div_plt + cons_glob_div_plt +
-  patchwork::plot_layout(guides = "collect", widths = c(1, 1)) +
-  patchwork::plot_annotation(
-    tag_levels = 'A',
-    theme = theme(
-      legend.position = "bottom",
-      legend.text = element_text(size = legend_text_size)
-    )
-  )
-
-# --------------------------------------------
-# Save output
-# --------------------------------------------
-ggsave(
-  plot = plot_div_per_fgroup_regional_scale,
-  filename = "../figures/FIGURE_3_plot_div_per_fgroup_regional_scale.png",
-  dpi = 600,
-  width = 10, height = 6
-)
-
-```
 
 ### FIGURE 2 - Trophic structure classification
 ```{r fig.width = 14, fig.asp = 1.2}
@@ -4828,7 +4461,7 @@ ordinations_fclusts_1 <- ordinations_fclusts_1 +
 # --------------------------------------------
 # Prepare Panel B: Classification tree from PNG image
 # --------------------------------------------
-tree_grob <- grid::rasterGrob(png::readPNG("../figures/decision_tree_paleo.png"))
+tree_grob <- grid::rasterGrob(png::readPNG("figures/decision_tree_paleo.png"))
 plot_decision_tree_paleo <- ggplot() +
   annotation_custom(tree_grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
   theme_void() +
@@ -4989,12 +4622,169 @@ final_figure <- (
 # Save to file
 # --------------------------------------------
 ggsave(plot = final_figure, 
-       filename = "../figures/FIGURE_3_composite_figure.png", 
+       filename = "figures/FIGURE_3_composite_figure.png", 
        dpi = 600,
        width = 14)
 
 
 ```
+
+
+### FIGURE 3 - Diversity Dynamics by Functional Group (Standardized Species Richness)
+```{r fig.asp = 0.5, fig.width = 10}
+
+# --------------------------------------------
+# Set common visual parameters (edit these to update all plots)
+# --------------------------------------------
+axis_title_size <- 13
+axis_text_size  <- 11
+legend_text_size <- 10
+plot_title_size <- 14
+
+# --------------------------------------------
+# Helper: Standardize and summarize species richness
+# --------------------------------------------
+summarize_richness <- function(df, producer = TRUE) {
+  df %>%
+    select(-name) %>%
+    group_by(lake, core_depth_id, fgroup) %>%
+    summarise(
+      species_richness = sum(value > 0, na.rm = TRUE),
+      total_abundance  = sum(value, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    group_by(lake, fgroup) %>%
+    mutate(
+      standardized_species_richness = (species_richness - min(species_richness, na.rm = TRUE)) / 
+                                      (max(species_richness, na.rm = TRUE) - min(species_richness, na.rm = TRUE))
+    ) %>%
+    left_join(df_age_model, by = "core_depth_id") %>%
+    filter(if (producer) !fgroup %in% c("algivore", "detritivore", "plantivore", "predator") else fgroup %in% c("algivore", "detritivore", "plantivore", "predator"))
+}
+
+# --------------------------------------------
+# Global consumer richness trend
+# --------------------------------------------
+cons_glob_div_plt <- summarize_richness(df_comm, producer = FALSE) %>%
+  ggplot(aes(age_ce, standardized_species_richness)) +
+  geom_smooth(aes(color = fgroup), se = TRUE) +
+  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
+  scale_color_viridis_d(name = "Consumer guilds", option = "B", direction = -1, alpha = 0.5) +
+  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
+  labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    axis.title = element_text(size = axis_title_size),
+    axis.text  = element_text(size = axis_text_size),
+    plot.title = element_text(size = plot_title_size, face = "bold")
+  ) +
+  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
+  lims(x = c(0, 2010))
+
+# --------------------------------------------
+# Per-lake consumer richness trends
+# --------------------------------------------
+cons_lake_div_plt <- summarize_richness(df_comm, producer = FALSE) %>%
+  ggplot(aes(age_ce, standardized_species_richness)) +
+  facet_wrap(~lake, scales = "free", nrow = 3) +
+  geom_point(aes(color = fgroup), alpha = 0.6) +
+  geom_smooth(aes(color = fgroup), se = FALSE) +
+  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
+  scale_color_viridis_d(name = "Consumer guilds", option = "B", direction = -1, alpha = 0.5) +
+  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
+  labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    axis.title = element_text(size = axis_title_size),
+    axis.text  = element_text(size = axis_text_size),
+    plot.title = element_text(size = plot_title_size, face = "bold")
+  ) +
+  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
+  lims(x = c(0, 2010))
+
+# --------------------------------------------
+# Global producer richness trend
+# --------------------------------------------
+prod_glob_div_plt <- summarize_richness(df_comm, producer = TRUE) %>%
+  ggplot(aes(age_ce, standardized_species_richness)) +
+  geom_smooth(aes(color = fgroup), se = TRUE) +
+  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
+  scale_color_viridis_d(name = "Producer guilds", option = "D", direction = -1, alpha = 0.5) +
+  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
+  labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    axis.title = element_text(size = axis_title_size),
+    axis.text  = element_text(size = axis_text_size),
+    plot.title = element_text(size = plot_title_size, face = "bold")
+  ) +
+  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
+  lims(x = c(0, 2010))
+
+# --------------------------------------------
+# Per-lake producer richness trends
+# --------------------------------------------
+prod_lake_div_plt <- summarize_richness(df_comm, producer = TRUE) %>%
+  ggplot(aes(age_ce, standardized_species_richness)) +
+  facet_wrap(~lake, scales = "free", nrow = 3) +
+  geom_point(aes(color = fgroup), alpha = 0.6) +
+  geom_smooth(aes(color = fgroup), se = FALSE) +
+  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
+  scale_color_viridis_d(name = "Producer guilds", option = "D", direction = -1, alpha = 0.5) +
+  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
+  labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    axis.title = element_text(size = axis_title_size),
+    axis.text  = element_text(size = axis_text_size),
+    plot.title = element_text(size = plot_title_size, face = "bold")
+  ) +
+  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
+  lims(x = c(0, 2010))
+
+# --------------------------------------------
+# Optional: Remove y-axis for consumer global plot to align with producer
+# --------------------------------------------
+cons_glob_div_plt <- cons_glob_div_plt +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y  = element_blank()
+  )
+
+# --------------------------------------------
+# Combine producer and consumer global plots
+# --------------------------------------------
+plot_div_per_fgroup_regional_scale <- 
+  prod_glob_div_plt + cons_glob_div_plt +
+  patchwork::plot_layout(guides = "collect", widths = c(1, 1)) +
+  patchwork::plot_annotation(
+    tag_levels = 'A',
+    theme = theme(
+      legend.position = "bottom",
+      legend.text = element_text(size = legend_text_size)
+    )
+  )
+
+# --------------------------------------------
+# Save output
+# --------------------------------------------
+ggsave(
+  plot = plot_div_per_fgroup_regional_scale,
+  filename = "figures/FIGURE_3_plot_div_per_fgroup_regional_scale.png",
+  dpi = 600,
+  width = 10, height = 6
+)
+
+```
+
 
 ## FIGURE 4 - MULTIVARIATE ANALYSIS
 ```{r fig.width = 10, fig.asp = 1}
@@ -5098,14 +4888,14 @@ print(combined_varplot)
 # --------------------------------------
 # Plot 1: NH Summer Temperature (Büntgen tree-ring reconstruction)
 # --------------------------------------
-buntgen_plot <- ggplot(buntgen, aes(x = age_ce, y = Rmean)) +
+nhst_buntgen_plot <- ggplot(nhst_buntgen, aes(x = age_ce, y = Rmean)) +
   geom_line(size = 1, color = "grey") +  # Main raw line
   geom_point(aes(color = sign), size = 1) +  # Positive (red) / negative (blue) deviations
   scale_color_manual(values = c("positive" = "red", "negative" = "blue")) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +  # zero reference
 
   # Add 50-year smoothed trend line
-  geom_line(data = buntgen_binned, aes(x = bin_50yr, y = avg_value),
+  geom_line(data = nhst_buntgen_binned, aes(x = bin_50yr, y = avg_value),
             color = "steelblue", linewidth = 2) +
 
   theme_minimal(base_size = 14) +
@@ -5120,7 +4910,7 @@ buntgen_plot <- ggplot(buntgen, aes(x = age_ce, y = Rmean)) +
 # --------------------------------------
 # Plot 2: North Atlantic Oscillation (NAO) median values
 # --------------------------------------
-nao_plot <- ggplot(nao_armand, aes(x = age_ce, y = NAO_Median_Value)) +
+nao_plot <- ggplot(nao_hernandez, aes(x = age_ce, y = NAO_Median_Value)) +
   geom_line(size = 1, color = "grey") +  # Raw NAO data
   geom_point(aes(color = sign), size = 1) +  # Red/blue anomalies
   scale_color_manual(values = c("positive" = "red", "negative" = "blue")) +
@@ -5140,16 +4930,16 @@ nao_plot <- ggplot(nao_armand, aes(x = age_ce, y = NAO_Median_Value)) +
   theme(legend.position = "none")
 
 # --------------------------------------
-# Plot 3: Sea Surface Temperature (SST) reconstruction from Abrantes
+# Plot 3: Sea Surface Temperature (SST) reconstruction from sst_abrantes
 # --------------------------------------
-abrantes_plot <- ggplot(abrantes, aes(x = age_ce, y = SST)) +
+sst_abrantes_plot <- ggplot(sst_abrantes, aes(x = age_ce, y = SST)) +
   geom_line(size = 1, color = "grey") +  # Raw SST signal
   geom_point(size = 1) +                 # SST points (uncolored here)
   scale_color_manual() +                # Placeholder (does nothing currently)
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +
 
   # Optional: add smoothed SST curve if needed
-  # geom_line(data = abrantes_binned, aes(x = bin_50yr, y = avg_value),
+  # geom_line(data = sst_abrantes_binned, aes(x = bin_50yr, y = avg_value),
   #           color = "steelblue", linewidth = 2) +
 
   theme_minimal(base_size = 14) +
@@ -5179,7 +4969,7 @@ tag_theme <- theme(
 # --------------------------------------
 # Assemble Tagged and Themed Panels
 # --------------------------------------
-buntgen_panel <- buntgen_plot + 
+nhst_buntgen_panel <- nhst_buntgen_plot + 
   labs(tag = "(a) NH Summer Temperature Anomaly reconstruction (Tree Rings)", title = NULL) + 
   tag_theme +
   theme(axis.title.x = element_blank())  # remove x-axis label
@@ -5193,7 +4983,7 @@ nao_panel <- nao_plot +
 # Combine Panels Vertically with patchwork
 # --------------------------------------
 final_plot_2 <- 
-  (buntgen_panel + nao_panel) +
+  (nhst_buntgen_panel + nao_panel) +
   patchwork::plot_layout(ncol = 1, nrow = 3,
                          heights = c(20, 20, 20)) +  # Equal height for each plot
   patchwork::plot_annotation(
@@ -5205,9 +4995,18 @@ final_plot_2 <-
   )
 
 # --------------------------------------
-# Display Final Figure
+# Export to PNG
 # --------------------------------------
+
+# Set PNG output for saving the tree plot
+png("supplementary/supplementary_figure_2.png", width = 8, height = 8, units = "in", res = 600)
+
+# Plot
 final_plot_2
+
+# Close the graphics device
+dev.off()
+
 
 ```
 
@@ -5299,7 +5098,7 @@ final_combined_plot_pollen <-
 # --------------------------------------
 # Export to PNG
 # --------------------------------------
-png("../figures/supplementary_figure_3_vegetation_change.png", 
+png("supplementary/supplementary_figure_3_vegetation_change.png", 
     width = 7.29, height = 4.51, units = "in", res = 600)
 
 # Render the plot to file
@@ -5385,7 +5184,7 @@ print(supplementary_figure_4)
 # -----------------------------------------------
 ggsave(
   plot = supplementary_figure_4,
-  filename = "../figures/supplementary_figure_4.png",
+  filename = "supplementary/supplementary_figure_4.png",
   dpi = 600,
   width = 12,
   height = 16
@@ -5397,10 +5196,24 @@ ggsave(
 ```{r}
 
 # Set PNG output for saving the tree plot
-png("../figures/supplementary_figure_5_decision_tree.png", width = 7.29, height = 4.51, units = "in", res = 600)
+png("supplementary/supplementary_figure_5_decision_tree.png", width = 7.29, height = 4.51, units = "in", res = 600)
 
 # Plot variable importance from random forest
 varImpPlot(RFfit_paleo, main = "")
+
+# Close the graphics device
+dev.off()
+
+```
+
+### SUPPLEMENTARY FIGURE 6 - Variable Importance Plot
+```{r fig.width = 12, fig.asp = 1}
+
+# Set PNG output for saving the tree plot
+png("supplementary/supplementary_figure_6_global_rda.png", width = 8, height = 8, units = "in", res = 600)
+
+# Plot Global Rda with selected variables
+global_rda
 
 # Close the graphics device
 dev.off()

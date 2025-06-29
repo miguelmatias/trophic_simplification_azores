@@ -1,33 +1,93 @@
-# trophic_simplification_azores
-This repository contains data, analysis code, and figures for the manuscript "Humans simplified lake trophic structures over the past millennium across the Azorean archipelago"
+# Paleo-Trophic Structures Analysis
 
-# Long-term trophic restructuring of Azorean island lakes
+This repository contains scripts and data for analyzing trophic structure changes in Azorean lake ecosystems over the past two millennia. It combines paleoecological proxies, statistical modeling, and data visualization to assess changes in biodiversity and community organization.
 
-This repository contains data, analysis code, and figures for the manuscript **"Humans simplified lake trophic structures over the past millennium across the Azorean archipelago"** submitted to _Nature Ecology & Evolution_.
+## Project Structure
 
-![Alt text](figures/plot_ce_chclusts_bstick_diatoms.png)
-
-## Contents
-
-- `data/`: Raw and processed data files
-- `code/`: R scripts for data processing, statistical modeling, and visualization
-- `figures/`: Output figures used in the manuscript
-- `notebooks/`: Optional RMarkdown/Quarto files for exploratory analyses
-- `supplementary/`: Supplementary tables and metadata
+```
+├── data/                     # Local data files (climate reconstructions, pollen data, etc.)
+├── figures/                  # Output plots and figures
+├── supplementary/                  # Output plots and figures
+├── functions/                # Custom R functions
+└── main_script.Rmd           # Primary analysis script (R Markdown)
+```
 
 ## Requirements
 
-All scripts are written in **R (≥4.2.0)**. Key packages used:
+All scripts are written in **R (≥4.2.0)** and rely on the following major packages:
 
-- `tidyverse`
-- `mgcv`
-- `vegan`
-- `patchwork`
-- `ggplot2`
-- `ggraph` (if using network diagrams)
-- `readr`, `here`, `janitor`
+### 🧰 General Data Handling
+- `tidyverse` (includes `dplyr`, `ggplot2`, `tidyr`, `tibble`, `purrr`, `forcats`)
+- `readxl`, `WriteXLS`, `googlesheets4` — for reading Excel and Google Sheets
+- `zoo`, `tidyquant` — for time series and interpolation
+- `rioja` — for paleoecological utilities
+- `parallel`, `furrr` — for parallel processing
+- `scales`, `png`, `Hmisc`
 
-You can install dependencies using:
+### 📊 Visualization & Plotting
+- `ggplot2` (via `tidyverse`)
+- `ggrepel`, `ggpmisc`, `viridis`, `cowplot`, `patchwork`
+- `ggtext`, `ggridges`, `ggh4x`, `ggspatial`, `ggordiplots`, `ggnewscale`, `gridExtra`, `grid`
 
-```R
-install.packages(c("tidyverse", "mgcv", "vegan", "patchwork", "ggplot2", "ggraph", "readr", "here", "janitor"))
+### 📈 Statistical Modeling
+- `mgcv`, `scam`, `gratia` — for GAMs and smoothers
+- `vegan`, `codyn` — for community ecology and dynamics
+- `broom` — for tidying model outputs
+- `rshift` — for changepoint detection
+
+### 🔗 Network Analysis
+- `igraph`, `ggnetwork`, `qgraph`
+
+### 🤖 Machine Learning & Tree Models
+- `caret`, `randomForest`, `xgboost`, `earth`, `e1071`
+- `rpart`, `rpart.plot`, `evtree` — for decision trees
+- `DALEX`, `DALEXtra` — for model explainability
+- `irr` — inter-rater reliability
+
+### 🔬 Phylogenetics & Spatial
+- `ape` — for phylogenetic trees
+- `sf` — for spatial vector data
+
+### 📂 Project-Specific
+- Custom functions sourced from `functions/source_custom_functions.R`
+
+### Install all packages at once
+
+```r
+install.packages(c(
+  "tidyverse", "readxl", "WriteXLS", "googlesheets4", "zoo", "tidyquant", "rioja", 
+  "parallel", "furrr", "scales", "png", "Hmisc", 
+  "ggrepel", "ggpmisc", "viridis", "cowplot", "patchwork", "ggtext", 
+  "ggridges", "ggh4x", "ggspatial", "ggordiplots", "ggnewscale", "gridExtra", "grid", 
+  "vegan", "codyn", "broom", "mgcv", "scam", "gratia", "rshift",
+  "igraph", "ggnetwork", "qgraph",
+  "caret", "randomForest", "xgboost", "earth", "e1071", "rpart", "rpart.plot", "evtree", 
+  "DALEX", "DALEXtra", "irr", 
+  "ape", "sf"
+))
+```
+
+---
+
+## Data
+
+Ensure the following datasets are available in the `data/` folder or downloaded from the corresponding sources:
+
+- Lake metadata (`table_lake_metadata.xlsx`)
+- Abundance and diversity of guilds
+- NAO and SST reconstructions
+- HGAM output from vegetation turnover
+- Pollen counts from regional cores
+
+## Running the analysis
+
+Open `main_script.Rmd` in RStudio and execute the script chunk-by-chunk or use **Knit** to render a full report.
+
+## Outputs
+
+- Figures exported to the `figures/` folder (e.g., trophic structure diagrams, GAM curves, classification trees)
+- Intermediate and final data saved in `output/`
+
+## Author
+
+Miguel Matias, Museo Nacional de Ciencias Naturales (MNCN-CSIC)
