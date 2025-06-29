@@ -143,7 +143,7 @@ alternative_functional_groups_guilds_globi_merged <- c(
 # ------------------------------------------------------------------------------
 # Load lake metadata
 # ------------------------------------------------------------------------------
-env <- readxl::read_excel(path = "data/table_lake_metadata.xlsx")  # lake coordinates, area, etc.
+lake_metadata <- readxl::read_excel(path = "data/table_lake_metadata.xlsx")  # lake coordinates, area, etc.
 
 # ------------------------------------------------------------------------------
 # Load guild relative abundances and diversity tables
@@ -3816,51 +3816,6 @@ ggplot(cor_tidy_lower, aes(x = Var2, y = Var1, fill = Correlation)) +
     x = "", y = ""
   )
 
-# Step 1: Select numeric columns and clean
-numeric_df <- joined_df_30yr %>% 
-  select(selected_variables, "1":"5") %>% 
-  select(where(is.numeric)) %>%
-  drop_na()
-
-# Step 2: Compute correlations and p-values
-corr_result <- Hmisc::rcorr(as.matrix(numeric_df), type = "pearson")
-cor_matrix <- corr_result$r
-p_matrix   <- corr_result$P
-
-# Step 3: Convert to tidy and remove upper triangle
-cor_tidy <- as.data.frame(as.table(cor_matrix)) %>%
-  rename(Var1 = Var1, Var2 = Var2, Correlation = Freq) %>%
-  mutate(p_value = as.vector(p_matrix)) %>%
-  mutate(Significance = case_when(
-    p_value < 0.001 ~ "***",
-    p_value < 0.01  ~ "**",
-    p_value < 0.05  ~ "*",
-    TRUE            ~ NA_character_
-  )) %>%
-  mutate(Label = ifelse(is.na(Significance), "", paste0(round(Correlation, 2), Significance)))
-
-# Step 4: Keep only lower triangle
-cor_tidy_lower <- cor_tidy %>%
-  filter(as.integer(factor(Var1, levels = colnames(cor_matrix))) >
-         as.integer(factor(Var2, levels = colnames(cor_matrix))))
-
-# Step 5: Plot lower triangle only
-ggplot(cor_tidy_lower, aes(x = Var2, y = Var1, fill = Correlation)) +
-  geom_tile(color = "white") +
-  geom_text(aes(label = Label), size = 3) +
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0,
-                       limits = c(-1, 1), name = "Pearson\nCorrelation") +
-  theme_minimal(base_size = 13) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 10),
-        panel.grid = element_blank()) +
-  labs(
-    title = "Lower Triangle Correlation Matrix (Significant Only)",
-    subtitle = "* = p < 0.05",
-    x = "", y = ""
-  )
-
-
 ```
 
 ### Phase RDA - Historical phases
@@ -4203,7 +4158,7 @@ scatterplots <-
 # --------------------------------------------
 # Convert lake coordinates to spatial points
 # --------------------------------------------
-lake_centers <- data.frame(island = env$lake, lat = env$lat, lon = env$long)
+lake_centers <- data.frame(island = lake_metadata$lake, lat = env$lat, lon = env$long)
 island_points <- st_as_sf(lake_centers, coords = c("lon", "lat"), crs = 4326)
 
 # --------------------------------------------
