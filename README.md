@@ -7,7 +7,8 @@ This repository contains scripts and data for analyzing trophic structure change
 ```
 ├── data/                     # Local data files (climate reconstructions, pollen data, etc.)
 ├── figures/                  # Output plots and figures
-├── supplementary/                  # Output plots and figures
+├── supplementary/            # Output plots and figures
+├── outputs/                  # Output intermediate figures 
 ├── functions/                # Custom R functions
 └── main_script.Rmd           # Primary analysis script (R Markdown)
 ```

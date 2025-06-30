@@ -33,10 +33,6 @@ library(tibble)         # Modern data frames (included in tidyverse)
 library(purrr)          # Functional programming for iteration (included in tidyverse)
 library(forcats)        # Tools for working with factors (included in tidyverse)
 
-library(readxl)         # Import Excel spreadsheets (.xls/.xlsx)
-library(WriteXLS)       # Export data to Excel (.xls) using Perl
-library(googlesheets4)  # Access and modify Google Sheets via API
-
 library(zoo)            # Time-series objects and interpolation
 library(tidyquant)      # Financial and time-series functions in tidyverse style
 library(rioja)          # Paleoecological and stratigraphic plotting utilities
@@ -122,12 +118,6 @@ summarize <- dplyr::summarize
 
 ```
 
-### LIST OF EXTERNAL OBJECTS NEEDE
-
-# Lake metadata for Figure 1
-env <- readxl::read_excel(path = "~/Dropbox/analysis/paleo_trophic_structures/tab_lake_metadata.xlsx")
-
-
 # LOAD DATA
 ```{r}
 
@@ -147,7 +137,7 @@ alternative_functional_groups_guilds_globi_merged <- c(
 # ------------------------------------------------------------------------------
 # Load lake metadata
 # ------------------------------------------------------------------------------
-lake_metadata <- readxl::read_excel(path = "data/table_lake_metadata.xlsx")  # lake coordinates, area, etc.
+lake_metadata <- read.csv(file = "data/table_lake_metadata.csv")  # lake coordinates, area, etc.
 
 # ------------------------------------------------------------------------------
 # Load guild relative abundances and diversity tables
@@ -167,12 +157,6 @@ sst_abrantes <- read.table("data/table_sst_abrantes.csv", header = TRUE, sep = "
 # Load pollen group data
 # ------------------------------------------------------------------------------
 pollen <- read.table("data/table_pollen_azores.csv", header = TRUE, sep = ",", dec = ".")
-
-pollen <- pollen %>% 
-  rename(age_bp = age) %>% 
-  mutate(age_ce = 1950 - age_bp) %>% 
-  mutate(ID = paste0(sitename, "_", age_ce))
-
 
 ```
 
@@ -291,6 +275,24 @@ for (i in 1:length(ls_df_all_scores_diatoms_amd_globi)) {
   ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(ls_df_all_scores_diatoms_amd_globi[[i]], ls_dca_diatoms[[i]])
 }
 
+ls_dca_diatoms_2 <- ls_df_diat_wide_codes %>%
+  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
+  # remove factors
+  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
+  # remove empty species
+  map(., ~ .x %>% decostand(method = "hellinger")) %>%
+  # calculate DCA
+  map(., ~ .x %>% decorana()) %>%
+  # calculate pcoa
+  map(., function(x) scores(x)) %>%
+  # extract axes
+  map(., function(x) as.data.frame(unlist(x[, 1:2]))) # extract first two axes and dataframe
+
+# bind list of codes and list of axes
+for (i in 1:length(ls_dca_diatoms_2)) {
+  ls_dca_diatoms_2[[i]] <- bind_cols(ls_df_codes_diat[[i]], ls_dca_diatoms_2[[i]])
+}
+
 ```
 
 ## DCA CHIRO
@@ -317,6 +319,24 @@ for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
 
 # set names to lists
 names(ls_df_all_scores_chiro_amd_globi) <- unlist(get_names_list(ls_df_all_scores_chiro_amd_globi))
+
+ls_dca_chiro_2 <- ls_df_chiro_wide_codes %>%
+  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
+  # remove factors
+  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
+  # remove empty species
+  map(., ~ .x %>% decostand(method = "hellinger")) %>%
+  # calculate DCA
+  map(., ~ .x %>% decorana()) %>%
+  # calculate pcoa
+  map(., function(x) scores(x)) %>%
+  # extract axes
+  map(., function(x) as.data.frame(unlist(x[, 1:2]))) # extract first two axes and dataframe
+
+# bind list of codes and list of axes
+for (i in 1:length(ls_dca_chiro_2)) {
+  ls_dca_chiro_2[[i]] <- bind_cols(df_chiro_codes[[i]], ls_dca_chiro_2[[i]])
+}
 
 ```
 
@@ -378,501 +398,19 @@ ls_df_dca_fgroups_codes_wide <-
 # set names to lists
 names(ls_df_dca_fgroups_codes_wide) <- unlist(get_names_list(ls_df_dca_fgroups_codes_wide))
 
-```
-
-
-# CLUSTERING DIATOMS
-## LAKE-SPECIFIC STANDARD CLUSTERS [PCOA, HELLINGER] DIATOMS
-
-```{r fig.asp = 1, fig.width = 12}
-
-# extract clusters vectors for each lake
-ls_df_hclust_diatoms <- ls_df_diat_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% hclust()) %>%
-  map(., ~ .x %>% cutree(k = 4)) %>%
-  map(., ~ .x %>% data.frame(groups = .x)) %>% 
-  map(., ~ .x %>% select(groups))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_diatoms_amd_globi)) {
-  ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(ls_df_all_scores_diatoms_amd_globi[[i]], ls_df_hclust_diatoms[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_diatoms_amd_globi) <- unlist(get_names_list(ls_df_all_scores_diatoms_amd_globi))
-
-# set factors
-ls_df_all_scores_diatoms_amd_globi <-
-  ls_df_all_scores_diatoms_amd_globi %>%
-  map(., ~ .x %>% mutate(groups = as.factor(as.vector(unlist(.x[, "groups"])))))
-
-ls_plots_dca_hclusts_ce <- ls_df_all_scores_diatoms_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_diatoms_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      # geom_line(colour="grey") +
-      geom_smooth(method = "gam") +
-      geom_point(aes(color = groups), size = 3) +
-      scale_colour_viridis_d(name = "Community Trophic \nstructures") +
-      theme(plot.background = NULL) +
-      labs(title = .y, ylab = "PcoA Axis 1") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-ls_plots_diatoms <- ls_plots_dca_hclusts_ce[c("Azul", "Caldeirao", "Empadadas Norte", "Funda", "Ginjal", "Peixinho", "Prata", "Santiago")]
-
-gridExtra::grid.arrange(grobs = ls_plots_dca_hclusts_ce, top = grid::textGrob("COMPOSITIONAL CHANGE [Community Trophic Structures] DIATOMS"))
-```
-
-## LAKE-SPECIFIC CONISS CLUSTERS [PCOA, HELLINGER] DIATOMS
-
-```{r fig.asp = 1, fig.width = 12}
-# extract clusters vectors for each lake
-all_chclusts_diatoms <- ls_df_diat_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% chclust()) %>%
-  map(., ~ .x %>% cutree(k = 4)) %>%
-  map(., ~ .x %>% data.frame(groups_coniss = .x)) %>% 
-  map(., ~ .x %>% select(groups_coniss))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_diatoms_amd_globi)) {
-  ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(ls_df_all_scores_diatoms_amd_globi[[i]], all_chclusts_diatoms[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_diatoms_amd_globi) <- unlist(get_names_list(ls_df_all_scores_diatoms_amd_globi))
-
-# set factors
-ls_df_all_scores_diatoms_amd_globi <-
-  ls_df_all_scores_diatoms_amd_globi %>%
-  map(., ~ .x %>% mutate(groups_coniss = as.factor(as.vector(unlist(.x[, "groups_coniss"])))))
-
-ls_plots_dca_chclusts_ce_diatoms <- ls_df_all_scores_diatoms_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_diatoms_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      # geom_line(colour="grey") +
-      geom_smooth(method = "loess", formula = "y ~ x") +
-      geom_point(aes(color = groups_coniss), size = 3) +
-      scale_colour_viridis_d(name = "Community Trophic \nstructures") +
-      theme(plot.background = NULL) +
-      labs(title = .y, ylab = "DCA1") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-ls_plots_chclusts_diatoms <- ls_plots_dca_chclusts_ce_diatoms[c("Azul", "Caldeirao", "Empadadas Norte", "Funda", "Ginjal", "Peixinho", "Prata", "Santiago")]
-
-plot_chclusts_diatoms <- gridExtra::grid.arrange(grobs = ls_plots_chclusts_diatoms, top = grid::textGrob("COMPOSITIONAL CHANGE [CONISS clusters]"))
-
-```
-
-## BROKENSTICKS DIATOMS
-
-```{r fig.asp=1, fig.width=, include=FALSE}
-
-ls_bstick_chclusts_diatoms <- ls_df_diat_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% chclust()) %>%
-  map(., ~ .x %>% bstick(., 10)) %>%
-  map(., ~ .x %>% detect_num_clusts_bstick(.))
-```
-
-## LAKE-SPECIFIC CONISS [BROKENSTICK OPTIMIZED] CLUSTERS [PCOA, SORENSEN] DIATOMS
-
-```{r fig.asp = 1, fig.width = 12}
-# extract clusters vectors for each lake based on number of clusters identified by the brokenstick method
-all_chclusts_diatoms <- ls_df_diat_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% chclust()) %>%
-  map2(., .y = ls_bstick_chclusts_diatoms, ~ .x %>% cutree(., k = .y)) %>% # use brokenstick cuts
-  map(., ~ .x %>% data.frame(groups_bstick_chclusts = .x)) %>% 
-  map(., ~ .x %>% select(groups_bstick_chclusts))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_diatoms_amd_globi)) {
-  ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(ls_df_all_scores_diatoms_amd_globi[[i]], all_chclusts_diatoms[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_diatoms_amd_globi) <- unlist(get_names_list(ls_df_all_scores_diatoms_amd_globi))
-
-# set factors
-ls_df_all_scores_diatoms_amd_globi <-
-  ls_df_all_scores_diatoms_amd_globi %>%
-  map(., ~ .x %>% mutate(groups_bstick_chclusts = as.factor(as.vector(unlist(.x[, "groups_bstick_chclusts"])))))
-
-ls_plots_dca_chclusts_ce_diatoms <- ls_df_all_scores_diatoms_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_diatoms_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      # geom_line(colour="grey") +
-      geom_smooth(method = "loess", formula = "y ~ x") +
-      geom_point(aes(color = groups_coniss), size = 3) +
-      # geom_density_2d(aes(color = groups), geom = "polygon") +
-      scale_fill_viridis_d() +
-      scale_colour_viridis_d(name = "Community Trophic \nstructures") +
-      theme(plot.background = NULL) +
-      labs(title = .y, ylab = "PcoA Axis 1") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-plot_ce_chclusts_bstick_diatoms <- gridExtra::grid.arrange(grobs = ls_plots_dca_chclusts_ce_diatoms, top = grid::textGrob("COMPOSITIONAL CHANGE [CONISS clusters]"))
-
-```
-
-## AMD LAKE-SPECIFIC CLUSTERS [PCOA, SORENSEN] DIATOMS
-
-```{r fig.asp = 1, fig.width = 12}
-# get optimal clusters for each lake
-tables <- ls_df_diat_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>% # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) # remove empty species
-
-numCores <- parallel::detectCores()
-
-ls_opt_clusts <-
-  parallel::mclapply(tables, function(x) optAMDclusters(x, .iterations = 100),
-    mc.cores = numCores
-  )
-
-# extract clusters vectors for each lake
-opt_AMD_clusts_diatoms <- ls_df_diat_wide_codes %>%
-  future_map(.x = ., ~ .x %>% select(-c(lake:core_depth_id))) %>% # remove factors
-  future_map(.x = ., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>% # remove empty species
-  future_map(.x = ., .y = ls_opt_clusts, .f = ~ .x %>% getAMDclusters(.data = .x, .opt_num_clusts = .y[[1]], .iterations = 100))
-
-opt_AMD_clusts_diatoms <- 
-  opt_AMD_clusts_diatoms %>% 
-  map(.x = ., ~ .x %>% dplyr::rename(., amd_clusts = .clst))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_diatoms_amd_globi)) {
-  ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(ls_df_all_scores_diatoms_amd_globi[[i]], opt_AMD_clusts_diatoms[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_diatoms_amd_globi) <- unlist(get_names_list(ls_df_all_scores_diatoms_amd_globi))
-
-# set factors
-ls_df_all_scores_diatoms_amd_globi <-
-  ls_df_all_scores_diatoms_amd_globi %>%
-  map(., ~ .x %>% mutate(amd_clusts = as.factor(as.vector(unlist(.x[, "amd_clusts"])))))
-```
-
-```{r fig.asp = 1, fig.width = 12}
-ls_plots_amd <- ls_df_all_scores_diatoms_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_diatoms_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      geom_line(colour = "grey") +
-      geom_point(aes(color = amd_clusts), size = 3) +
-      scale_colour_viridis_d(name = "Clusters") +
-      theme(plot.background = NULL) +
-      labs(title = .y) +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-plot_dca_amd_diatoms <- gridExtra::grid.arrange(grobs = ls_plots_amd, top = grid::textGrob("COMPOSITIONAL CHANGE [PCOA, SORENSEN + AMD LAKE-SPECIFIC CLUSTERS]"))
-
-```
-
-# CLUSTERING CHIRO [MODIFIED]
-## LAKE-SPECIFIC STANDARD CLUSTERS [PCOA, HELLINGER] chiro
-
-```{r fig.asp = 1, fig.width = 12}
-
-# extract clusters vectors for each lake
-ls_df_hclust_chiro <- ls_df_chiro_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% hclust()) %>%
-  map(., ~ .x %>% cutree(k = 4)) %>%
-  map(., ~ .x %>% data.frame(groups = .x)) %>% 
-  map(., ~ .x %>% select(groups))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
-  ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(ls_df_all_scores_chiro_amd_globi[[i]], ls_df_hclust_chiro[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_chiro_amd_globi) <- unlist(get_names_list(ls_df_all_scores_chiro_amd_globi))
-
-# set factors
-ls_df_all_scores_chiro_amd_globi <-
-  ls_df_all_scores_chiro_amd_globi %>%
-  map(., ~ .x %>% mutate(groups = as.factor(as.vector(unlist(.x[, "groups"])))))
-
-hclusts_ls_plots_ce <- ls_df_all_scores_chiro_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_chiro_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      # geom_line(colour="grey") +
-      geom_smooth(method = "gam") +
-      geom_point(aes(color = groups), size = 3) +
-      scale_colour_viridis_d(name = "Community Trophic \nstructures") +
-      theme(plot.background = NULL) +
-      labs(title = .y, ylab = "PcoA Axis 1") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-ls_plots_chiro <- hclusts_ls_plots_ce[c("Azul", "Caldeirao", "Empadadas Norte", "Funda", "Ginjal", "Peixinho", "Prata", "Santiago")]
-
-gridExtra::grid.arrange(grobs = hclusts_ls_plots_ce, top = grid::textGrob("COMPOSITIONAL CHANGE [Community Trophic Structures]"))
-```
-
-## LAKE-SPECIFIC CONISS CLUSTERS [PCOA, HELLINGER] chiro
-
-```{r fig.asp = 1, fig.width = 12}
-# extract clusters vectors for each lake
-ls_chclusts_chiro <- ls_df_chiro_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% chclust()) %>%
-  map(., ~ .x %>% cutree(k = 4)) %>%
-  map(., ~ .x %>% data.frame(groups_coniss = .x)) %>% 
-  map(., ~ .x %>% select(groups_coniss))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
-  ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(ls_df_all_scores_chiro_amd_globi[[i]], ls_chclusts_chiro[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_chiro_amd_globi) <- unlist(get_names_list(ls_df_all_scores_chiro_amd_globi))
-
-# set factors
-ls_df_all_scores_chiro_amd_globi <-
-  ls_df_all_scores_chiro_amd_globi %>%
-  map(., ~ .x %>% mutate(groups_coniss = as.factor(as.vector(unlist(.x[, "groups_coniss"])))))
-
-ls_plots_dca_chclusts_ce_chiro <- ls_df_all_scores_chiro_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_chiro_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      # geom_line(colour="grey") +
-      geom_smooth(method = "loess", formula = "y ~ x") +
-      geom_point(aes(color = groups_coniss), size = 3) +
-      scale_colour_viridis_d(name = "Community Trophic \nstructures") +
-      theme(plot.background = NULL) +
-      labs(title = .y, ylab = "DCA1") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-ls_plots_chclusts_chiro <- ls_plots_dca_chclusts_ce_chiro[c("Azul", "Caldeirao", "Empadadas Norte", "Funda", "Ginjal", "Peixinho", "Prata", "Santiago")]
-
-plot_chclusts_chiro <- gridExtra::grid.arrange(grobs = ls_plots_chclusts_chiro, top = grid::textGrob("COMPOSITIONAL CHANGE [CONISS clusters]"))
-
-```
-
-## BROKENSTICKS chiro
-
-```{r fig.asp=1, fig.width=, include=FALSE}
-
-ls_bstick_chclusts_chiro <- ls_df_chiro_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% chclust()) %>%
-  map(., ~ .x %>% bstick(., 10)) %>%
-  map(., ~ .x %>% detect_num_clusts_bstick(.))
-```
-
-## LAKE-SPECIFIC CONISS [BROKENSTICK OPTIMIZED] CLUSTERS [PCOA, SORENSEN] chiro
-
-```{r fig.asp = 1, fig.width = 12}
-# extract clusters vectors for each lake based on number of clusters identified by the brokenstick method
-ls_chclusts_chiro <- ls_df_chiro_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% chclust()) %>%
-  map2(., .y = ls_bstick_chclusts_chiro, ~ .x %>% cutree(., k = .y)) %>% # use brokenstick cuts
-  map(., ~ .x %>% data.frame(groups_bstick_chclusts = .x)) %>% 
-  map(., ~ .x %>% select(groups_bstick_chclusts))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
-  ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(ls_df_all_scores_chiro_amd_globi[[i]], ls_chclusts_chiro[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_chiro_amd_globi) <- unlist(get_names_list(ls_df_all_scores_chiro_amd_globi))
-
-# set factors
-ls_df_all_scores_chiro_amd_globi <-
-  ls_df_all_scores_chiro_amd_globi %>%
-  map(., ~ .x %>% mutate(groups_bstick_chclusts = as.factor(as.vector(unlist(.x[, "groups_bstick_chclusts"])))))
-
-ls_plots_dca_chclusts_ce_chiro <- ls_df_all_scores_chiro_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_chiro_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      # geom_line(colour="grey") +
-      geom_smooth(method = "loess", formula = "y ~ x") +
-      geom_point(aes(color = groups_coniss), size = 3) +
-      # geom_density_2d(aes(color = groups), geom = "polygon") +
-      scale_fill_viridis_d() +
-      scale_colour_viridis_d(name = "Community Trophic \nstructures") +
-      theme(plot.background = NULL) +
-      labs(title = .y, ylab = "PcoA Axis 1") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-plot_ce_chclusts_bstick_chiro <- gridExtra::grid.arrange(grobs = ls_plots_dca_chclusts_ce_chiro, top = grid::textGrob("COMPOSITIONAL CHANGE [CONISS clusters]"))
-
-```
-
-## AMD LAKE-SPECIFIC CLUSTERS [PCOA, SORENSEN] chiro
-
-```{r fig.asp = 1, fig.width = 12}
-# get optimal clusters for each lake
-tables <- ls_df_chiro_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>% # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) # remove empty species
-
-numCores <- parallel::detectCores()
-
-ls_opt_clusts_chiro <-
-  parallel::mclapply(tables, function(x) optAMDclusters(x, .iterations = 100),
-    mc.cores = numCores
-  )
-
-# extract clusters vectors for each lake
-opt_AMD_clusts_chiro <- ls_df_chiro_wide_codes %>%
-  future_map(.x = ., ~ .x %>% select(-c(lake:core_depth_id))) %>% # remove factors
-  future_map(.x = ., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>% # remove empty species
-  future_map(.x = ., .y = ls_opt_clusts_chiro, .f = ~ .x %>% getAMDclusters(.data = .x, .opt_num_clusts = .y[[1]], .iterations = 100))
-
-opt_AMD_clusts_chiro <- 
-  opt_AMD_clusts_chiro %>% 
-  map(.x = ., ~ .x %>% dplyr::rename(., amd_clusts = .clst))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
-  ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(ls_df_all_scores_chiro_amd_globi[[i]], opt_AMD_clusts_chiro[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_chiro_amd_globi) <- unlist(get_names_list(ls_df_all_scores_chiro_amd_globi))
-
-# set factors
-ls_df_all_scores_chiro_amd_globi <-
-  ls_df_all_scores_chiro_amd_globi %>%
-  map(., ~ .x %>% mutate(amd_clusts = as.factor(as.vector(unlist(.x[, "amd_clusts"])))))
-```
-
-# CLUSTERING - FGROUPS
-
-## LAKE-SPECIFIC STANDARD CLUSTERS [PCOA, HELLINGER] FGROUPS
-
-```{r fig.asp = 1, fig.width = 12}
-
 ls_df_fg <- 
   df_fg %>% 
   group_split(lake)
 
 # set names to lists
 names(ls_df_fg) <- unlist(get_names_list(ls_df_fg))
+
+```
+
+# CLUSTERING - FGROUPS
+## LAKE-SPECIFIC STANDARD CLUSTERS [PCOA, HELLINGER] FGROUPS
+
+```{r fig.asp = 1, fig.width = 12}
 
 # extract PCOA vectors for each lake
 ls_df_pcoa_scores_fgroups <- ls_df_fg %>%
@@ -1140,67 +678,6 @@ plot_pcoa_amd_fgroups <- gridExtra::grid.arrange(grobs = ls_plots_amd_2, top = g
 ```
 
 
-## COMPOSITIONAL CHANGE OVER TIME [PCOA, LAKE-SPECIFIC CLUSTERS] DIATOMS
-```{r fig.asp = 1, fig.width = 12}
-
-ls_plots_dca_hclusts_ce_diatoms <- ls_df_all_scores_diatoms_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_diatoms_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      # geom_line(colour="grey") +
-      geom_smooth(method = "loess", formula = "y ~ x") +
-      geom_point(aes(color = groups_bstick_chclusts), size = 3) +
-      scale_colour_viridis_d(name = "Community Trophic \nstructures") +
-      theme(plot.background = NULL) +
-      labs(title = .y, ylab = "PcoA Axis 1") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-ls_plots_diatoms <- ls_plots_dca_hclusts_ce_diatoms[c("Azul", "Caldeirao", "Caveiro", "Empadadas Norte", "Funda", "Ginjal", "Peixinho", "Santiago")]
-
-gridExtra::grid.arrange(grobs = ls_plots_diatoms, top = grid::textGrob("COMPOSITIONAL CHANGE [Community Trophic Structures]"))
-```
-
-## COMPOSITIONAL CHANGE OVER TIME [PCOA, LAKE-SPECIFIC CLUSTERS] CHIRO
-
-```{r fig.asp = 1, fig.width = 12}
-
-ls_plots_dca_hclusts_ce_chiro <- ls_df_all_scores_chiro_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_chiro_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      # geom_line(colour="grey") +
-      geom_smooth(method = "loess", formula = "y ~ x") +
-      geom_point(aes(color = groups_bstick_chclusts), size = 3) +
-      scale_colour_viridis_d(name = "Community Trophic \nstructures") +
-      theme(plot.background = NULL) +
-      labs(title = .y, ylab = "PcoA Axis 1") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-ls_plots_chiro <- ls_plots_dca_hclusts_ce_chiro[c("Azul", "Caldeirao", "Caveiro", "Empadadas Norte", "Funda", "Ginjal", "Peixinho", "Santiago")]
-
-gridExtra::grid.arrange(grobs = ls_plots_chiro, top = grid::textGrob("COMPOSITIONAL CHANGE [Community Trophic Structures]"))
-
-```
 # ANALYSIS - DCA's
 ### Prep DCAs
 ```{r}
@@ -1209,11 +686,11 @@ gridExtra::grid.arrange(grobs = ls_plots_chiro, top = grid::textGrob("COMPOSITIO
 # Apply axis correction to diatom DCA scores
 # --------------------------------------------
 b_ls_dca_diatoms <- 
-  ls_df_all_scores_diatoms_amd_globi %>%
+  ls_dca_diatoms_2 %>%
   map(~ .x %>% arrange(age_ce)) %>%         # Sort by age
   map(~ .x %>% convert_DCA()) %>%           # Flip DCA if needed (Custom function in functions file)
   bind_rows() %>%
-  select(lake, age_ce, DCA1, DCA2, groups)
+  select(lake, age_ce, DCA1, DCA2)
 
 # Fix Prata manually (function failed or returned incorrect orientation)
 b_ls_dca_diatoms[b_ls_dca_diatoms$lake == "Prata", "DCA1"] <- 
@@ -1223,21 +700,21 @@ b_ls_dca_diatoms[b_ls_dca_diatoms$lake == "Prata", "DCA1"] <-
 # Apply axis correction to chironomid DCA scores
 # --------------------------------------------
 b_ls_dca_chiro <- 
-  ls_df_all_scores_chiro_amd_globi %>%
+  ls_dca_chiro_2 %>%
   map(~ .x %>% arrange(age_ce)) %>%
   map(~ .x %>% convert_DCA()) %>%
   bind_rows() %>%
-  select(lake, age_ce, DCA1, DCA2, groups)
+  select(lake, age_ce, DCA1, DCA2)
 
 # --------------------------------------------
 # Apply axis correction to functional group DCA scores
 # --------------------------------------------
 b_ls_dca_fgroup <- 
-  ls_df_all_scores_fgroups_2_amd_globi %>%
+  ls_df_dca_fgroups_codes_wide %>%
   map(~ .x %>% arrange(age_ce)) %>%
   map(~ .x %>% convert_DCA()) %>%
   bind_rows() %>%
-  select(lake, age_ce, DCA1, DCA2, groups)
+  select(lake, age_ce, DCA1, DCA2)
 
 # --------------------------------------------
 # Combine all DCA scores into a single long-format dataframe
@@ -1294,6 +771,7 @@ ls_plot_df_dca_multi_all <-
 
 
 ```
+
 
 # ANALYSIS - TROPHIC STRUCTURES ANALYSIS
 ## 1. Get clusters 
@@ -1588,7 +1066,7 @@ guides("none")
 
 ```
 
-# INTERMEDIATE FIGURE TO CHECK
+## 3. Lake-scale proportions trophic structures 
 ```{r fig.asp = 1, fig.width = 12}
 
 # Define the vector of dates to highlight
@@ -2094,7 +1572,7 @@ printcp(decision_tree_paleo)
 # --------------------------------------------
 # Save the decision tree as a high-resolution PNG image
 # --------------------------------------------
-png("figures/decision_tree_paleo.png", width = 2000, height = 1400, res = 300)
+png("outputs/decision_tree_paleo.png", width = 2000, height = 1400, res = 300)
 rpart.plot::rpart.plot(
   decision_tree_paleo, 
   type = 5, 
@@ -2118,58 +1596,12 @@ lakes_col_groups <-
   )
 
 
-general <- 
-  df_fgroups_div %>% 
-  left_join(., df_age_model, by = "core_depth_id") %>%
-  mutate(lake = as.factor(lake)) %>%
-  ungroup() %>% 
-  filter(!fgroup %in% c("Ceratopogonidae", "Simuliidae")) %>% 
-  ggplot(aes(x = age_ce, y = nspp_norm/total_norm
-             )) +
-          #facet_wrap(~type, scales = "free") +
-          #geom_point(aes(colour = fgroup)) +
-          geom_smooth(aes(colour = fgroup), method = "gam") +
-          scale_colour_viridis_d() +
-          labs(title = "Consumers vs producers") +
-          scale_color_manual("Lake", values = lakes_col_groups) +
-          scale_fill_manual("Lake", values = lakes_col_groups) +
-          scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-          theme_classic(base_size = 12) +
-          #lims(x = c(0, 2020)) +
-          #lims(y = c(0, 1)) +
-          theme(
-            legend.position = "right",
-            legend.background = element_rect(fill = "white", colour = NA)
-          )
+lakes_col_groups <- scico(9, begin = 0, end = 0.95, palette = 'roma')
 
-general_island <- 
-  df_fgroups_div %>% 
-  left_join(., df_age_model, by = "core_depth_id") %>%
-  mutate(lake = as.factor(lake)) %>%
-  ungroup() %>% 
-  filter(!fgroup %in% c("Ceratopogonidae", "Simuliidae")) %>% 
-  ggplot(aes(x = age_ce, y = nspp_norm/total_norm
-             )) +
-          facet_wrap(~lake, scales = "free") +
-          #geom_point(aes(colour = fgroup)) +
-          geom_smooth(aes(colour = fgroup), method = "gam", se = F) +
-          scale_colour_viridis_d() +
-          #lims( x = c(0, 2020)) +
-          labs(title = "Consumers vs producers [by island]") +
-          scale_color_manual("Lake", values = lakes_col_groups) +
-          scale_fill_manual("Lake", values = lakes_col_groups) +
-          scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-          theme_classic(base_size = 12) +
-          #lims(x = c(0, 2020)) +
-          #lims(y = c(0, 1)) +
-          theme(
-            legend.position = "right",
-            legend.background = element_rect(fill = "white", colour = NA)
-          )
+# "#7E1700" "#9B5517" "#B3862E" "#CCBF63" "#C8E9B6" "#8CDCD6" "#46ACCC" "#287CB9" "#1549A2"
 
-general / general_island + patchwork::plot_layout(height = c(0.5, 0.5))
+
 ```
-
 
 ## GAM - Diatoms
 ### Regional Smooth
@@ -2271,6 +1703,7 @@ plot_time_dev_diatoms <-
   theme(panel.grid.minor.y = element_blank())
 
 plot_time_dev_diatoms
+
 ```
 
 ### Prediction [lake scale]
@@ -3121,6 +2554,11 @@ df_env <-
 # 1. Load and clean pollen data
 # ----------------------------------------------------------
 
+pollen <- pollen %>% 
+  rename(age_bp = age) %>% 
+  mutate(age_ce = 1950 - age_bp) %>% 
+  mutate(ID = paste0(sitename, "_", age_ce))
+
 df_1 <- pollen
 
 # Filter out aquatic and unidentified taxa, then group by ecological group
@@ -3141,8 +2579,6 @@ df_wk <- df_wk %>%
   select(-mean_percentage) %>%
   droplevels()
 
-# Set color palettes
-library(scico)
 sites_col <- scico(n_distinct(df_wk$sitename), begin = 0, end = 0.95, palette = 'roma')
 gr_col <- scico(n_distinct(df_wk$group), begin = 0, end = 0.95, palette = 'nuuk')
 
@@ -4583,7 +4019,7 @@ ordinations_fclusts_1 <- ordinations_fclusts_1 +
 # --------------------------------------------
 # Prepare Panel B: Classification tree from PNG image
 # --------------------------------------------
-tree_grob <- grid::rasterGrob(png::readPNG("figures/decision_tree_paleo.png"))
+tree_grob <- grid::rasterGrob(png::readPNG("outputs/decision_tree_paleo.png"))
 plot_decision_tree_paleo <- ggplot() +
   annotation_custom(tree_grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
   theme_void() +
@@ -4739,12 +4175,12 @@ final_figure <- (
   plot_layout(guides = "collect", heights = c(8, 5)) +
   plot_annotation(tag_levels = NULL)
 )
-
+print(final_figure)
 # --------------------------------------------
 # Save to file
 # --------------------------------------------
 ggsave(plot = final_figure, 
-       filename = "figures/FIGURE_3_composite_figure.png", 
+       filename = "figures/FIGURE_2_composite_figure.png", 
        dpi = 600,
        width = 14)
 
@@ -5002,6 +4438,16 @@ combined_varplot <- (
 # Print the plot
 print(combined_varplot)
 
+# --------------------------------------------
+# Save output
+# --------------------------------------------
+ggsave(
+  plot = combined_varplot,
+  filename = "figures/FIGURE_4_multivariate_analysis.png",
+  dpi = 600,
+  width = 10, height = 6
+)
+
 ```
 
 ## SUPPLEMENTARY FIGURE 2 - Climatic reconstructions
@@ -5237,7 +4683,7 @@ dev.off()
 # -----------------------------------------------
 # Convert PNG tree plot into a ggplot-compatible object
 # -----------------------------------------------
-tree_grob_paleo <- grid::rasterGrob(png::readPNG("figures/decision_tree_paleo.png"))
+tree_grob_paleo <- grid::rasterGrob(png::readPNG("outputs/decision_tree_paleo.png"))
 
 # Create a ggplot with the decision tree image embedded as a background
 tree_image_panel <- ggplot() +
