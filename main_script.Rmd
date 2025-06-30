@@ -3117,98 +3117,80 @@ df_env <-
 ## Data prep - Vegetation change - Regional Vegetation change
 
 ```{r}
-
 # ----------------------------------------------------------
 # 1. Load and clean pollen data
 # ----------------------------------------------------------
 
 df_1 <- pollen
 
-# Remove aquatic vegetation and unidentified taxa, then group by ecological type
+# Filter out aquatic and unidentified taxa, then group by ecological group
 df_wk <- df_1 %>%
-  filter(ecologicalgroup != "UNID") %>%
-  filter(!ecologicalgroup %in% c("AQVP", "AQBR")) %>%
+  filter(!ecologicalgroup %in% c("UNID", "AQVP", "AQBR")) %>%
   group_by(ID, sitename, age_ce, group) %>%
-  summarise(value = sum(value), .groups = 'drop')
-
-# Calculate group percentage per sample
-df_wk <- df_wk %>%
+  summarise(value = sum(value), .groups = 'drop') %>%
   group_by(ID) %>%
   mutate(percentage = value / sum(value) * 100) %>%
   ungroup()
 
-# Mean percentage per lake/group combination
-mean_percentage <- df_wk %>%
-  group_by(sitename, group) %>%
-  summarise(mean_percentage = mean(percentage), .groups = 'drop')
-
-# Add anomaly and drop mean
+# Calculate group-wise mean percentages and anomalies
 df_wk <- df_wk %>%
-  left_join(mean_percentage, by = c("sitename", "group")) %>%
+  group_by(sitename, group) %>%
+  mutate(mean_percentage = mean(percentage)) %>%
+  ungroup() %>%
   mutate(percent_anomaly = percentage - mean_percentage) %>%
   select(-mean_percentage) %>%
   droplevels()
 
 # Set color palettes
-sites <- length(unique(df_wk$sitename))
-eco_gr <- length(unique(df_wk$group))
-
-sites_col <- scico(sites, begin = 0, end = 0.95, palette = 'roma', categorical = FALSE)
-gr_col <- scico(eco_gr, begin = 0, end = 0.95, palette = 'nuuk', categorical = FALSE)
+library(scico)
+sites_col <- scico(n_distinct(df_wk$sitename), begin = 0, end = 0.95, palette = 'roma')
+gr_col <- scico(n_distinct(df_wk$group), begin = 0, end = 0.95, palette = 'nuuk')
 
 # ----------------------------------------------------------
 # 2. DCA Analysis
 # ----------------------------------------------------------
 
-selection <- c("Lomba")
-
+exclude_sites <- c("Lomba")
 df_wk_dca <- df_1 %>%
-  filter(ecologicalgroup != "UNID", age_ce > 0, !sitename %in% selection) %>%
+  filter(!ecologicalgroup %in% c("UNID"), age_ce > 0, !sitename %in% exclude_sites) %>%
   droplevels()
 
-Sites <- sort(unique(df_wk_dca$sitename))
-results_list <- list()
-
-for (i in seq_along(Sites)) {
+results_list <- lapply(sort(unique(df_wk_dca$sitename)), function(site) {
   df.sp <- df_wk_dca %>%
-    filter(sitename == Sites[i]) %>%
-    select(ID, value, taxa) %>%
+    filter(sitename == site) %>%
     group_by(ID, taxa) %>%
     summarise(value = sum(value), .groups = 'drop') %>%
-    pivot_wider(names_from = taxa, values_from = value) %>%
+    pivot_wider(names_from = taxa, values_from = value, values_fill = 0) %>%
     column_to_rownames("ID") %>%
-    mutate(across(everything(), ~replace_na(., 0))) %>%
     select(where(~ any(. != 0)))
-
+  
   df.spe <- decostand(df.sp, method = "hellinger")
-
-  df.DCA <- df.spe %>%
-    decorana() %>%
+  df.DCA <- decorana(df.spe) %>%
     scores(choices = 1) %>%
     as.data.frame() %>%
     rownames_to_column("ID")
-
-  results_list[[i]] <- df.DCA
-}
+  
+  return(df.DCA)
+})
 
 DCA.res <- Reduce(full_join, results_list) %>%
   separate(ID, into = c("sitename", "age_ce"), sep = "_", convert = TRUE) %>%
   arrange(sitename, age_ce) %>%
   mutate(DCA1 = case_when(
-    sitename == 'Azul' ~ DCA1 * -1,
-    sitename == 'Gingal' ~ DCA1 * -1,
+    sitename == "Azul" ~ -DCA1,
+    sitename == "Gingal" ~ -DCA1,
     TRUE ~ DCA1
   ))
 
-DF_to <- DCA.res %>%
-  mutate(sitename = as.factor(sitename))
+DF_to <- DCA.res %>% mutate(sitename = as.factor(sitename))
 
 # ----------------------------------------------------------
 # 3. HGAM on DCA1
 # ----------------------------------------------------------
 
+library(mgcv)
 mod_to <- gam(DCA1 ~ s(age_ce, bs = "tp", k = 25) +
-                s(age_ce, by = sitename, k = 15, m = 1, bs = "tp") +
+                s(age_ce, by = sitename, bs = "tp", k = 15, m = 1) +
                 s(sitename, bs = "re"),
               data = DF_to, method = "REML")
 
@@ -3216,9 +3198,9 @@ summary(mod_to)
 k.check(mod_to, n.rep = 500)
 appraise(mod_to)
 
+# Plot smoothed global trend and derivative
 sm_to <- smooth_estimates(mod_to) %>% add_confint()
 df <- DF_to %>% add_partial_residuals(mod_to)
-
 lakes_col <- scico(length(levels(DF_to$sitename)), begin = 0, end = 0.95, palette = 'roma')
 
 p.DCA.gl <- sm_to %>%
@@ -3234,10 +3216,8 @@ p.DCA.gl <- sm_to %>%
   scale_x_continuous(n.breaks = 10) +
   theme(panel.grid.minor.y = element_blank(), legend.position = "bottom")
 
-mod_to_dev <- derivatives(mod_to, select = "s(age_ce)", eps = 1, level = 0.9,
-                          interval = "simultaneous", seed = 22)
-
-color_mapping <- scico(2, begin = 0, end = 0.9, palette = 'vik', categorical = FALSE)
+mod_to_dev <- derivatives(mod_to, select = "s(age_ce)", eps = 1, level = 0.9, interval = "simultaneous", seed = 22)
+color_mapping <- scico(2, begin = 0, end = 0.9, palette = 'vik')
 
 p.DCA.gl.dev <- mod_to_dev %>%
   add_sizer(type = "change") %>%
@@ -3252,57 +3232,48 @@ p.DCA.gl.dev <- mod_to_dev %>%
   scale_x_continuous(n.breaks = 10) +
   theme(panel.grid.minor.y = element_blank())
 
-library(patchwork)
-p <- p.DCA.gl + p.DCA.gl.dev + plot_annotation(title = "Archipelago-scale vegetation turnover")
-print(p)
+(p.DCA.gl + p.DCA.gl.dev) + plot_annotation(title = "Archipelago-scale vegetation turnover")
 
 # ----------------------------------------------------------
 # 4. HGAM on Trees or Herbs
 # ----------------------------------------------------------
 
 DF_to_groups <- df_wk %>%
-  filter(sitename %in% unique(df_wk$sitename),
-         age_ce > 0,
-         group == "Herb") %>%
-  mutate(p_anomaly = percent_anomaly,
-         sitename = factor(sitename)) %>%
+  filter(age_ce > 0, group == "Herb") %>%
+  mutate(p_anomaly = percent_anomaly, sitename = factor(sitename)) %>%
   droplevels()
 
-variable <- "Percentage"
-sites <- n_distinct(DF_to$sitename)
-lakes_col <- scico(sites, begin = 0, end = 0.95, palette = 'roma')
-
 mod_to_groups <- gam(percentage ~ s(age_ce, bs = "tp", k = 30) +
-                s(age_ce, by = sitename, k = 10, m = 1, bs = "tp") +
-                s(sitename, bs = "re"),
-              data = DF_to, method = "REML")
+                       s(age_ce, by = sitename, k = 10, m = 1, bs = "tp") +
+                       s(sitename, bs = "re"),
+                     data = DF_to_groups, method = "REML")
 
-summary(mod_to)
-k.check(mod_to, n.rep = 500)
-appraise(mod_to)
+summary(mod_to_groups)
+k.check(mod_to_groups, n.rep = 500)
+appraise(mod_to_groups)
 
-sm_to_groups <- smooth_estimates(mod_to) |> add_confint()
-partial_residuals_df <- DF_to_groups |> add_partial_residuals(mod_to)
+sm_to_groups <- smooth_estimates(mod_to_groups) %>% add_confint()
+partial_residuals_df_groups <- DF_to_groups %>% add_partial_residuals(mod_to_groups)
 
-p.gl <- sm_to_groups |>
-  filter(.smooth == "s(age_ce)") |>
+lakes_col <- scico(n_distinct(DF_to_groups$sitename), begin = 0, end = 0.95, palette = 'roma')
+
+p.gl <- sm_to_groups %>%
+  filter(.smooth == "s(age_ce)") %>%
   ggplot() +
-  geom_rug(aes(x = age_ce), data = partial_residuals_df, sides = "b", length = unit(0.02, "npc")) +
+  geom_rug(aes(x = age_ce), data = partial_residuals_df_groups, sides = "b", length = unit(0.02, "npc")) +
   geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci), alpha = 0.2) +
-  geom_point(aes(x = age_ce, y = `s(age_ce)`, color = sitename), data = partial_residuals_df, alpha = 0.8, size = 1.5) +
+  geom_point(aes(x = age_ce, y = `s(age_ce)`, color = sitename), data = partial_residuals_df_groups, alpha = 0.8, size = 1.5) +
   geom_line(aes(x = age_ce, y = .estimate), linewidth = 1) +
-  labs(y = variable, x = "Age (CE)") +
+  labs(y = "Percentage", x = "Age (CE)") +
   scale_color_manual("Lake", values = lakes_col) +
   theme_minimal(base_size = 7) +
   scale_x_continuous(n.breaks = 10) +
   theme(panel.grid.minor.y = element_blank(), legend.position = "bottom")
 
-mod_to_dev <- derivatives(mod_to, select = "s(age_ce)", eps = 1, level = 0.9,
-                          interval = "simultaneous", seed = 111)
-color_mapping <- scico(2, begin = 0, end = 0.9, palette = 'vik', categorical = FALSE)
+mod_to_dev <- derivatives(mod_to_groups, select = "s(age_ce)", eps = 1, level = 0.9, interval = "simultaneous", seed = 111)
 
-p.gl.dev <- mod_to_dev |>
-  add_sizer(type = "change") |>
+p.gl.dev <- mod_to_dev %>%
+  add_sizer(type = "change") %>%
   ggplot() +
   geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci), alpha = 0.2) +
   geom_line(aes(x = age_ce, y = .derivative, color = (.lower_ci > 0 | .upper_ci < 0),
@@ -3314,8 +3285,8 @@ p.gl.dev <- mod_to_dev |>
   scale_x_continuous(n.breaks = 10) +
   theme(panel.grid.minor.y = element_blank())
 
-# Final combined plot
 (p.gl + p.gl.dev) + plot_annotation(title = "Trends in the relative abundance of Herbs in Azores")
+
 
 ```
 
