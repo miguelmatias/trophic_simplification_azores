@@ -160,137 +160,128 @@ pollen <- read.table("data/table_pollen_azores.csv", header = TRUE, sep = ",", d
 
 ```
 
-#### LIST OF OBJECTS FROM UPSTREAM ANALYSES
+#### LIST OF OBJECTS FROM UPSTREAM ANALYSES [this needs to be checked]
 ls_df_diat_wide_codes
 
-# PART ONE - COMMUNITY TURNOVER ANALYSIS
-## COMPOSITIONAL CHANGE (PCOA, HELLINGER, BRAY) DIATOMS
-```{r fig.asp = 1, fig.width = 12}
-# extract PCOA vectors for each lake
-ls_df_pcoa_scores_diatoms_hellinger <- ls_df_diat_wide_codes %>%
-  # remove factors
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove NAs
-  map(., ~ .x %>% replace(is.na(.), 0)) %>%
-  # remove empty species
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # transform data
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  # calculate pcoa
-  map(., ~ .x %>% pcoa()) %>%
-  # extract axes
-  map(., function(x) x$vectors) %>%
-  map(., function(x) as.data.frame(unlist(x[, 1:2]))) # extract first two axes and dataframe
-
-# bind all codes and metrics
-ls_df_all_scores_diatoms_amd_globi <- NULL
-for (i in 1:length(ls_df_pcoa_scores_diatoms_hellinger)) {
-  ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(ls_df_codes_diat[[i]], ls_df_pcoa_scores_diatoms_hellinger[[i]])
-}
-
-# fix missing decimal in dec_depth
-ls_df_all_scores_diatoms_amd_globi <- ls_df_all_scores_diatoms_amd_globi %>%
-  map(., ~ .x %>% mutate(dec_depth = as.numeric(str_replace(dec_depth, ",", "."))))
-
-# calculate richness and abundance for each sample
-ls_df_diatoms_wide_abund <-
-  ls_df_diat_wide_codes %>%
-  map(., ~ .x %>% select(8:last_col())) %>%
-  map(., ~ .x %>% mutate(lake_abundance = rowSums(.x))) %>%
-  map(., ~ .x %>% mutate(local_richness = apply(.x[8:(ncol(.x) - 1)] > 0, 1, sum))) %>%
-  map(., ~ .x %>% mutate(simpson = apply(.x[8:(ncol(.x) - 1)], 1, function(x) abdiv::simpson(x)))) %>%
-  map(., ~ .x %>% select(lake_abundance, local_richness, simpson))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_diatoms_wide_abund)) {
-  ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(ls_df_all_scores_diatoms_amd_globi[[i]], ls_df_diatoms_wide_abund[[i]])
-}
-
-```
-
-## COMPOSITIONAL CHANGE (PCOA, HELLINGER, BRAY) CHIRO
-
-```{r fig.asp = 1, fig.width = 12}
-
-# extract PCOA vectors for each lake
-ls_df_pcoa_scores_chiro_hellinger <- ls_df_chiro_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:depth_top))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% pcoa()) %>%
-  # calculate pcoa
-  map(., function(x) x$vectors) %>%
-  # extract axes
-  map(., function(x) as.data.frame(unlist(x[, 1:2]))) # extract first two axes and dataframe
-
-# bind all codes and metrics
-ls_df_all_scores_chiro_amd_globi <- NULL
-for (i in 1:length(ls_df_pcoa_scores_chiro_hellinger)) {
-  ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(df_chiro_codes[[i]], ls_df_pcoa_scores_chiro_hellinger[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_chiro_amd_globi) <- unlist(get_names_list(ls_df_all_scores_chiro_amd_globi))
-
-# calculate rich and abundance for each slice
-lake_abund_chiro <-
-  ls_df_chiro_wide_codes %>%
-  map(., ~ .x %>% select(8:last_col())) %>%
-  map(., ~ .x %>% mutate(chiro_lake_abundance = rowSums(.x))) %>%
-  map(., ~ .x %>% mutate(chiro_local_richness = apply(.x[8:(ncol(.x) - 1)] > 0, 1, sum))) %>%
-  map(., ~ .x %>% mutate(chiro_simpson = apply(.x[8:(ncol(.x) - 1)], 1, function(x) abdiv::simpson(x)))) %>%
-  map(., ~ .x %>% select(chiro_lake_abundance, chiro_local_richness, chiro_simpson))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
-  ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(ls_df_all_scores_chiro_amd_globi[[i]], lake_abund_chiro[[i]])
-}
-
-```
-
-# Detrended Correspondence Analysis
+# ANALYSIS - Detrended Correspondence Analysis
 ## DCA DIATOMS
 
 ```{r fig.asp = 1, fig.width = 12}
-# extract DCA vectors for each lake
-ls_dca_diatoms <- ls_df_diat_wide_codes %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  # calculate DCA
-  map(., ~ .x %>% decorana()) %>%
-  # calculate pcoa
-  map(., function(x) scores(x)) %>%
-  # extract axes
-  map(., function(x) as.data.frame(unlist(x[, 1:2]))) # extract first two axes and dataframe
+# ------------------------------------------------------------------------------
+# Extract PCoA vectors (1st and 2nd axes) for each lake
+# ------------------------------------------------------------------------------
 
-# bind list of coes and list of axes
-for (i in 1:length(ls_df_all_scores_diatoms_amd_globi)) {
-  ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(ls_df_all_scores_diatoms_amd_globi[[i]], ls_dca_diatoms[[i]])
+ls_df_pcoa_scores_diatoms_hellinger <- ls_df_diat_wide_codes %>%
+  # Remove metadata columns
+  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
+  # Replace NAs with zeros
+  map(., ~ .x %>% replace(is.na(.), 0)) %>%
+  # Remove species with total abundance = 0 across all samples
+  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
+  # Apply Hellinger transformation
+  map(., ~ .x %>% decostand(method = "hellinger")) %>%
+  # Compute Bray–Curtis dissimilarity
+  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
+  # Run PCoA
+  map(., ~ .x %>% pcoa()) %>%
+  # Extract eigenvectors
+  map(., function(x) x$vectors) %>%
+  # Convert first two axes into a data frame
+  map(., function(x) as.data.frame(unlist(x[, 1:2])))
+
+# ------------------------------------------------------------------------------
+# Bind metadata and PCoA scores for each lake
+# ------------------------------------------------------------------------------
+
+ls_df_all_scores_diatoms_amd_globi <- NULL
+
+for (i in 1:length(ls_df_pcoa_scores_diatoms_hellinger)) {
+  ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(
+    ls_df_codes_diat[[i]],
+    ls_df_pcoa_scores_diatoms_hellinger[[i]]
+  )
 }
+
+# ------------------------------------------------------------------------------
+# Fix decimal comma issue in depth field
+# ------------------------------------------------------------------------------
+
+ls_df_all_scores_diatoms_amd_globi <- ls_df_all_scores_diatoms_amd_globi %>%
+  map(., ~ .x %>% mutate(dec_depth = as.numeric(str_replace(dec_depth, ",", "."))))
+
+# ------------------------------------------------------------------------------
+# Calculate abundance, richness, and Simpson index for each sample
+# ------------------------------------------------------------------------------
+
+ls_df_diatoms_wide_abund <- ls_df_diat_wide_codes %>%
+  # Select species-only columns
+  map(., ~ .x %>% select(8:last_col())) %>%
+  # Add total abundance column
+  map(., ~ .x %>% mutate(lake_abundance = rowSums(.x))) %>%
+  # Add richness (count of present species)
+  map(., ~ .x %>% mutate(local_richness = apply(.x[8:(ncol(.x) - 1)] > 0, 1, sum))) %>%
+  # Add Simpson diversity index
+  map(., ~ .x %>% mutate(simpson = apply(.x[8:(ncol(.x) - 1)], 1, function(x) abdiv::simpson(x)))) %>%
+  # Keep only calculated metrics
+  map(., ~ .x %>% select(lake_abundance, local_richness, simpson))
+
+# ------------------------------------------------------------------------------
+# Bind PCoA scores with richness and abundance metrics
+# ------------------------------------------------------------------------------
+
+for (i in 1:length(ls_df_diatoms_wide_abund)) {
+  ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(
+    ls_df_all_scores_diatoms_amd_globi[[i]],
+    ls_df_diatoms_wide_abund[[i]]
+  )
+}
+
+# ------------------------------------------------------------------------------
+# Extract DCA vectors (1st and 2nd axes) for each lake
+# ------------------------------------------------------------------------------
+
+ls_dca_diatoms <- ls_df_diat_wide_codes %>%
+  # Remove metadata columns
+  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
+  # Remove species with zero abundance across all samples
+  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
+  # Apply Hellinger transformation
+  map(., ~ .x %>% decostand(method = "hellinger")) %>%
+  # Perform DCA
+  map(., ~ .x %>% decorana()) %>%
+  # Extract DCA scores
+  map(., function(x) scores(x)) %>%
+  # Convert first two axes into a data frame
+  map(., function(x) as.data.frame(unlist(x[, 1:2])))
+
+# ------------------------------------------------------------------------------
+# Bind DCA scores to existing PCoA + richness/abundance data
+# ------------------------------------------------------------------------------
+
+for (i in 1:length(ls_df_all_scores_diatoms_amd_globi)) {
+  ls_df_all_scores_diatoms_amd_globi[[i]] <- bind_cols(
+    ls_df_all_scores_diatoms_amd_globi[[i]],
+    ls_dca_diatoms[[i]]
+  )
+}
+
+# ------------------------------------------------------------------------------
+# Create additional list with DCA scores + metadata
+# ------------------------------------------------------------------------------
 
 ls_dca_diatoms_2 <- ls_df_diat_wide_codes %>%
   map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
   map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
   map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  # calculate DCA
   map(., ~ .x %>% decorana()) %>%
-  # calculate pcoa
   map(., function(x) scores(x)) %>%
-  # extract axes
-  map(., function(x) as.data.frame(unlist(x[, 1:2]))) # extract first two axes and dataframe
+  map(., function(x) as.data.frame(unlist(x[, 1:2])))
 
-# bind list of codes and list of axes
 for (i in 1:length(ls_dca_diatoms_2)) {
-  ls_dca_diatoms_2[[i]] <- bind_cols(ls_df_codes_diat[[i]], ls_dca_diatoms_2[[i]])
+  ls_dca_diatoms_2[[i]] <- bind_cols(
+    ls_df_codes_diat[[i]],
+    ls_dca_diatoms_2[[i]]
+  )
 }
 
 ```
@@ -298,389 +289,235 @@ for (i in 1:length(ls_dca_diatoms_2)) {
 ## DCA CHIRO
 ```{r fig.asp = 1, fig.width = 12}
 
-# extract PCOA vectors for each lake
-ls_dca_chiro <- ls_df_chiro_wide_codes %>%
-  map(., ~ .x %>% dplyr::select(., -c(lake:depth_top))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  # calculate DCA
-  map(., ~ .x %>% decorana()) %>%
-  # calculate pcoa
-  map(., function(x) scores(x)) %>%
-  # extract axes
-  map(., function(x) as.data.frame(unlist(x[, 1:2]))) # extract first two axes and dataframe
+# ------------------------------------------------------------------------------
+# 1. Extract PCoA vectors (1st and 2nd axes) for each lake based on chironomid data
+# ------------------------------------------------------------------------------
 
-# bind list of coes and list of axes
-for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
-  ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(ls_df_all_scores_chiro_amd_globi[[i]], ls_dca_chiro[[i]])
+ls_df_pcoa_scores_chiro_hellinger <- ls_df_chiro_wide_codes %>%
+  # Remove metadata columns
+  map(., ~ .x %>% select(-c(lake:depth_top))) %>%
+  # Remove species columns with no occurrences
+  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
+  # Apply Hellinger transformation
+  map(., ~ .x %>% decostand(method = "hellinger")) %>%
+  # Compute Bray–Curtis dissimilarity matrix
+  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
+  # Perform PCoA
+  map(., ~ .x %>% pcoa()) %>%
+  # Extract eigenvectors
+  map(., function(x) x$vectors) %>%
+  # Keep first two axes and convert to data frame
+  map(., function(x) as.data.frame(unlist(x[, 1:2])))
+
+# ------------------------------------------------------------------------------
+# 2. Combine metadata with PCoA scores
+# ------------------------------------------------------------------------------
+
+ls_df_all_scores_chiro_amd_globi <- NULL
+
+for (i in 1:length(ls_df_pcoa_scores_chiro_hellinger)) {
+  ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(
+    df_chiro_codes[[i]],
+    ls_df_pcoa_scores_chiro_hellinger[[i]]
+  )
 }
 
-# set names to lists
+# ------------------------------------------------------------------------------
+# 3. Assign lake names to list entries
+# ------------------------------------------------------------------------------
+
 names(ls_df_all_scores_chiro_amd_globi) <- unlist(get_names_list(ls_df_all_scores_chiro_amd_globi))
+
+# ------------------------------------------------------------------------------
+# 4. Calculate chironomid abundance, richness, and Simpson index
+# ------------------------------------------------------------------------------
+
+lake_abund_chiro <- ls_df_chiro_wide_codes %>%
+  # Keep only species columns
+  map(., ~ .x %>% select(8:last_col())) %>%
+  # Compute total abundance per sample
+  map(., ~ .x %>% mutate(chiro_lake_abundance = rowSums(.x))) %>%
+  # Compute local richness (number of present species)
+  map(., ~ .x %>% mutate(chiro_local_richness = apply(.x[8:(ncol(.x) - 1)] > 0, 1, sum))) %>%
+  # Compute Simpson diversity index
+  map(., ~ .x %>% mutate(chiro_simpson = apply(.x[8:(ncol(.x) - 1)], 1, function(x) abdiv::simpson(x)))) %>%
+  # Retain calculated metrics only
+  map(., ~ .x %>% select(chiro_lake_abundance, chiro_local_richness, chiro_simpson))
+
+# ------------------------------------------------------------------------------
+# 5. Bind abundance and diversity metrics to main list
+# ------------------------------------------------------------------------------
+
+for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
+  ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(
+    ls_df_all_scores_chiro_amd_globi[[i]],
+    lake_abund_chiro[[i]]
+  )
+}
+
+# ------------------------------------------------------------------------------
+# 6. Extract DCA vectors (1st and 2nd axes) from chironomid data
+# ------------------------------------------------------------------------------
+
+ls_dca_chiro <- ls_df_chiro_wide_codes %>%
+  # Remove metadata columns
+  map(., ~ .x %>% select(-c(lake:depth_top))) %>%
+  # Remove species columns with no data
+  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
+  # Apply Hellinger transformation
+  map(., ~ .x %>% decostand(method = "hellinger")) %>%
+  # Perform DCA
+  map(., ~ .x %>% decorana()) %>%
+  # Extract site scores
+  map(., function(x) scores(x)) %>%
+  # Keep first two axes and convert to data frame
+  map(., function(x) as.data.frame(unlist(x[, 1:2])))
+
+# ------------------------------------------------------------------------------
+# 7. Bind DCA scores to metadata + PCoA + diversity info
+# ------------------------------------------------------------------------------
+
+for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
+  ls_df_all_scores_chiro_amd_globi[[i]] <- bind_cols(
+    ls_df_all_scores_chiro_amd_globi[[i]],
+    ls_dca_chiro[[i]]
+  )
+}
+
+# ------------------------------------------------------------------------------
+# 8. Create second DCA list with metadata attached
+# ------------------------------------------------------------------------------
 
 ls_dca_chiro_2 <- ls_df_chiro_wide_codes %>%
   map(., ~ .x %>% select(-c(lake:core_depth_id))) %>%
-  # remove factors
   map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
   map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  # calculate DCA
   map(., ~ .x %>% decorana()) %>%
-  # calculate pcoa
   map(., function(x) scores(x)) %>%
-  # extract axes
-  map(., function(x) as.data.frame(unlist(x[, 1:2]))) # extract first two axes and dataframe
+  map(., function(x) as.data.frame(unlist(x[, 1:2])))
 
-# bind list of codes and list of axes
 for (i in 1:length(ls_dca_chiro_2)) {
-  ls_dca_chiro_2[[i]] <- bind_cols(df_chiro_codes[[i]], ls_dca_chiro_2[[i]])
+  ls_dca_chiro_2[[i]] <- bind_cols(
+    df_chiro_codes[[i]],
+    ls_dca_chiro_2[[i]]
+  )
 }
 
-```
 
+```
 
 ## DCA FGROUPS
 ```{r fig.asp = 1, fig.width = 12}
+# ------------------------------------------------------------------------------
+# Clean initial data and remove NA rows
+# ------------------------------------------------------------------------------
 
-# remove NAs from AZUL
 df_fgroups <- df_fgroups[!is.na(rowSums(df_fgroups[, -c(1:4)])), ]
 
-df_fg <- 
-  df_fgroups %>% 
-  ungroup() 
-  
-df_fg_codes <- 
-  df_fg %>%
-  ungroup() %>% 
-  select(lake:age_ce) %>% 
+# Ungroup any groupings that might exist in df_fgroups
+df_fg <- df_fgroups %>% ungroup()
+
+# Extract identifying metadata (lake, core_id, depth, age_ce)
+df_fg_codes <- df_fg %>%
+  ungroup() %>%
+  select(lake:age_ce) %>%
   distinct()
 
-# make ist from the codes
-ls_df_fgroups_wide_codes <- 
-  df_fg_codes %>% 
+# Split the metadata by lake into a list
+ls_df_fgroups_wide_codes <- df_fg_codes %>%
   group_split(lake)
 
-# set names to lists
+# Assign names to list based on lake
 names(ls_df_fgroups_wide_codes) <- unlist(get_names_list(ls_df_fgroups_wide_codes))
 
-ls_dca_fgroups <-
-  df_fg %>% 
-  group_split(lake) %>% 
-  map(., ~ .x %>% dplyr::select(., -c(lake:age_ce))) %>%
-  map(., ~ .x %>% filter(.,rowSums(.)!= 0, na.rm = TRUE)) %>%
-  # remove empty groups
+# ------------------------------------------------------------------------------
+# Run DCA on each lake's functional group composition
+# ------------------------------------------------------------------------------
+
+ls_dca_fgroups <- df_fg %>%
+  group_split(lake) %>%
+  # Remove metadata columns
+  map(., ~ .x %>% dplyr::select(-c(lake:age_ce))) %>%
+  # Remove empty rows (samples with no groups)
+  map(., ~ .x %>% filter(rowSums(.) != 0, na.rm = TRUE)) %>%
+  # Remove empty group columns (groups not present)
   map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  #map(., ~ .x %>% mutate(., across(everything(), round))) %>% not needed here
-  # transform data
-  map(., ~ .x %>% decostand(method = "hellinger")) %>% # needed here?
-  # calculate DCA
+  # Apply Hellinger transformation
+  map(., ~ .x %>% decostand(method = "hellinger")) %>%
+  # Perform DCA ordination
   map(., ~ .x %>% decorana()) %>%
-  # calculate pcoa
+  # Extract sample scores
   map(., function(x) scores(x)) %>%
-  # extract axes
-  map(., function(x) as.data.frame(unlist(x[, 1:2]))) # extract first two axes and dataframe
+  # Convert first two axes to data frame
+  map(., function(x) as.data.frame(unlist(x[, 1:2])))
 
-ls_dca_fgroups_EWS <-
-  df_fg %>% 
+# Also create a list of raw data split by lake (used later)
+ls_dca_fgroups_EWS <- df_fg %>% group_split(lake)
+
+# ------------------------------------------------------------------------------
+# Combine metadata and DCA results
+# ------------------------------------------------------------------------------
+
+# Combine all DCA outputs into one data frame and bind with metadata
+df_dca_fgroups_codes_wide <- ls_dca_fgroups %>%
+  bind_rows() %>%
+  bind_cols(df_fg_codes, .)
+
+# Split DCA results with metadata by lake
+ls_df_dca_fgroups_codes_wide <- df_dca_fgroups_codes_wide %>%
   group_split(lake)
 
-df_dca_fgroups_codes_wide <- 
-  ls_dca_fgroups %>% 
-  bind_rows() %>% 
-  bind_cols(df_fg_codes,.)
-
-ls_df_dca_fgroups_codes_wide <- 
-  df_dca_fgroups_codes_wide %>%
-  group_split(lake)
-
-# set names to lists
+# Assign names to list
 names(ls_df_dca_fgroups_codes_wide) <- unlist(get_names_list(ls_df_dca_fgroups_codes_wide))
 
-ls_df_fg <- 
-  df_fg %>% 
+# ------------------------------------------------------------------------------
+# Prepare input for PCoA analyses
+# ------------------------------------------------------------------------------
+
+# Split raw abundance data by lake
+ls_df_fg <- df_fg %>%
   group_split(lake)
 
-# set names to lists
+# Assign names to list
 names(ls_df_fg) <- unlist(get_names_list(ls_df_fg))
 
-```
+# ------------------------------------------------------------------------------
+# Compute PCoA for each lake using Bray–Curtis distances
+# ------------------------------------------------------------------------------
 
-# CLUSTERING - FGROUPS
-## LAKE-SPECIFIC STANDARD CLUSTERS [PCOA, HELLINGER] FGROUPS
-
-```{r fig.asp = 1, fig.width = 12}
-
-# extract PCOA vectors for each lake
 ls_df_pcoa_scores_fgroups <- ls_df_fg %>%
-  # remove factors
+  # Remove metadata columns
   map(., ~ .x %>% select(-c(lake:age_ce))) %>%
-  # remove NAs
+  # Replace NAs with 0s
   map(., ~ .x %>% replace(is.na(.), 0)) %>%
-  # remove empty species
+  # Remove empty group columns
   map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-    # transform data
-  map(., ~ .x %>% decostand(method = "hellinger")) %>% # not sure we need hellinger here
+  # Optional: Apply Hellinger transformation (common before Bray-Curtis, but not mandatory here)
+  map(., ~ .x %>% decostand(method = "hellinger")) %>%
+  # Calculate Bray–Curtis distance
   map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  # calculate pcoa
+  # Perform PCoA
   map(., ~ .x %>% pcoa()) %>%
-  # extract axes
+  # Extract sample scores
   map(., function(x) x$vectors) %>%
-  map(., function(x) as.data.frame(unlist(x[, 1:2]))) # extract first two axes and dataframe
+  # Keep first two PCoA axes and convert to data frame
+  map(., function(x) as.data.frame(unlist(x[, 1:2])))
 
-# bind list of codes and list of axes
+# ------------------------------------------------------------------------------
+# Bind metadata and PCoA scores
+# ------------------------------------------------------------------------------
+
 for (i in 1:length(ls_df_pcoa_scores_fgroups)) {
-  ls_df_pcoa_scores_fgroups[[i]] <- bind_cols(ls_df_dca_fgroups_codes_wide[[i]], ls_df_pcoa_scores_fgroups[[i]])
-}
-
-# extract clusters vectors for each lake
-ls_df_hclust_fgroup <- ls_df_fg %>%
-  map(., ~ .x %>% select(-c(lake:age_ce))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% hclust()) %>%
-  map(., ~ .x %>% cutree(k = 4)) %>%
-  map(., ~ .x %>% data.frame(groups = .x)) %>% 
-  map(., ~ .x %>% select(groups))
-
-# bind all codes and metrics
-ls_df_all_scores_fgroups_amd_globi <- NULL
-for (i in 1:length(ls_df_pcoa_scores_fgroups)) {
-  ls_df_all_scores_fgroups_amd_globi[[i]] <- bind_cols(ls_df_pcoa_scores_fgroups[[i]], ls_df_hclust_fgroup[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_fgroups_amd_globi) <- unlist(get_names_list(ls_df_all_scores_fgroups_amd_globi))
-
-# set factors
-ls_df_all_scores_fgroups_amd_globi <-  
-  ls_df_all_scores_fgroups_amd_globi %>%
-  map(., ~ .x %>% mutate(groups = as.factor(as.vector(unlist(.x[, "groups"])))))
-
-ls_plots_hclusts_fgroups <- ls_df_all_scores_fgroups_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_fgroups_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      geom_line(colour = "grey") +
-      geom_point(aes(color = groups), size = 3) +
-      scale_colour_viridis_d(name = "Clusters") +
-      theme(plot.background = NULL) +
-      labs(title = .y) +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
+  ls_df_pcoa_scores_fgroups[[i]] <- bind_cols(
+    ls_df_dca_fgroups_codes_wide[[i]],
+    ls_df_pcoa_scores_fgroups[[i]]
   )
-
-#ls_plots_hclusts_fgroups <- ls_plots_hclusts_fgroups[c("Azul", "Caldeirao", "Caveiro", "Empadadas Norte", "Funda", "Ginjal", "Peixinho", "Santiago")]
-
-plot_hclusts_fgroups <- gridExtra::grid.arrange(grobs = ls_plots_hclusts_fgroups, top = grid::textGrob("COMPOSITIONAL CHANGE [PCOA, SORENSEN + LAKE-SPECIFIC CLUSTERS] FGROUPS"))
+}
 
 ```
 
-## LAKE-SPECIFIC CONISS CLUSTERS [PCOA, HELLINGER] FGROUPS
-
+## Prep DCAs
 ```{r fig.asp = 1, fig.width = 12}
-# extract clusters vectors for each lake
-ls_chclusts_fgroups <- ls_df_fg %>%
-  map(., ~ .x %>% select(-c(lake:age_ce))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% chclust()) %>%
-  map(., ~ .x %>% cutree(k = 4)) %>%
-  map(., ~ .x %>% data.frame(groups_coniss = .x)) %>% 
-  map(., ~ .x %>% select(groups_coniss))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_fgroups_amd_globi)) {
-  ls_df_all_scores_fgroups_amd_globi[[i]] <- bind_cols(ls_df_all_scores_fgroups_amd_globi[[i]], ls_chclusts_fgroups[[i]])
-}
-
-# set factors
-ls_df_all_scores_fgroups_amd_globi <-
-  ls_df_all_scores_fgroups_amd_globi %>%
-  map(., ~ .x %>% mutate(groups_coniss = as.factor(as.vector(unlist(.x[, "groups_coniss"])))))
-
-ls_plots_chclusts_fgroups <- ls_df_all_scores_fgroups_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_fgroups_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      geom_line(colour = "grey") +
-      geom_point(aes(color = groups_coniss), size = 3) +
-      scale_colour_viridis_d(name = "Clusters") +
-      theme(plot.background = NULL) +
-      labs(title = .y) +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-plot_coniss_fgroups <- gridExtra::grid.arrange(grobs = ls_plots_chclusts_fgroups, top = grid::textGrob("COMPOSITIONAL CHANGE [PCOA, SORENSEN + CONISS LAKE-SPECIFIC CLUSTERS]"))
-
-```
-
-## BROKENSTICKS FGROUPS
-
-```{r fig.asp=1, fig.width=, include=FALSE}
-
-ls_bstick_chclusts <- ls_df_fg %>%
-  map(., ~ .x %>% select(-c(lake:age_ce))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% chclust()) %>%
-  map(., ~ .x %>% bstick(., 10)) %>%
-  map(., ~ .x %>% detect_num_clusts_bstick(.))
-
-# fix without break
-ls_bstick_chclusts <- lapply(ls_bstick_chclusts, function(x) if(is.na(x)) {x <- 5} else x <- x)
-
-```
-
-## LAKE-SPECIFIC CONISS [BROKENSTICK OPTIMIZED] CLUSTERS [PCOA, SORENSEN] FGROUPS
-
-```{r fig.asp = 1, fig.width = 12}
-# extract clusters vectors for each lake based on number of clusters identified by the brokenstick method
-ls_chclusts_fgroups <- ls_df_fg %>%
-  map(., ~ .x %>% select(-c(lake:age_ce))) %>%
-  # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) %>%
-  # remove empty species
-  map(., ~ .x %>% decostand(method = "hellinger")) %>%
-  map(., ~ .x %>% vegdist(method = "bray", na.rm = TRUE)) %>%
-  map(., ~ .x %>% chclust()) %>%
-  map2(., .y = ls_bstick_chclusts, ~ .x %>% cutree(., k = .y)) %>% # use brokenstick cuts
-  map(., ~ .x %>% data.frame(groups_bstick_chclusts = .x)) %>% 
-  map(., ~ .x %>% select(groups_bstick_chclusts))
-
-# bind all codes and metrics
-ls_df_all_scores_fgroups_2_amd_globi <- NULL
-for (i in 1:length(ls_df_fg)) {
-  ls_df_all_scores_fgroups_2_amd_globi[[i]] <- bind_cols(ls_df_all_scores_fgroups_amd_globi[[i]], ls_chclusts_fgroups[[i]])
-}
-
-# set names to lists
-names(ls_df_all_scores_fgroups_2_amd_globi) <- unlist(get_names_list(ls_df_all_scores_fgroups_2_amd_globi))
-
-# set factors
-ls_df_all_scores_fgroups_2_amd_globi <-
-  ls_df_all_scores_fgroups_2_amd_globi %>%
-  map(., ~ .x %>% mutate(groups_bstick_chclusts = as.factor(as.vector(unlist(.x[, "groups_bstick_chclusts"])))))
-
-ls_plots_dca_chclusts_ce_fgroups <- ls_df_all_scores_fgroups_2_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_fgroups_2_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      # geom_line(colour="grey") +
-      geom_smooth(method = "loess", formula = "y ~ x") +
-      geom_point(aes(color = groups), size = 3) +
-      # geom_density_2d(aes(color = groups), geom = "polygon") +
-      scale_fill_viridis_d() +
-      scale_colour_viridis_d(name = "Community Trophic \nstructures") +
-      theme(plot.background = NULL) +
-      labs(title = .y, ylab = "PcoA Axis 1") +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-plot_dca_ce_chclusts_bstick_fgroups <- gridExtra::grid.arrange(grobs = ls_plots_dca_chclusts_ce_fgroups, top = grid::textGrob("COMPOSITIONAL CHANGE [CONISS clusters]"))
-
-```
-
-## AMD LAKE-SPECIFIC CLUSTERS [PCOA, SORENSEN] FGROUPS
-
-```{r fig.asp = 1, fig.width = 12}
-# get optimal clusters for each lake
-tables <- ls_df_fg %>%
-  map(., ~ .x %>% select(-c(lake:core_depth_id))) %>% # remove factors
-  map(., ~ .x %>% select_if(list(~ sum(.x) > 0))) # remove empty species
-
-numCores <- parallel::detectCores()
-
-ls_opt_clusts <-
-  parallel::mclapply(tables, function(x) optAMDclusters(x, .iterations = 100, .num_groups = 6),
-    mc.cores = numCores
-  )
-
-# extract clusters vectors for each lake
-opt_AMD_clusts_fgroups <- ls_df_fg %>%
-  future_map(.x = ., ~ .x %>% select(-c(lake:core_depth_id)), seed = "ignore") %>% # remove factors
-  future_map(.x = ., ~ .x %>% select_if(list(~ sum(.x) > 0)), seed = "ignore") %>% # remove empty species
-  future_map(.x = ., .y = ls_opt_clusts, .f = ~ .x %>% getAMDclusters(.data = .x, .opt_num_clusts = .y[[1]], .iterations = 100), seed = "ignore")
-
-opt_AMD_clusts_fgroups <- 
-  opt_AMD_clusts_fgroups %>% 
-  map(.x = ., ~ .x %>% dplyr::rename(., amd_clusts = .clst))
-
-# bind all codes and metrics
-for (i in 1:length(ls_df_all_scores_fgroups_2_amd_globi)) {
-  ls_df_all_scores_fgroups_2_amd_globi[[i]] <- bind_cols(ls_df_all_scores_fgroups_2_amd_globi[[i]], opt_AMD_clusts_fgroups[[i]])
-}
-
-# set factors
-ls_df_all_scores_fgroups_2_amd_globi <-
-  ls_df_all_scores_fgroups_2_amd_globi %>%
-  map(., ~ .x %>% mutate(amd_clusts = as.factor(as.vector(unlist(.x[, "amd_clusts"])))))
-
-ls_plots_amd_2 <- ls_df_all_scores_fgroups_2_amd_globi %>%
-  map2(
-    ., names(ls_df_all_scores_fgroups_2_amd_globi),
-    ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-      geom_line(colour = "grey") +
-      geom_point(aes(color = amd_clusts), size = 3) +
-      scale_colour_viridis_d(name = "Clusters") +
-      theme(plot.background = NULL) +
-      labs(title = .y) +
-      theme_bw() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-  )
-
-plot_pcoa_amd_fgroups <- gridExtra::grid.arrange(grobs = ls_plots_amd_2, top = grid::textGrob("COMPOSITIONAL CHANGE [PCOA, SORENSEN + AMD LAKE-SPECIFIC CLUSTERS] - fgroups"))
-
-```
-
-
-# ANALYSIS - DCA's
-### Prep DCAs
-```{r}
 
 # --------------------------------------------
 # Apply axis correction to diatom DCA scores
@@ -772,13 +609,12 @@ ls_plot_df_dca_multi_all <-
 
 ```
 
-
 # ANALYSIS - TROPHIC STRUCTURES ANALYSIS
-## 1. Get clusters 
+## Get clusters 
 ```{r fig.asp = 0.5, fig.width = 12}
 
 # --------------------------------------------
-# 1. Combine list of functional group data frames into one table
+# Combine list of functional group data frames into one table
 # --------------------------------------------
 tab_sums <- 
   ls_df_fg %>% 
@@ -786,7 +622,7 @@ tab_sums <-
   bind_rows()  # Combine into one unified data frame
 
 # --------------------------------------------
-# 2. Normalize abundance data by row (i.e., relative abundance)
+# Normalize abundance data by row (i.e., relative abundance)
 # --------------------------------------------
 norm_abund <- 
   bind_cols(
@@ -797,7 +633,7 @@ norm_abund <-
   replace(is.na(.), 0)  # Replace any resulting NAs with 0s
 
 # --------------------------------------------
-# 3. Detect available CPU cores for parallel processing
+# Detect available CPU cores for parallel processing
 # --------------------------------------------
 numCores <- parallel::detectCores()
 
@@ -810,7 +646,7 @@ ls_opt_clusts <-
   PlotoptAMDclusters(., .iterations = 1000, .min_clusts = 3, .num_groups = 9)  # Evaluate from 3 to 9 clusters
 
 # --------------------------------------------
-# 5. Identify optimal number of clusters via asymptote detection
+# Identify optimal number of clusters via asymptote detection
 # --------------------------------------------
 x <- ls_opt_clusts$results$.clusters
 y <- ls_opt_clusts$results$.maxpmean
@@ -831,7 +667,7 @@ ls_opt_clusts <- as.vector(ls_opt_clusts$results[asymptote_point, 1])$.clusters
 ls_opt_clusts <- 6
 
 # --------------------------------------------
-# 6. Assign cluster identity to each row (sample)
+# Assign cluster identity to each row (sample)
 # --------------------------------------------
 opt_AMD_clusts_fgroups_paleo <- 
   norm_abund %>%
@@ -845,7 +681,7 @@ opt_AMD_clusts_fgroups_paleo <- opt_AMD_clusts_fgroups_paleo %>%
   mutate(amd_clusts = factor(as.vector(unlist(.[, "amd_clusts"]))))
 
 # --------------------------------------------
-# 7. Prepare ordination scores and metadata
+# Prepare ordination scores and metadata
 # --------------------------------------------
 glob_df_pcoa_scores_fgroups <- bind_rows(ls_df_pcoa_scores_fgroups)
 
@@ -855,7 +691,7 @@ sub_glob_df_pcoa_scores_fgroups <-
   filter(core_depth_id %in% norm_abund$core_depth_id)
 
 # --------------------------------------------
-# 8. Merge metadata, ordination, and cluster assignment into one table
+# Merge metadata, ordination, and cluster assignment into one table
 # --------------------------------------------
 global_matrix_merged_paleo <- 
   bind_cols(
@@ -869,7 +705,7 @@ global_matrix_merged_paleo <-
             by = "core_depth_id")
 
 # --------------------------------------------
-# 9. Create color mapping key based on cluster means
+# Create color mapping key based on cluster means
 # --------------------------------------------
 key <- 
   bind_cols(
@@ -885,7 +721,7 @@ key <-
   mutate(rank = row_number())  # Assign ranking based on richness
 
 # --------------------------------------------
-# 10. Apply ranking to cluster IDs (relabel clusters by complexity)
+# Apply ranking to cluster IDs (relabel clusters by complexity)
 # --------------------------------------------
 cluster_mapping <- key %>% 
   select(amd_clusts, rank) %>% 
@@ -897,12 +733,12 @@ global_matrix_merged_paleo <- global_matrix_merged_paleo %>%
   mutate(amd_clusts = as.factor(amd_clusts))
 
 # --------------------------------------------
-# 11. (Optional) Merge two cluster levels (e.g., CT5 and CT6)
+# [Decision made here] Merge two cluster levels
 # --------------------------------------------
 global_matrix_merged_paleo$amd_clusts[global_matrix_merged_paleo$amd_clusts == 6] <- 5
 
 # --------------------------------------------
-# 12. Split final data frame by lake into a named list
+# Split final data frame by lake into a named list
 # --------------------------------------------
 ls_all_hclusts_complete_paleo <- 
   global_matrix_merged_paleo %>%
@@ -914,11 +750,11 @@ names(ls_all_hclusts_complete_paleo) <- unlist(get_names_list(ls_all_hclusts_com
 
 ```
 
-## 2. Diversity by community trophic clusters
+## Diversity by community trophic clusters
 ```{r fig.asp=1, fig.width=12}
 
 # ----------------------------------------------
-# 1. Merge all lake-specific dataframes into one long-format table
+# Merge all lake-specific dataframes into one long-format table
 # ----------------------------------------------
 merged_data <- ls_all_hclusts_complete_paleo %>%
   map(~.x %>% as.data.frame()) %>%
@@ -928,7 +764,7 @@ merged_data <- ls_all_hclusts_complete_paleo %>%
   unique()
 
 # ----------------------------------------------
-# 2. Perform ANOVA and Tukey post-hoc test
+# Perform ANOVA and Tukey post-hoc test
 # ----------------------------------------------
 anova_res <- aov(total_nspp_by_lake_core ~ amd_clusts, data = merged_data)
 tukey_res <- TukeyHSD(anova_res)
@@ -953,7 +789,7 @@ signif_letters <- signif_letters %>%
   mutate(y_position = max_y * 1.1)
 
 # ----------------------------------------------
-# 3. Create boxplot comparing diversity across clusters (all lakes combined)
+# Create boxplot comparing diversity across clusters (all lakes combined)
 # ----------------------------------------------
 box_plot_clusts <- ggplot(merged_data, aes(x = amd_clusts, y = total_nspp_by_lake_core)) +
   geom_boxplot(aes(fill = amd_clusts)) +
@@ -997,86 +833,26 @@ guides("none")
 
 ```
 
-```{r fig.asp=3, fig.width=6}
-#ls_all_hclusts_complete_paleo %>%
-#  map(~.x %>% as.data.frame()) %>% 
-#  bind_rows() %>%
-#  ggplot(aes(x = age_ce, y = DCA1)) +
-#  #facet_wrap(~lake, nrow = 9, scales = "fixed") +
-#  geom_smooth(size = 2) +
-#  geom_line() +
-#  geom_point(aes(color = amd_clusts), size = 2) +
-#  scale_colour_viridis_d(name = "Community Trophic \nstructures", option = "viridis", direction = -1) +
-#  theme(plot.background = NULL) +
-#  theme_minimal() +
-#  theme(
-#    plot.title = element_text(size = 12),
-#    legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-#    legend.justification = c(0, 1),
-#    # legend.position = c(0, 1),
-#    axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-#    panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-#    panel.grid.minor = element_blank()
-#  )
-```
-
-```{r fig.asp = 0.5, fig.width = 12}
-#ls_all_hclusts_complete_paleo %>%
-#  map(~.x %>% as.data.frame()) %>% 
-#  bind_rows() %>%
-#  ggplot(aes(x = age_ce, y = as.factor(amd_clusts))) +
-#  facet_wrap(~lake, scales = "free") +
-#  geom_point(aes(color = amd_clusts), size = 3, ) +
-#  geom_line() +
-#      scale_colour_viridis_d(name = "Community Trophic \nstructures", option = "viridis", direction = -1) +
-#      theme(plot.background = NULL) +
-#      theme_minimal() +
-#      theme(
-#        plot.title = element_text(size = 12),
-#        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-#        legend.justification = c(0, 1),
-#        # legend.position = c(0, 1),
-#        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-#        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-#        panel.grid.minor = element_blank()
-#      )
-
-```
-
+## Lake-scale proportions trophic structures 
 ```{r fig.asp = 1, fig.width = 12}
 
-#ls_all_hclusts_complete_paleo %>%
-#  map(~.x %>% as.data.frame()) %>% 
-#  bind_rows() %>%
-#  ggplot(aes(amd_clusts)) +
-#  #facet_wrap(~amd_clusts, scales = "free")+
-#  geom_histogram(aes(x = age_ce, fill = as.factor(amd_clusts)), size = 2) +
-#  scale_fill_viridis_d(name = "Community Trophic \nstructures", option = "viridis", direction = -1) +
-#      theme(plot.background = NULL) +
-#      theme_minimal() +
-#      theme(
-#        plot.title = element_text(size = 12),
-#        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-#        legend.justification = c(0, 1),
-#        # legend.position = c(0, 1),
-#        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-#        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-#        panel.grid.minor = element_blank()
-#      )
+# ------------------------------------------------------------------------------
+# Define dates of interest to be highlighted with vertical lines
+# ------------------------------------------------------------------------------
 
-```
-
-## 3. Lake-scale proportions trophic structures 
-```{r fig.asp = 1, fig.width = 12}
-
-# Define the vector of dates to highlight
 highlighted_dates <- c(750, 1050, 1450, 1750)
 
-# Combine your data into one data frame
-data_combined <- ls_all_hclusts_complete_paleo %>%
-  map_dfr(as.data.frame)
+# ------------------------------------------------------------------------------
+# Combine hierarchical clustering outputs from all lakes into a single dataframe
+# ------------------------------------------------------------------------------
 
-# Calculate the data range for each lake and order the lakes
+data_combined <- ls_all_hclusts_complete_paleo %>%
+  map_dfr(as.data.frame)  # Combine list elements into one long data frame
+
+# ------------------------------------------------------------------------------
+# Compute time range per lake and order lakes from longest to shortest
+# ------------------------------------------------------------------------------
+
 lake_ranges <- data_combined %>%
   group_by(lake) %>%
   summarise(
@@ -1084,26 +860,31 @@ lake_ranges <- data_combined %>%
     max_age = max(age_ce, na.rm = TRUE),
     data_range = max_age - min_age
   ) %>%
-  arrange(desc(data_range)) # Order lakes from longest to shortest data range
+  arrange(desc(data_range))  # Order lakes by longest time coverage
 
-# Get the ordered lake names
-lake_levels <- lake_ranges$lake
+lake_levels <- lake_ranges$lake  # Store ordered lake names
 
-# Set 'lake' as an ordered factor in data_combined
+# ------------------------------------------------------------------------------
+# Update factor levels and cluster assignments in the combined data
+# ------------------------------------------------------------------------------
+
 data_combined <- data_combined %>%
   mutate(
-    lake = factor(lake, levels = lake_levels),
-    amd_clusts = as.factor(amd_clusts)
+    lake = factor(lake, levels = lake_levels),          # Set lake as ordered factor
+    amd_clusts = as.factor(amd_clusts)                  # Convert cluster assignments to factor
   )
 
-# Prepare the rectangle data to block out areas outside data ranges
+# ------------------------------------------------------------------------------
+# Prepare rectangle overlay data to mask out areas beyond each lake's range
+# ------------------------------------------------------------------------------
+
 rect_data <- lake_ranges %>%
   select(lake, min_age, max_age) %>%
   mutate(
-    lake = factor(lake, levels = lake_levels),
-    xmin1 = 0,
+    lake = factor(lake, levels = lake_levels),  # Retain lake factor level order
+    xmin1 = 0,                                  # Left trim range
     xmax1 = min_age,
-    xmin2 = max_age,
+    xmin2 = max_age,                            # Right trim range
     xmax2 = 2010
   ) %>%
   pivot_longer(
@@ -1116,23 +897,29 @@ rect_data <- lake_ranges %>%
     names_to = "rect_part2",
     values_to = "xmax"
   ) %>%
-  filter(substr(rect_part, 5, 5) == substr(rect_part2, 5, 5)) %>%
+  filter(substr(rect_part, 5, 5) == substr(rect_part2, 5, 5)) %>%  # Match xmin-xmax pairs
   select(lake, xmin, xmax) %>%
   mutate(
-    ymin = -Inf,
+    ymin = -Inf,  # Full y-range for blocking
     ymax = Inf
   )
 
+# ------------------------------------------------------------------------------
+# Create final ggplot showing relative abundance of trophic clusters over time
+# ------------------------------------------------------------------------------
+
 plot_density_fclusts_time_lines_1B <- 
   ggplot(data_combined, aes(x = age_ce, fill = amd_clusts)) +
-  facet_wrap(~ lake, ncol = 1, scales = "fixed", strip.position = "right") +
-  # Plot the density
+  facet_wrap(~ lake, ncol = 1, scales = "fixed", strip.position = "right") +  # One column per lake
+
+  # Plot kernel density estimate of cluster proportions
   geom_density(
     adjust = 1.5,
     position = "fill",
     colour = "white"
   ) +
-  # Add the white rectangles on top to block out areas outside data ranges
+
+  # Overlay white rectangles to mask out time intervals not covered by data
   geom_rect(
     data = rect_data,
     aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
@@ -1140,45 +927,54 @@ plot_density_fclusts_time_lines_1B <-
     fill = "white",
     colour = "white"
   ) +
-  # Add vertical lines for all highlighted dates
+
+  # Add vertical dashed lines for highlighted dates
   geom_vline(
     xintercept = highlighted_dates,
     colour = "white",
     linetype = "dashed"
   ) +
+
+  # Color scale for trophic clusters
   scale_fill_viridis_d(
     name = "Community Trophic \nstructures",
     option = "viridis",
     direction = -1
   ) +
+
+  # Set x-axis limits
   lims(x = c(0, 2010)) +
-  # Adjust y-axis breaks
+
+  # Y-axis as relative proportion (0 to 1)
   scale_y_continuous(
     breaks = c(0, 0.5, 1),
     labels = c("0", "0.5", "1")
   ) +
+
+  # Minimalist theme with layout adjustments
   theme_minimal() +
   theme(
     plot.background = element_blank(),
-    plot.title = element_text(size = 12), # Reduce title size
+    plot.title = element_text(size = 12),
     legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
     legend.justification = c(0, 1),
-    #axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-    #panel.grid.major = element_line(colour = "white", linewidth = 0.2),
     panel.grid.minor = element_blank(),
     panel.grid.major = element_line(colour = "grey90", linewidth = 0.2),
-    strip.text = element_text(size = 10), # Adjust facet title size
-    plot.margin = unit(c(2, 1, 1, 1), "cm") # Add space for labels at the top
+    strip.text = element_text(size = 10),
+    plot.margin = unit(c(2, 1, 1, 1), "cm")  # Add space for facet labels
   ) +
+
   labs(
     x = "Age (CE)",
     y = "Proportion of Community Trophic Structures",
     title = "Proportions of Community Trophic Structures Over Time by Lake"
   )
 
-# Display the final combined plot
-print(plot_density_fclusts_time_lines_1B)
+# ------------------------------------------------------------------------------
+# Render the final plot
+# ------------------------------------------------------------------------------
 
+print(plot_density_fclusts_time_lines_1B)
 
 ```
 
@@ -1477,7 +1273,7 @@ ordinations_fclusts_2
 
 ```
 
-## 4. Random Forest
+## Random Forest
 ```{r}
 
 # ----------------------------
@@ -1586,22 +1382,6 @@ dev.off()
 ```
 
 # ANALYSIS - Hierarchical Generalized Additive Models - HGAMs
-## GAM - Major groups
-```{r fig.width=12}
-
-lakes_col_groups <-
-  c(
-    "#66C2A5", "#3288BD", "#5E4FA2",
-    "#9E0142", "#D53E4F", "#F46D43", "#FDAE61", "#FEE08B", "#FFFFBF"
-  )
-
-
-lakes_col_groups <- scico(9, begin = 0, end = 0.95, palette = 'roma')
-
-# "#7E1700" "#9B5517" "#B3862E" "#CCBF63" "#C8E9B6" "#8CDCD6" "#46ACCC" "#287CB9" "#1549A2"
-
-
-```
 
 ## GAM - Diatoms
 ### Regional Smooth
@@ -2551,7 +2331,7 @@ df_env <-
 
 ```{r}
 # ----------------------------------------------------------
-# 1. Load and clean pollen data
+# Load and clean pollen data
 # ----------------------------------------------------------
 
 pollen <- pollen %>% 
@@ -2583,7 +2363,7 @@ sites_col <- scico(n_distinct(df_wk$sitename), begin = 0, end = 0.95, palette = 
 gr_col <- scico(n_distinct(df_wk$group), begin = 0, end = 0.95, palette = 'nuuk')
 
 # ----------------------------------------------------------
-# 2. DCA Analysis
+# DCA Analysis
 # ----------------------------------------------------------
 
 exclude_sites <- c("Lomba")
@@ -2621,7 +2401,7 @@ DCA.res <- Reduce(full_join, results_list) %>%
 DF_to <- DCA.res %>% mutate(sitename = as.factor(sitename))
 
 # ----------------------------------------------------------
-# 3. HGAM on DCA1
+# HGAM on DCA
 # ----------------------------------------------------------
 
 library(mgcv)
@@ -2655,85 +2435,13 @@ p.DCA.gl <- sm_to %>%
 mod_to_dev <- derivatives(mod_to, select = "s(age_ce)", eps = 1, level = 0.9, interval = "simultaneous", seed = 22)
 color_mapping <- scico(2, begin = 0, end = 0.9, palette = 'vik')
 
-p.DCA.gl.dev <- mod_to_dev %>%
-  add_sizer(type = "change") %>%
-  ggplot() +
-  geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci), alpha = 0.2) +
-  geom_line(aes(x = age_ce, y = .derivative, color = (.lower_ci > 0 | .upper_ci < 0),
-                linewidth = (.lower_ci > 0 | .upper_ci < 0)), show.legend = FALSE) +
-  scale_discrete_manual("linewidth", values = c(0.5, 1.5)) +
-  scale_color_manual(values = color_mapping) +
-  labs(y = "Derivative", x = "Age (CE)") +
-  theme_minimal(base_size = 9) +
-  scale_x_continuous(n.breaks = 10) +
-  theme(panel.grid.minor.y = element_blank())
-
-(p.DCA.gl + p.DCA.gl.dev) + plot_annotation(title = "Archipelago-scale vegetation turnover")
-
 # ----------------------------------------------------------
-# 4. HGAM on Trees or Herbs
+# HGAM on representative groups
 # ----------------------------------------------------------
-
-DF_to_groups <- df_wk %>%
-  filter(age_ce > 0, group == "Herb") %>%
-  mutate(p_anomaly = percent_anomaly, sitename = factor(sitename)) %>%
-  droplevels()
-
-mod_to_groups <- gam(percentage ~ s(age_ce, bs = "tp", k = 30) +
-                       s(age_ce, by = sitename, k = 10, m = 1, bs = "tp") +
-                       s(sitename, bs = "re"),
-                     data = DF_to_groups, method = "REML")
-
-summary(mod_to_groups)
-k.check(mod_to_groups, n.rep = 500)
-appraise(mod_to_groups)
-
-sm_to_groups <- smooth_estimates(mod_to_groups) %>% add_confint()
-partial_residuals_df_groups <- DF_to_groups %>% add_partial_residuals(mod_to_groups)
-
-lakes_col <- scico(n_distinct(DF_to_groups$sitename), begin = 0, end = 0.95, palette = 'roma')
-
-p.gl <- sm_to_groups %>%
-  filter(.smooth == "s(age_ce)") %>%
-  ggplot() +
-  geom_rug(aes(x = age_ce), data = partial_residuals_df_groups, sides = "b", length = unit(0.02, "npc")) +
-  geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci), alpha = 0.2) +
-  geom_point(aes(x = age_ce, y = `s(age_ce)`, color = sitename), data = partial_residuals_df_groups, alpha = 0.8, size = 1.5) +
-  geom_line(aes(x = age_ce, y = .estimate), linewidth = 1) +
-  labs(y = "Percentage", x = "Age (CE)") +
-  scale_color_manual("Lake", values = lakes_col) +
-  theme_minimal(base_size = 7) +
-  scale_x_continuous(n.breaks = 10) +
-  theme(panel.grid.minor.y = element_blank(), legend.position = "bottom")
-
-mod_to_dev <- derivatives(mod_to_groups, select = "s(age_ce)", eps = 1, level = 0.9, interval = "simultaneous", seed = 111)
-
-p.gl.dev <- mod_to_dev %>%
-  add_sizer(type = "change") %>%
-  ggplot() +
-  geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci), alpha = 0.2) +
-  geom_line(aes(x = age_ce, y = .derivative, color = (.lower_ci > 0 | .upper_ci < 0),
-                linewidth = (.lower_ci > 0 | .upper_ci < 0)), show.legend = FALSE) +
-  scale_discrete_manual("linewidth", values = c(0.5, 1.5)) +
-  scale_color_manual(values = color_mapping) +
-  labs(y = "Derivative", x = "Age (CE)") +
-  theme_minimal(base_size = 7) +
-  scale_x_continuous(n.breaks = 10) +
-  theme(panel.grid.minor.y = element_blank())
-
-(p.gl + p.gl.dev) + plot_annotation(title = "Trends in the relative abundance of Herbs in Azores")
-
-
-```
-
-## Data prep - Vegetation Change - Pollen
-```{r fig.width = 12, fig.asp = 1.2}
-
-# --- Clean and normalize pollen data ---
 
 pollen_clean <- pollen %>%
   filter(elementtype == "pollen", !is.na(value)) %>%
-  filter(!sitename %in% c("Caldeir√£o Connor", "Lomba"))
+  filter(!sitename %in% c("Lomba"))
 
 sample_totals <- pollen_clean %>%
   group_by(sitename, age_ce) %>%
@@ -2849,7 +2557,7 @@ combined_df_pollen <- bind_rows(aug_tree, aug_herb)
 
 ```
 
-## FIX GAM POLLEN DATA LINK
+## Data prep - Align environmental data
 
 ```{r fig.width = 12, fig.asp = 1.2}
 
@@ -2857,38 +2565,21 @@ combined_df_pollen <- bind_rows(aug_tree, aug_herb)
 # Interpolate vegetation smooth (HGAM output)
 # ------------------------------------------------------------------------------
 
-sm_to <- sm_to %>% 
-  filter(is.na(sitename))
-
 interp_years <- 0:2010
 
-interp_est <- approx(
-  x = sm_to$age_ce,
-  y = sm_to$.estimate,
-  xout = interp_years,
-  method = "linear"
-)
+# Extract the global smooth only (sitename == NA)
+sm_interp <- sm_to %>%
+  filter(is.na(sitename)) %>%
+  select(age_ce, estimate = .estimate, lower_ci = .lower_ci, upper_ci = .upper_ci)
 
-interp_lower <- approx(
-  x = sm_to$age_ce,
-  y = sm_to$.lower_ci,
-  xout = interp_years,
-  method = "linear"
-)
-
-interp_upper <- approx(
-  x = sm_to$age_ce,
-  y = sm_to$.upper_ci,
-  xout = interp_years,
-  method = "linear"
-)
-
-interpolated_df <- data.frame(
-  age_ce = interp_years,
-  estimate = interp_est$y,
-  lower_ci = interp_lower$y,
-  upper_ci = interp_upper$y
-)
+# Interpolate all three columns at once using purrr and bind together
+interpolated_df <- interp_years %>%
+  tibble(age_ce = .) %>%
+  mutate(
+    estimate = approx(x = sm_interp$age_ce, y = sm_interp$estimate, xout = age_ce, method = "linear")$y,
+    lower_ci = approx(x = sm_interp$age_ce, y = sm_interp$lower_ci, xout = age_ce, method = "linear")$y,
+    upper_ci = approx(x = sm_interp$age_ce, y = sm_interp$upper_ci, xout = age_ce, method = "linear")$y
+  )
 
 # ------------------------------------------------------------------------------
 # Prepare and interpolate NAO Hernandez
@@ -2921,7 +2612,7 @@ nao_binned <- nao_hernandez_interpolated %>%
 nao_hernandez <- nao_hernandez %>% mutate(age_ce = round(age_ce))
 
 # ------------------------------------------------------------------------------
-# Interpolate SST Jiang
+# Prepare and interpolate SST Jiang
 # ------------------------------------------------------------------------------
 
 sst_jiang_interpolated <- approx(
@@ -2935,7 +2626,7 @@ sst_jiang <- as.data.frame(sst_jiang_interpolated)
 colnames(sst_jiang) <- c("age_ce", "SST.DTF")
 
 # ------------------------------------------------------------------------------
-# Interpolate and normalize SST Abrantes
+# Prepare and interpolate and normalize SST Abrantes
 # ------------------------------------------------------------------------------
 
 sst_abrantes_interpolated <- approx(
@@ -2960,7 +2651,7 @@ sst_abrantes_binned <- sst_abrantes %>%
   summarise(avg_value = mean(SST, na.rm = TRUE), .groups = "drop")
 
 # ------------------------------------------------------------------------------
-# Interpolate NH summer temperatures (Büntgen et al.)
+# Prepare and interpolate NH summer temperatures (Büntgen et al.)
 # ------------------------------------------------------------------------------
 
 nhst_buntgen_interpolated <- approx(
@@ -3038,11 +2729,6 @@ prop_comm_matrix <- proportions_long %>%
     values_from = average_proportion
   )
 
-```
-
-## Align datasets using 30y windows
-```{r fig.width = 10, fig.asp = 0.5}
-
 # ------------------------------------------------------------------------------
 # Prepare and align datasets using 30-year windows
 # ------------------------------------------------------------------------------
@@ -3072,7 +2758,7 @@ joined_df_30yr <- joined_df_30yr %>%
 
 ```
 
-## GAM norm_abund_guilds
+## Data prep - Extract regional guild responses
 ```{r}
 
 # ------------------------------------------------------------------------------
@@ -4425,9 +4111,9 @@ effect_diff_plot <- ggplot(effect_diff, aes(x = midpoint, y = effect_diff, fill 
 
 # Build the combined plot
 combined_varplot <- (
-  (original_varpart + ggtitle("(A) Historical phases (sensu Raposeiro et al. 2021)")) /
-  (varpart_moving + ggtitle("(B) Moving window (300-year steps)")) /
-  (effect_diff_plot + ggtitle("(C) Climate vs VegChange (effect sizes)"))
+  (original_varpart + ggtitle("(A) Historical phases")) /
+  (varpart_moving + ggtitle("(B) Moving window")) /
+  (effect_diff_plot + ggtitle("(C) Climate vs VegChange"))
 ) +
   plot_layout(guides = "collect") &
   theme(
