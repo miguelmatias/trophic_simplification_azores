@@ -2,7 +2,7 @@
 
 This repository contains scripts and data for analyzing trophic structure changes in Azorean lake ecosystems over the past two millennia. It combines paleoecological proxies, statistical modeling, and data visualization to assess changes in biodiversity and community organization.
 
-![Community Structure](figure/FIGURE_2_composite_figure.png)
+![Community Structure](figures/FIGURE_2_composite_figure.png)
 
 ## Project Structure
 
