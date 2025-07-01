@@ -290,7 +290,7 @@ for (i in 1:length(ls_dca_diatoms_2)) {
 ```{r fig.asp = 1, fig.width = 12}
 
 # ------------------------------------------------------------------------------
-# 1. Extract PCoA vectors (1st and 2nd axes) for each lake based on chironomid data
+# Extract PCoA vectors (1st and 2nd axes) for each lake based on chironomid data
 # ------------------------------------------------------------------------------
 
 ls_df_pcoa_scores_chiro_hellinger <- ls_df_chiro_wide_codes %>%
@@ -310,7 +310,7 @@ ls_df_pcoa_scores_chiro_hellinger <- ls_df_chiro_wide_codes %>%
   map(., function(x) as.data.frame(unlist(x[, 1:2])))
 
 # ------------------------------------------------------------------------------
-# 2. Combine metadata with PCoA scores
+# Combine metadata with PCoA scores
 # ------------------------------------------------------------------------------
 
 ls_df_all_scores_chiro_amd_globi <- NULL
@@ -323,13 +323,13 @@ for (i in 1:length(ls_df_pcoa_scores_chiro_hellinger)) {
 }
 
 # ------------------------------------------------------------------------------
-# 3. Assign lake names to list entries
+# Assign lake names to list entries
 # ------------------------------------------------------------------------------
 
 names(ls_df_all_scores_chiro_amd_globi) <- unlist(get_names_list(ls_df_all_scores_chiro_amd_globi))
 
 # ------------------------------------------------------------------------------
-# 4. Calculate chironomid abundance, richness, and Simpson index
+# Calculate chironomid abundance, richness, and Simpson index
 # ------------------------------------------------------------------------------
 
 lake_abund_chiro <- ls_df_chiro_wide_codes %>%
@@ -345,7 +345,7 @@ lake_abund_chiro <- ls_df_chiro_wide_codes %>%
   map(., ~ .x %>% select(chiro_lake_abundance, chiro_local_richness, chiro_simpson))
 
 # ------------------------------------------------------------------------------
-# 5. Bind abundance and diversity metrics to main list
+# Bind abundance and diversity metrics to main list
 # ------------------------------------------------------------------------------
 
 for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
@@ -356,7 +356,7 @@ for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
 }
 
 # ------------------------------------------------------------------------------
-# 6. Extract DCA vectors (1st and 2nd axes) from chironomid data
+# Extract DCA vectors (1st and 2nd axes) from chironomid data
 # ------------------------------------------------------------------------------
 
 ls_dca_chiro <- ls_df_chiro_wide_codes %>%
@@ -374,7 +374,7 @@ ls_dca_chiro <- ls_df_chiro_wide_codes %>%
   map(., function(x) as.data.frame(unlist(x[, 1:2])))
 
 # ------------------------------------------------------------------------------
-# 7. Bind DCA scores to metadata + PCoA + diversity info
+# Bind DCA scores to metadata + PCoA + diversity info
 # ------------------------------------------------------------------------------
 
 for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
@@ -385,7 +385,7 @@ for (i in 1:length(ls_df_all_scores_chiro_amd_globi)) {
 }
 
 # ------------------------------------------------------------------------------
-# 8. Create second DCA list with metadata attached
+# Create second DCA list with metadata attached
 # ------------------------------------------------------------------------------
 
 ls_dca_chiro_2 <- ls_df_chiro_wide_codes %>%
@@ -977,7 +977,7 @@ plot_density_fclusts_time_lines_1B <-
 print(plot_density_fclusts_time_lines_1B)
 
 ```
-
+## Regional proportions trophic structures 
 ```{r fig.asp = 0.5, fig.width = 12}
 
 # Create the plot
@@ -1020,87 +1020,9 @@ plot_stacked_fclusts_time_lines <-
 plot_stacked_fclusts_time_lines
 ```
 
-
-```{r fig.asp = 1.5, fig.width = 12}
-layout <-
-"
-AAAA
-CCCC
-CCCC
-CCCC
-"
-
-(plot_stacked_fclusts_time_lines + theme(plot.margin = unit(c(0,0,0,0), "cm")))+
-  (plot_density_fclusts_time_lines_1B + theme(plot.margin = unit(c(0,0,0,0), "cm")))+
-  patchwork::plot_layout(
-    nrow = 2, 
-    design = layout, 
-    heights = c(40, 80), 
-    guides = "collect") + patchwork::plot_annotation(tag_levels = 'A') & theme(legend.position = 'bottom')
-
-```
-
+## Ordination with trophic structures
 ```{r fig.asp = 0.5, fig.width = 12}
-# Create the dataframe
-lake_depth_df <- data.frame(
-  lake = c("Azul", "Funda", "Santiago",  "Peixinho", 
-           "Caldeirao", "Caveiro", "Empadadas Norte", "Ginjal","Prata"),
-  depth = c("deep", "deep", "deep", "deep",
-            "shallow", "shallow", "shallow", "shallow", "shallow")
-)
 
-# Stacked density plot:
-plot_stacked_fclusts_time_together <- 
-  ls_all_hclusts_complete_paleo %>%
-  map(~.x %>% as.data.frame()) %>% 
-  bind_rows() %>%
-  ggplot(aes(x=age_ce, fill = amd_clusts)) +
-  geom_density(adjust=1.5, position="fill", colour = "white") +
-  scale_fill_viridis_d(name = "Community Trophic \nstructures", option = "viridis", direction = -1) +
-  lims(x=c(0,2010))+
-      theme(plot.background = NULL) +
-      theme_minimal() +
-      theme(
-        axis.title.y = element_text("Proportion of Trophic Structures"),
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-
-# Stacked density plot:
-sep_depth <- 
-  ls_all_hclusts_complete_paleo %>%
-  map(~.x %>% as.data.frame()) %>% 
-  bind_rows() %>%
-  left_join(., lake_depth_df, by = "lake") %>% 
-  relocate(lake, depth) %>% 
-  ggplot(aes(x=age_ce, fill = amd_clusts)) +
-  facet_wrap(~depth, nrow = 2) +
-  geom_density(adjust=1.5, position="fill", colour = "white") +
-  scale_fill_viridis_d(name = "Community Trophic \nstructures", option = "viridis", direction = -1) +
-  lims(x=c(0,2010))+
-      theme(plot.background = NULL) +
-      theme_minimal() +
-      theme(
-        axis.title.y = element_text("Proportion of Trophic Structures"),
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-
-plot_stacked_fclusts_time_together / sep_depth
-
-```
-
-```{r fig.asp = 0.5, fig.width = 12}
 plot_density_fclusts_fime <- 
   ls_all_hclusts_complete_paleo %>%
   map(~.x %>% as.data.frame()) %>% 
@@ -1219,60 +1141,6 @@ ordinations_fclusts_1
 
 ```
 
-```{r fig.asp = 1, fig.width = 12}
-ordinations_fclusts_2 <- 
-  bind_cols(
-    ordinations_paleo,
-    select(norm_abund, c(lake, alternative_functional_groups_guilds_globi_merged)),
-    select(global_matrix_merged_paleo, c(DCA1:amd_clusts))
-    ) %>% 
-  ggplot(aes(x = Dim1, y = Dim2)) +
-  facet_wrap(~lake) +
-  geom_line(size = 1) +
-  
-  # Polygons
-  geom_polygon(aes(fill = as.factor(amd_clusts)), data = hull_paleo, alpha = 0.2) +
-  scale_fill_viridis_d(option = "viridis", direction = -1, name = NULL, guide = "none") +
-  ggnewscale::new_scale_fill() +
-  
-  # Points
-  geom_point(aes(colour = as.factor(amd_clusts)), size = 3) +
-  scale_colour_viridis_d(option = "viridis", direction = -1, name = "Community Trophic Structures") +
-  ggnewscale::new_scale_colour() +
-  
-  geom_segment(
-      data = fit_env_paleo,
-      aes(x = 0, xend = Dim1, y = 0, yend = Dim2),
-      arrow = arrow(length = unit(0.1, "cm"))
-    ) +
-  
-  # Labels
-  ggrepel::geom_label_repel(
-      max.overlaps = 12,
-      data = fit_env_paleo,
-      aes(x = Dim1, y = Dim2, label = groups), 
-      cex = 3, direction = "both", segment.size = 0.25
-    ) +
-  theme(plot.background = NULL) +
-  scale_fill_manual(values = rep("grey", 9), name = NULL, guide = "none") +
-  ggnewscale::new_scale_colour() +
-  labs(title = "") +
-  theme_bw() +
-  theme(
-    plot.title = element_text(size = 12),
-    legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-    legend.justification = c(0, 1),
-    legend.position = NULL,
-    axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-    panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-    panel.grid.minor = element_blank()
-    ) +
-  guides(fill = "none")
-
-ordinations_fclusts_2
-
-```
-
 ## Random Forest
 ```{r}
 
@@ -1378,11 +1246,9 @@ rpart.plot::rpart.plot(
 )
 dev.off()
 
-
 ```
 
 # ANALYSIS - Hierarchical Generalized Additive Models - HGAMs
-
 ## GAM - Diatoms
 ### Regional Smooth
 ```{r}
@@ -2277,40 +2143,8 @@ plot_fitted_DCA1_fgroup <-
 plot_fitted_DCA1_fgroup
 ```
 
-```{r}
-
-hull <- 
-  ls_df_env_wide_full %>%
-  bind_rows() %>% 
-  filter(!lake == "Prata") %>% 
-  group_by(lake) %>% 
-  dplyr::slice(chull(d13c, d15n))
-
-ls_df_env_wide_full %>% 
-  bind_rows() %>% 
-  filter(age_ce > 0) %>% 
-  #group_by(lake) %>%
-  # mutate(age_ce_range = rescale(age_ce, to = c(0, 1), 
-  #     from = range(age_ce, na.rm = TRUE, finite = TRUE))) %>% 
-  filter(!lake == "Prata") %>% 
-  ggplot(aes(x = d13c, y = d15n)) +
-  #facet_wrap(~lake, scales = "free") +
-  geom_polygon(aes(fill = lake), data = hull, alpha = 0.2, )+
-  geom_point(aes(fill = lake), shape = 21)+
-  #geom_line(aes(colour = lake))+
-  scale_colour_viridis_d(option = "plasma") +
-  scale_fill_viridis_d(option = "plasma") #+
-  #lims(x=c(-45,-18), y=c(-2,10))
-
- 
-
-```
-
-
 # MULTIVARIATE ANALYSIS - REDUNDANCY ANALYSIS AND VARIANCE PARTITIONING
 ## Data prep - Environmetal Variables
-
-
 ```{r}
 # ------------------------------------------------------------------------------
 # Rescaling Environmental variables
@@ -2366,7 +2200,7 @@ gr_col <- scico(n_distinct(df_wk$group), begin = 0, end = 0.95, palette = 'nuuk'
 # DCA Analysis
 # ----------------------------------------------------------
 
-exclude_sites <- c("Lomba")
+exclude_sites <- c("Lomba", "Rasa")
 df_wk_dca <- df_1 %>%
   filter(!ecologicalgroup %in% c("UNID"), age_ce > 0, !sitename %in% exclude_sites) %>%
   droplevels()
@@ -2441,7 +2275,7 @@ color_mapping <- scico(2, begin = 0, end = 0.9, palette = 'vik')
 
 pollen_clean <- pollen %>%
   filter(elementtype == "pollen", !is.na(value)) %>%
-  filter(!sitename %in% c("Lomba"))
+  filter(!sitename %in% c("Lomba", "Rasa"))
 
 sample_totals <- pollen_clean %>%
   group_by(sitename, age_ce) %>%
@@ -2859,7 +2693,6 @@ gam_kcheck_summary <- imap_dfr(gam_models, function(model, name) {
 
 ```
 
-# MULTIVARIATE ANALYSIS
 ## Global RDA model
 ```{r fig.width = 12, fig.asp = 1}
 
@@ -2999,7 +2832,7 @@ ggplot(biplot_df, aes(x = Axis, y = Variable, fill = Correlation)) +
   theme_minimal(base_size = 13)
 
 # ------------------------------------------------------------------------------
-# Final RDA biplot figure (Revised)
+# Final RDA biplot figure
 # ------------------------------------------------------------------------------
 
 # Extract eigenvalues and compute explained variance
@@ -3058,63 +2891,17 @@ global_rda
 
 ```
 
-
-```{r fig.width = 12, fig.asp = 0.5}
-# Load required libraries
-
-# Step 1: Select numeric columns and clean
-numeric_df <- joined_df_30yr %>% 
-  select(estimate, selected_variables, `high_profile`:predator) %>% 
-  select(where(is.numeric)) %>%
-  drop_na()
-
-# Step 2: Compute correlations and p-values
-corr_result <- Hmisc::rcorr(as.matrix(numeric_df), type = "pearson")
-cor_matrix <- corr_result$r
-p_matrix   <- corr_result$P
-
-# Step 3: Convert to tidy and remove upper triangle
-cor_tidy <- as.data.frame(as.table(cor_matrix)) %>%
-  rename(Var1 = Var1, Var2 = Var2, Correlation = Freq) %>%
-  mutate(p_value = as.vector(p_matrix)) %>%
-  mutate(Significance = case_when(
-    p_value < 0.001 ~ "***",
-    p_value < 0.01  ~ "**",
-    p_value < 0.05  ~ "*",
-    TRUE            ~ NA_character_
-  )) %>%
-  mutate(Label = ifelse(is.na(Significance), "", paste0(round(Correlation, 2), Significance)))
-
-# Step 4: Keep only lower triangle
-cor_tidy_lower <- cor_tidy %>%
-  filter(as.integer(factor(Var1, levels = colnames(cor_matrix))) >
-         as.integer(factor(Var2, levels = colnames(cor_matrix))))
-
-# Step 5: Plot lower triangle only
-ggplot(cor_tidy_lower, aes(x = Var2, y = Var1, fill = Correlation)) +
-  geom_tile(color = "white") +
-  geom_text(aes(label = Label), size = 3) +
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0,
-                       limits = c(-1, 1), name = "Pearson\nCorrelation") +
-  theme_minimal(base_size = 13) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 10),
-        panel.grid = element_blank()) +
-  labs(
-    title = "Lower Triangle Correlation Matrix (Significant Only)",
-    subtitle = "* = p < 0.05",
-    x = "", y = ""
-  )
-
-```
-
 ## Phase varpart - Historical phases
 ```{r fig.width=10, fig.asp=0.5}
 
-# Define predictor variables
+# ----------------------------------------------------------
+# Phase varpart - Historical phases
+# ----------------------------------------------------------
+
+# --- Define predictor variables ---
 selected_variables <- c("NAO_Median_Value", "estimate")
 
-# Phase subsets
+# --- Define phase subsets ---
 phase_list <- list(
   "Phase 1" = joined_df_30yr %>% filter(age_ce < 750),
   "Phase 2" = joined_df_30yr %>% filter(age_ce >= 750 & age_ce < 1050),
@@ -3123,7 +2910,7 @@ phase_list <- list(
   "Phase 5" = joined_df_30yr %>% filter(age_ce >= 1750)
 )
 
-# Function to compute Pure and Shared variance per phase
+# --- Function to compute pure and shared effects ---
 calculate_pure_shared <- function(data, phase_name) {
   comm <- data %>% select(high_profile:predator) %>% filter(complete.cases(.))
   env  <- data %>% select(all_of(selected_variables)) %>% filter(complete.cases(.))
@@ -3131,7 +2918,6 @@ calculate_pure_shared <- function(data, phase_name) {
   comm <- comm[1:n, ]
   env  <- env[1:n, ]
   
-  # Compute pure effects
   pure_effects <- map_dfr(selected_variables, function(var) {
     others <- setdiff(selected_variables, var)
     formula <- as.formula(
@@ -3145,11 +2931,8 @@ calculate_pure_shared <- function(data, phase_name) {
     )
   })
   
-  # Total explained variance
   mod_full <- rda(comm ~ ., data = env)
   total_r2 <- max(0, RsquareAdj(mod_full)$adj.r.squared)
-  
-  # Shared = total - sum of pure
   shared_val <- total_r2 - sum(pure_effects$value)
   
   shared <- tibble(
@@ -3161,10 +2944,10 @@ calculate_pure_shared <- function(data, phase_name) {
   bind_rows(pure_effects, shared)
 }
 
-# Run across all phases
+# --- Run across all phases ---
 r2_partitioned <- imap_dfr(phase_list, calculate_pure_shared)
 
-# Add human-readable and ordered phase labels
+# --- Add readable and ordered phase labels ---
 r2_partitioned <- r2_partitioned %>%
   mutate(
     phase_label = factor(case_when(
@@ -3182,21 +2965,14 @@ r2_partitioned <- r2_partitioned %>%
     ))
   )
 
-#component_colors <- c(
-#  "Pure Vegetation" = "#659E45", "#97D8C4"
-#  "Pure Climate" = "#FF8233", "#4059AD"
-#  "Shared" = "#FFE704" "#F4B942"
-#  )
-
-
-# Define a clear, muted color palette
+# --- Define muted color palette for components ---
 component_colors <- c(
   "Pure Vegetation" = "#97D8C4",
   "Pure Climate" = "#F4B942",
-  "Shared" =  "#4059AD"
-  )
+  "Shared" = "#4059AD"
+)
 
-# Plot
+# --- Plot variance partitioning per phase ---
 original_varpart <- ggplot(r2_partitioned, aes(x = phase_label, y = value, fill = component)) +
   geom_col(width = 0.6) +
   geom_text(
@@ -3208,9 +2984,7 @@ original_varpart <- ggplot(r2_partitioned, aes(x = phase_label, y = value, fill 
   scale_fill_manual(values = component_colors, name = "Variance Component") +
   labs(
     x = NULL,
-    y = "Adjusted R² (Variance explained)",
-    #title = "Partitioned Variance Explained per Phase",
-    #subtitle = "Shared and Pure Effects Only (labels shown if > 0%)"
+    y = "Adjusted R² (Variance explained)"
   ) +
   theme_minimal(base_size = 13) +
   theme(
@@ -3219,24 +2993,29 @@ original_varpart <- ggplot(r2_partitioned, aes(x = phase_label, y = value, fill 
     strip.text.y.left = element_text(angle = 90, face = "bold"),
     plot.margin = ggplot2::margin(0.2, 0.2, 0.2, 0.2, unit = "lines")
   )
+
 ```
 
 ## Moving window varpart
 ```{r}
 
-# Predictor variables
+# ----------------------------------------------------------
+# Moving window varpart - Continuous variance decomposition
+# ----------------------------------------------------------
+
+# --- Predictor variables ---
 selected_variables <- c("NAO_Median_Value", "estimate")
 
-# Moving window parameters
+# --- Moving window parameters ---
 window_size <- 300   # years
 step_size <- 30      # sliding step in years
 
-# Define window sequence
+# --- Define window sequence ---
 min_year <- floor(min(joined_df_30yr$age_ce, na.rm = TRUE))
 max_year <- ceiling(max(joined_df_30yr$age_ce, na.rm = TRUE))
 window_starts <- seq(min_year, max_year - window_size, by = step_size)
 
-# Function to compute Pure and Shared variance per window
+# --- Function to compute Pure and Shared variance per window ---
 calculate_pure_shared <- function(data, window_start) {
   window_end <- window_start + window_size
   subset <- data %>% filter(age_ce >= window_start, age_ce < window_end)
@@ -3269,7 +3048,6 @@ calculate_pure_shared <- function(data, window_start) {
   # Total explained variance
   mod_full <- rda(comm ~ ., data = env)
   total_r2 <- max(0, RsquareAdj(mod_full)$adj.r.squared)
-  
   shared_val <- total_r2 - sum(pure_effects$value)
   
   shared <- tibble(
@@ -3282,16 +3060,16 @@ calculate_pure_shared <- function(data, window_start) {
   bind_rows(pure_effects, shared)
 }
 
-# Run moving window analysis
+# --- Run moving window analysis ---
 r2_windowed <- map_dfr(window_starts, ~calculate_pure_shared(joined_df_30yr, .x))
 
-# Create midpoint label
+# --- Create midpoint labels ---
 r2_windowed <- r2_windowed %>%
   mutate(
     midpoint = (window_start + window_end) / 2
   )
 
-# Plot as time series
+# --- Plot moving window variance partitioning ---
 varpart_moving <- ggplot(r2_windowed, aes(x = midpoint, y = value, fill = component)) +
   geom_col(position = "stack", width = step_size) +
   scale_fill_manual(values = component_colors, name = "Variance Component") +
@@ -3313,24 +3091,29 @@ varpart_moving <- ggplot(r2_windowed, aes(x = midpoint, y = value, fill = compon
     )
   )
 
+
 ```
 
 ## Moving window varpart - Effect sizes
 ```{r}
 
-# Define selected predictor variables
+# ----------------------------------------------------------
+# Moving window varpart - Effect sizes
+# ----------------------------------------------------------
+
+# --- Predictor variables ---
 selected_variables <- c("NAO_Median_Value", "estimate")
 
-# Moving window parameters
+# --- Moving window parameters ---
 window_size <- 300   # years
 step_size <- 30      # sliding step in years
 
-# Define window sequence
+# --- Define window sequence ---
 min_year <- floor(min(joined_df_30yr$age_ce, na.rm = TRUE))
 max_year <- ceiling(max(joined_df_30yr$age_ce, na.rm = TRUE))
 window_starts <- seq(min_year, max_year - window_size, by = step_size)
 
-# Function to compute Pure and Shared variance per window
+# --- Function to compute Pure and Shared variance per window ---
 calculate_pure_shared <- function(data, window_start) {
   window_end <- window_start + window_size
   subset <- data %>% filter(age_ce >= window_start, age_ce < window_end)
@@ -3374,10 +3157,10 @@ calculate_pure_shared <- function(data, window_start) {
   bind_rows(pure_effects, shared)
 }
 
-# Run moving window analysis
+# --- Run moving window analysis ---
 r2_windowed <- map_dfr(window_starts, ~calculate_pure_shared(joined_df_30yr, .x))
 
-# Add midpoint and split Pure Vegetation effect
+# --- Add midpoint and split Pure Vegetation effect ---
 r2_windowed <- r2_windowed %>%
   mutate(
     midpoint = (window_start + window_end) / 2,
@@ -3388,7 +3171,7 @@ r2_windowed <- r2_windowed %>%
     )
   )
 
-# Define custom colors (adjust as needed)
+# --- Custom color palette ---
 component_colors_split <- c(
   "Pre-Coloniz. VegChange" = "#054A29",       # darker green
   "Post-Coloniz. VegChange" = "#97D8C4",      # original muted green
@@ -3396,7 +3179,7 @@ component_colors_split <- c(
   "Shared" = "#4059AD"
 )
 
-# Compute effect size difference: Pure Vegetation R² - Pure Climate R²
+# --- Calculate effect size contrast (Vegetation - Climate) ---
 effect_diff <- r2_windowed %>%
   filter(component %in% c("Pure Vegetation", "Pure Climate")) %>%
   select(midpoint, component, value) %>%
@@ -3404,6 +3187,7 @@ effect_diff <- r2_windowed %>%
   mutate(
     effect_diff = `Pure Vegetation` - `Pure Climate`
   )
+
 
 ```
 
@@ -3585,97 +3369,73 @@ print(combined_plot_map)
 ggsave(
   "figures/FIGURE_1_azores_map_DCA_all_types_two_panels.svg",
   plot = combined_plot_map,
-  dpi = 600, width = 12, height = 12
+  dpi = 600, width = 14, height = 14
 )
 
 
 ```
 
-### FIGURE 1b - Regional smooth for inset 
+### FIGURE 1b - Regional smooth for inset [combined with Figure 1 in Illustrator]
 ```{r fig.asp=0.75, fig.width=12}
+
+# ----------------------------------------------------------
+# Combine smoothed GAM outputs and DCA scores across groups
+# ----------------------------------------------------------
 
 smooth_all_in_one <- 
   bind_rows(
     cbind(type = rep("diatoms", nrow(smooth_diatoms)), smooth_diatoms),
-    cbind(type = rep("chiro", nrow(smooth_diatoms)), smooth_chiro),
-    cbind(type = rep("fgroup", nrow(smooth_diatoms)), smooth_fgroup)
-      )
+    cbind(type = rep("chiro", nrow(smooth_diatoms)), smooth_chiro)
+  )
 
 df_all_in_one <- 
   bind_rows(
     cbind(type = rep("diatoms", nrow(b_ls_dca_diatoms)), b_ls_dca_diatoms),
-    cbind(type = rep("chiro", nrow(b_ls_dca_chiro)), b_ls_dca_chiro),
-    cbind(type = rep("fgroup", nrow(b_ls_dca_fgroup)), b_ls_dca_fgroup)
-      )
+    cbind(type = rep("chiro", nrow(b_ls_dca_chiro)), b_ls_dca_chiro)
+  )
 
-plot_time_dev_all_flat <-
-  dev_mod_diatoms %>%
-  ggplot(aes(linewidth = 10)) +
-  geom_line(aes(x = age_ce, y = 3, color = (.lower_ci) > 0 | (.upper_ci) < 0, group = 1),
-    show.legend = FALSE
-  ) +
-  scale_color_manual(values = c("lightgrey", viridis::viridis(3, alpha = 0.8)[1])) +
-  new_scale_color() +
-  geom_line(aes(x = age_ce, y = 2, color = (.lower_ci) > 0 | (.upper_ci) < 0, group = 1),
-    show.legend = FALSE, data = dev_mod_chiro
-  ) +
-  scale_color_manual(values = c("lightgrey", viridis::viridis(3, alpha = 0.8)[2])) +
-  new_scale_color() +
-  geom_line(aes(x = age_ce, y = 1, color = (.lower_ci) > 0 | (.upper_ci) < 0, group = 1),
-    show.legend = FALSE, data = dev_mod_fgroup
-  ) +
-  scale_color_manual(values = c("lightgrey", viridis::viridis(3, alpha = 0.8)[3])) +
-    theme_classic() +
-  lims(x = c(0, 2020), y = c(0, 5)) +
-  scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-  theme(
-        panel.border = element_rect(colour = "black", fill=NA, size=0.5),
-        axis.line=element_blank(),
-        axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())+
-  theme(axis.title.y=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks.y=element_blank()
-        )
+# ----------------------------------------------------------
+# Plot smooth trends of DCA1 scores for all groups
+# ----------------------------------------------------------
 
 plot_time.all_in_one <- 
   smooth_all_in_one %>%
   filter(.smooth == "s(age_ce)") %>%
   ggplot(aes(colour = type), group = type) +
-  geom_ribbon(aes(ymin = .lower_ci, ymax = .upper_ci, x = age_ce, colour = type, fill = type),
-    alpha = 0.2, linewidth = 0
-  ) +
-  # geom_point(aes(x = age_ce, y = `s(age_ce)`, color = lake),
-  #           data = df_fgroup, alpha = 0.5, size = 1) +
+  geom_ribbon(aes(ymin = .lower_ci, ymax = .upper_ci, x = age_ce, fill = type),
+              alpha = 0.2, linewidth = 0) +
   geom_line(aes(x = age_ce, y = .estimate, colour = type), linewidth = 3, alpha = 1) +
-  labs(y = "DCA1", title = "Chiro s(age_ce) GI model") +
-  scale_colour_viridis_d(name = "Groups", labels=c("Producers", "Consumers", "FGroups")) +
-  scale_fill_viridis_d(name = "Groups", labels=c("Producers", "Consumers", "FGroups")) +
+  labs(y = "DCA1", title = "Chiro s(age_ce) GI model", x = "Year (CE)") +  # Added x-axis label
+  scale_colour_viridis_d(name = "Groups", labels = c("Producers", "Consumers")) +
+  scale_fill_viridis_d(name = "Groups", labels = c("Producers", "Consumers")) +
   theme_classic(base_size = 12) +
   lims(x = c(0, 2020), y = c(-2, 2)) +
   scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-  theme(plot.background = NULL) +
   theme_bw() +
-      theme(
-        panel.border = element_rect(colour = "black", fill=NA, size=0.5),
-        plot.title = element_blank(),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        legend.position = "right",
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
+  theme(
+    plot.background = element_blank(),
+    plot.title = element_blank(),
+    legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
+    legend.justification = c(0, 1),
+    legend.position = "right",
+    axis.title = element_text(size = 15),   # Increase axis titles
+    axis.text = element_text(size = 13),                   # Increase axis labels
+    axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
+    panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(colour = "black", fill = NA, size = 0.5)
+  )
 
-ggpubr::ggarrange(
-  plot_time_dev_all_flat,
-  plot_time.all_in_one,
-  heights = c(3, 10),
-  ncol = 1, nrow = 2, common.legend = T, align = "hv", 
-  label.y = 0.9, label.x = 0,
-  labels = c("Significant periods of changes", "Community turnover")
+
+# --------------------------------------------
+# Export figure to file
+# --------------------------------------------
+ggsave(
+  "figures/FIGURE_1b_regional_gam_DCA_all_groups.svg",
+  plot = plot_time.all_in_one,
+  dpi = 600, width = 12, height = 6
 )
+
 
 ```
 
@@ -4115,7 +3875,7 @@ combined_varplot <- (
   (varpart_moving + ggtitle("(B) Moving window")) /
   (effect_diff_plot + ggtitle("(C) Climate vs VegChange"))
 ) +
-  plot_layout(guides = "collect") &
+  #plot_layout(guides = "collect") &
   theme(
     plot.title = element_text(size = 12, face = "bold", hjust = 0),
     plot.margin = ggplot2::margin(6, 6, 6, 6)
@@ -4131,7 +3891,7 @@ ggsave(
   plot = combined_varplot,
   filename = "figures/FIGURE_4_multivariate_analysis.png",
   dpi = 600,
-  width = 10, height = 6
+  width = 14, height = 10
 )
 
 ```
