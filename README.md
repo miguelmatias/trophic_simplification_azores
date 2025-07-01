@@ -2,7 +2,7 @@
 
 This repository contains scripts and data for analyzing trophic structure changes in Azorean lake ecosystems over the past two millennia. It combines paleoecological proxies, statistical modeling, and data visualization to assess changes in biodiversity and community organization.
 
-![Community Structure](figure/FIGURE_1_azores_map_DCA_all_types_two_panels.svg)
+![Community Structure](figure/FIGURE_2_composite_figure.png)
 
 ## Project Structure
 
@@ -88,8 +88,8 @@ Open `main_script.Rmd` in RStudio and execute the script chunk-by-chunk or use *
 
 ## Outputs
 
-- Figures exported to the `figures/` folder (e.g., trophic structure diagrams, GAM curves, classification trees)
-- Intermediate and final data saved in `output/`
+- Figures exported to the `figures/` folder
+- Supplementary Figures exported to the `supplementary/` folder
 
 ## Author
 
