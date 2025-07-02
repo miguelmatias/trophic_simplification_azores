@@ -92,7 +92,8 @@ conflict_prefer("rename", "dplyr")
 conflict_prefer("summarise", "dplyr")
 conflict_prefer("summarize", "dplyr")
 conflict_prefer("filter", "dplyr")
-
+conflict_prefer("explain", "DALEX")
+conflict_prefer("annotate", "ggplot2")
 ```
 
 # Load data
