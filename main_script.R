@@ -1,101 +1,117 @@
----
-title: "A millennium of human-driven trophic simplification in Azorean lake ecosystems"
-output:
-  pdf_document: default
----
-
-```{r}
-# Set-up chunk
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Set-up chunk - save all figures to PNG
 knitr::opts_chunk$set(
+#  dev = "png",
+#  dpi = 300,
+#  include = FALSE,
   echo = FALSE,
+#  cache = TRUE,
   warning = FALSE,
+#  message = FALSE,
+#  error = FALSE
   fig.pos = "H",
   fig.width = 12
 )
-```
 
-# Load libraries
-```{r sources, include=FALSE}
+
+## ----sources, include=FALSE--------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # -------------------------------
 # 🧰 General-Purpose & Data Handling
 # -------------------------------
-library(tidyverse)      # Loads: ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats
-library(zoo)            # Time-series objects and interpolation
-library(parallel)       # Base R parallel processing support
-library(furrr)          # Parallel purrr (requires future backend)
-library(sf)             # Spatial vector data handling
+library(tidyverse)      # Core data science packages (ggplot2, dplyr, tidyr, etc.)
+library(dplyr)          # Data manipulation (included in tidyverse)
+library(tidyr)          # Data tidying (included in tidyverse)
+library(tibble)         # Modern data frames (included in tidyverse)
+library(purrr)          # Functional programming for iteration (included in tidyverse)
+library(forcats)        # Tools for working with factors (included in tidyverse)
 
-# -------------------------------
-# 🖍 Aesthetic & Utility Enhancements
-# -------------------------------
-library(scales)         # Useful for custom ggplot2 axes
-library(png)            # For reading PNG images (only if you're embedding raster images)
-library(ggtext)         # Rich text/markdown/emoji in ggplot2 elements
-library(Hmisc)          # For `capitalize()` or advanced summary stats
-library(scico)          # Color palettes (colorblind-safe, perceptually uniform)
-library(conflicted)     # Safer namespace conflict management
+library(zoo)            # Time-series objects and interpolation
+library(tidyquant)      # Financial and time-series functions in tidyverse style
+library(rioja)          # Paleoecological and stratigraphic plotting utilities
+
+library(parallel)       # Base R parallel processing support
+library(furrr)          # Parallel versions of purrr functions using futures
+
+# Libraries to check
+library(scales)
+library(png)
+library(ggtext)  # for emoji in axis/legend labels
+library(Hmisc)
+# Set the Color Pallet 
+library(scico) # Blind friendly paletts
 
 # -------------------------------
 # 📊 Visualization & Plot Layout
 # -------------------------------
-# ggplot2 already loaded via tidyverse, but other extensions aren't:
-library(ggrepel)        # Smart label positioning
-library(ggpmisc)        # Annotations and statistical labels
-library(viridis)        # Better color palettes
-library(cowplot)        # Clean multi-panel figures
-library(patchwork)      # Combine ggplots with intuitive syntax
-library(gridExtra)      # Arrange base or ggplots in grids
-library(grid)           # Base graphics system (already available, no need to load)
-library(ggnewscale)     # Multiple color/fill scales
-library(ggridges)       # Ridgeline plots
-library(ggh4x)          # Extended faceting and axes
-library(ggspatial)      # North arrows, scale bars, etc.
-library(ggordiplots)    # Ordination diagrams (RDA, CCA, NMDS)
+library(ggplot2)        # Core plotting system (included in tidyverse)
+library(ggrepel)        # Smart text labels that avoid overlapping
+library(ggpmisc)        # Misc ggplot2 extensions, including annotation helpers (e.g., npcx)
+library(viridis)        # Colorblind-friendly and perceptually uniform palettes
+library(cowplot)        # Publication-ready ggplot2 themes and plot annotations
+library(patchwork)      # Intuitive syntax to combine ggplot2 plots
+library(gridExtra)      # Arrange multiple base or ggplots on a grid
+library(grid)           # Low-level grid graphics system
+library(ggnewscale)     # Add multiple color scales to a single ggplot
+library(ggridges)       # Ridgeline plots (density plots over a categorical axis)
+library(ggh4x)          # Extended ggplot2 faceting and scale tools
+library(ggspatial)      # Add north arrows, scalebars, etc. to spatial ggplots
+library(ggordiplots)    # Ordination plots for ecological data
 
 # -------------------------------
 # 📈 Statistical Analysis & Modeling
 # -------------------------------
-library(vegan)          # Ecological ordination (NMDS, CCA, RDA), diversity metrics
-library(codyn)          # Temporal beta-diversity and dynamics
-library(broom)          # Tidy model outputs
-library(mgcv)           # Generalized Additive Models
-library(scam)           # Shape-constrained additive models
-library(gratia)         # Diagnostics and visualization for `mgcv::gam()`
+library(vegan)          # Community ecology and ordination methods (CCA, RDA, diversity)
+library(codyn)          # Community dynamics (e.g., turnover metrics)
+library(broom)          # Converts model outputs to tidy format
+library(mgcv)           # Generalized Additive Models (GAMs)
+library(scam)           # Shape-constrained additive models (special case of GAMs)
+library(gratia)         # Visualization and diagnostics for GAMs
+library(rshift)         # Detect changepoints and shifts in time series
 
 # -------------------------------
-# 🤖 Machine Learning & Interpretation
+# 🔗 Network & Graph Analysis
 # -------------------------------
-library(caret)          # Framework for ML model training/testing
-library(e1071)          # SVMs, Naive Bayes, etc. (caret dependency)
-library(evtree)         # Evolutionary trees
-library(rpart)          # Classification/regression trees
-library(randomForest)   # Random Forests
-library(rpart.plot)     # Visualize rpart trees
-library(earth)          # MARS regression
-library(xgboost)        # Boosted decision trees
-library(DALEX)          # Model explanation tools
-library(DALEXtra)       # Extra methods for xgboost, caret, etc.
-library(irr)            # Inter-rater agreement (Cohen's Kappa, etc.)
-library(ape)            # Phylogenetic tools (tree manipulation, distances)
+library(igraph)         # Create, manipulate, and analyze graphs
+library(ggnetwork)      # ggplot2-based visualization of network objects
+library(qgraph)         # Network visualization; supports graphical LASSO (Glasso)
 
 # -------------------------------
-# 📂 Custom Functions
+# 🤖 Machine Learning & Model Interpretation
 # -------------------------------
-source("functions/source_custom_functions.R")  # Custom paleoecological tools
+library(caret)          # Unified ML framework (train/test split, tuning, etc.)
+library(e1071)          # Includes SVMs, Naive Bayes, and more
+library(evtree)         # Evolutionary decision trees
+library(rpart)          # Recursive partitioning (CART-style trees)
+library(randomForest)   # Random Forest implementation
+library(rpart.plot)     # Plotting decision trees from rpart
+library(earth)          # Multivariate Adaptive Regression Splines (MARS)
+library(xgboost)        # High-performance gradient boosting
+library(DALEX)          # Model explainability and diagnostics
+library(DALEXtra)       # Extended tools for DALEX (e.g., support for caret/xgboost)
+library(irr)            # Inter-rater reliability metrics
 
 # -------------------------------
-# 🚨 Solve Function Conflicts
+# 🔬 Phylogenetics & Spatial Data
 # -------------------------------
-conflict_prefer("select", "dplyr")
-conflict_prefer("rename", "dplyr")
-conflict_prefer("summarise", "dplyr")
-conflict_prefer("summarize", "dplyr")
+library(ape)            # Phylogenetic analysis tools (trees, distances, etc.)
+library(sf)             # Spatial vector data support using simple features
 
-```
+# -------------------------------
+# 📂 Project-Specific Functions
+# -------------------------------
+source(file = "functions/source_custom_functions.R")  # Custom functions for paleoecological workflows
 
-# Load data
-```{r}
+
+# override mass dplyr select conflict 
+select <- dplyr::select
+rename <- dplyr::rename
+summarise <- dplyr::summarise
+summarize <- dplyr::summarize
+
+
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # Load local pre-saved RData files (contains trophic data and clustering outputs)
@@ -134,15 +150,9 @@ sst_abrantes <- read.table("data/table_sst_abrantes.csv", header = TRUE, sep = "
 # ------------------------------------------------------------------------------
 pollen <- read.table("data/table_pollen_azores.csv", header = TRUE, sep = ",", dec = ".")
 
-```
 
-#### LIST OF OBJECTS FROM UPSTREAM ANALYSES [this needs to be checked]
-ls_df_diat_wide_codes
 
-# Analysis - Detrended Correspondence Analysis
-## DCA Diatoms
-
-```{r fig.asp = 1, fig.width = 12}
+## ----fig.asp = 1, fig.width = 12---------------------------------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Extract PCoA vectors (1st and 2nd axes) for each lake
 # ------------------------------------------------------------------------------
@@ -260,10 +270,9 @@ for (i in 1:length(ls_dca_diatoms_2)) {
   )
 }
 
-```
 
-## DCA Chironomids
-```{r fig.asp = 1, fig.width = 12}
+
+## ----fig.asp = 1, fig.width = 12---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # Extract PCoA vectors (1st and 2nd axes) for each lake based on chironomid data
@@ -380,10 +389,9 @@ for (i in 1:length(ls_dca_chiro_2)) {
 }
 
 
-```
 
-## DCA Guilds
-```{r fig.asp = 1, fig.width = 12}
+
+## ----fig.asp = 1, fig.width = 12---------------------------------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Clean initial data and remove NA rows
 # ------------------------------------------------------------------------------
@@ -490,10 +498,9 @@ for (i in 1:length(ls_df_pcoa_scores_fgroups)) {
   )
 }
 
-```
 
-## Combine DCAs
-```{r fig.asp = 1, fig.width = 12}
+
+## ----fig.asp = 1, fig.width = 12---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --------------------------------------------
 # Apply axis correction to diatom DCA scores
@@ -583,11 +590,9 @@ ls_plot_df_dca_multi_all <-
   )
 
 
-```
 
-# Analysis - Community Trophic Structure Analysis
-## Get clusters 
-```{r fig.asp = 0.5, fig.width = 12}
+
+## ----fig.asp = 0.5, fig.width = 12-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --------------------------------------------
 # Combine list of functional group data frames into one table
@@ -724,10 +729,9 @@ ls_all_hclusts_complete_paleo <-
 names(ls_all_hclusts_complete_paleo) <- unlist(get_names_list(ls_all_hclusts_complete_paleo))
 
 
-```
 
-## Diversity by community trophic clusters
-```{r fig.asp=1, fig.width=12}
+
+## ----fig.asp=1, fig.width=12-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------
 # Merge all lake-specific dataframes into one long-format table
@@ -807,10 +811,9 @@ box_plot_clusts_mod <- box_plot_clusts_mod +
   #)) +
 guides("none")
 
-```
 
-## Lake-scale proportions trophic structures 
-```{r fig.asp = 1, fig.width = 12}
+
+## ----fig.asp = 1, fig.width = 12---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # Define dates of interest to be highlighted with vertical lines
@@ -952,9 +955,9 @@ plot_density_fclusts_time_lines_1B <-
 
 print(plot_density_fclusts_time_lines_1B)
 
-```
-## Regional proportions trophic structures 
-```{r fig.asp = 0.5, fig.width = 12}
+
+
+## ----fig.asp = 0.5, fig.width = 12-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Create the plot
 plot_stacked_fclusts_time_lines <- 
@@ -994,10 +997,9 @@ plot_stacked_fclusts_time_lines <-
   )
 
 plot_stacked_fclusts_time_lines
-```
 
-## Ordination with trophic structures
-```{r fig.asp = 0.5, fig.width = 12}
+
+## ----fig.asp = 0.5, fig.width = 12-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 plot_density_fclusts_fime <- 
   ls_all_hclusts_complete_paleo %>%
@@ -1115,10 +1117,9 @@ ordinations_fclusts_1 <-
 
 ordinations_fclusts_1
 
-```
 
-## Random Forest
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------
 # Data Preparation
@@ -1222,12 +1223,9 @@ rpart.plot::rpart.plot(
 )
 dev.off()
 
-```
 
-# Analysis - Hierarchical Generalized Additive Models - HGAMs
-## GAM - Diatoms
-### Regional Smooth
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 lakes_col <- c(viridis::viridis(9, option = "plasma", alpha = 0.8))
 lakes_col_10 <- c("black", viridis::viridis(10, option = "plasma", alpha = 0.8))
@@ -1300,10 +1298,9 @@ plot_time_GI_diatoms <-
 
 plot_time_GI_diatoms
 
-```
 
-### Regional Smooth: derivatives
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 dev_mod_diatoms <- derivatives(mod_diatoms, term = "s(age_ce)")
 
@@ -1326,10 +1323,9 @@ plot_time_dev_diatoms <-
 
 plot_time_dev_diatoms
 
-```
 
-### Prediction [lake scale]
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 pred_modGI_DCA_diatoms <-
   df_partial_residuals_diatoms %>%
@@ -1370,11 +1366,9 @@ plots_partial_residuals_diatoms <-
 
 plots_partial_residuals_diatoms + theme(legend.position="bottom", legend.box = "horizontal")
 
-```
 
-### Response derivative for each group
 
-```{r}
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # compute response derivatives
 resp_dev_diatoms <- 
@@ -1383,9 +1377,9 @@ resp_dev_diatoms <-
     focal = "age_ce",
     eps = 10, seed = 42
     )
-```
 
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ### plot the response derivative ####
 plot_res_dev_diatoms <- 
   resp_dev_diatoms %>%
@@ -1408,11 +1402,9 @@ plot_res_dev_diatoms <-
   
 #plot_res_dev_diatoms
 
-```
 
-### flat bars
 
-```{r fig.asp=.75, fig.width=8}
+## ----fig.asp=.75, fig.width=8------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 lake_island_match <- 
   rbind(
@@ -1505,9 +1497,9 @@ plot_res_dev_diatoms <-
 
 plot_res_dev_diatoms
 
-```
 
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ## Fitted trends for each lake ####
 fit_modGI_diatoms <- fitted_values(mod_diatoms, data = b_ls_dca_diatoms, scale = "response")
 
@@ -1530,13 +1522,9 @@ plot_fitted_DCA1 <-
   )
 
 plot_fitted_DCA1
-```
 
 
-## GAM - Chironomids
-### Regional Smooth
-
-```{r}
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 b_ls_dca_chiro <-
   b_ls_dca_chiro %>%
@@ -1606,11 +1594,9 @@ plot_time_GI_chiro <-
 
 plot_time_GI_chiro
 
-```
 
-### Regional Smooth: derivatives
 
-```{r}
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 dev_mod_chiro <- derivatives(mod_chiro, term = "s(age_ce)")
 
@@ -1632,11 +1618,9 @@ plot_time_dev_chiro <-
   theme(panel.grid.minor.y = element_blank())
 
 plot_time_dev_chiro
-```
 
-### Prediction [lake scale]
 
-```{r}
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 pred_modGI_DCA_chiro <-
   df_partial_residuals_chiro %>%
@@ -1677,11 +1661,9 @@ plots_partial_residuals_chiro <-
 
 plots_partial_residuals_chiro + theme(legend.position="bottom", legend.box = "horizontal")
 
-```
 
-### Response derivative for each group
 
-```{r}
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # compute response derivatives
 resp_dev_chiro <- 
@@ -1690,9 +1672,9 @@ resp_dev_chiro <-
     focal = "age_ce",
     eps = 10, seed = 42
     )
-```
 
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ### plot the response derivative ####
 plot_res_dev_chiro <- 
   resp_dev_chiro %>%
@@ -1715,10 +1697,9 @@ plot_res_dev_chiro <-
   
 #plot_res_dev_chiro
 
-```
 
-### flat bars
-```{r fig.asp=.75, fig.width=8}
+
+## ----fig.asp=.75, fig.width=8------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 all_devs_chiro <- 
   bind_rows(
@@ -1798,9 +1779,9 @@ plot_res_dev_chiro <-
 
 plot_res_dev_chiro
 
-```
 
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ## Fitted trends for each lake ####
 fit_modGI_chiro <- fitted_values(mod_chiro, data = b_ls_dca_chiro, scale = "response")
 
@@ -1823,13 +1804,9 @@ plot_fitted_DCA1 <-
   )
 
 plot_fitted_DCA1
-```
 
 
-## GAM - Fgroups
-### Regional Smooth
-
-```{r}
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 b_ls_dca_fgroup <-
   b_ls_dca_fgroup %>%
@@ -1899,11 +1876,9 @@ plot_time_GI_fgroup <-
 
 plot_time_GI_fgroup
 
-```
 
-### Regional Smooth: derivatives
 
-```{r}
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 dev_mod_fgroup <- derivatives(mod_fgroup, term = "s(age_ce)")
 
@@ -1925,11 +1900,9 @@ plot_time_dev_fgroup <-
   theme(panel.grid.minor.y = element_blank())
 
 plot_time_dev_fgroup
-```
 
-### Prediction [lake scale]
 
-```{r}
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 pred_modGI_DCA_fgroup <-
   df_partial_residuals_fgroup %>%
@@ -1970,11 +1943,9 @@ plots_partial_residuals_fgroup <-
 
 plots_partial_residuals_fgroup + theme(legend.position="bottom", legend.box = "horizontal")
 
-```
 
-### Lake scale derivatives
 
-```{r}
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # compute response derivatives
 resp_dev_fgroup <- 
@@ -1983,9 +1954,9 @@ resp_dev_fgroup <-
     focal = "age_ce",
     eps = 10, seed = 42
     )
-```
 
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ### plot the response derivative ####
 plot_res_dev_fgroup <- 
   resp_dev_fgroup %>%
@@ -2008,11 +1979,9 @@ plot_res_dev_fgroup <-
   
 #plot_res_dev_fgroup
 
-```
 
-### flat bars
 
-```{r fig.asp=.75, fig.width=8}
+## ----fig.asp=.75, fig.width=8------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 all_devs_fgroup <- 
   bind_rows(
@@ -2092,9 +2061,9 @@ plot_res_dev_fgroup <-
 
 plot_res_dev_fgroup
 
-```
 
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ## Fitted trends for each lake ####
 fit_modGI_fgroup <- fitted_values(mod_fgroup, data = b_ls_dca_fgroup, scale = "response")
 
@@ -2117,11 +2086,9 @@ plot_fitted_DCA1_fgroup <-
   )
 
 plot_fitted_DCA1_fgroup
-```
 
-# Multivariate Analysis - Redundancy Analysis and Variance Partitioning
-## Data prep - Environmetal Variables
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Rescaling Environmental variables
 # ------------------------------------------------------------------------------
@@ -2135,10 +2102,9 @@ df_env <-
   mutate(across(c(tc, tn, toc_tn, d13c, d15n), ~ scale(.) %>% as.numeric())) %>%
   ungroup()
 
-```
 
-## Data prep - Vegetation change - Regional Vegetation change
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------
 # Load and clean pollen data
 # ----------------------------------------------------------
@@ -2364,11 +2330,9 @@ aug_herb <- augment(mod_herb, type.predict = "response") %>%
 
 combined_df_pollen <- bind_rows(aug_tree, aug_herb)
 
-```
 
-## Data prep - Align environmental data
 
-```{r fig.width = 12, fig.asp = 1.2}
+## ----fig.width = 12, fig.asp = 1.2-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # Interpolate vegetation smooth (HGAM output)
@@ -2565,10 +2529,9 @@ joined_df_30yr <- joined_df %>%
 joined_df_30yr <- joined_df_30yr %>%
   mutate(across(NAO_Median_Value:Rmean, scale))
 
-```
 
-## Data prep - Extract regional guild responses
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # Prepare long-format data for GAM fitting
@@ -2666,10 +2629,9 @@ gam_kcheck_summary <- imap_dfr(gam_models, function(model, name) {
     mutate(model_name = name, .before = 1)
 })
 
-```
 
-## Global RDA model
-```{r fig.width = 12, fig.asp = 1}
+
+## ----fig.width = 12, fig.asp = 1---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # Prepare community and environmental matrices
@@ -2864,10 +2826,9 @@ global_rda <- ggplot() +
 # Print plot
 global_rda
 
-```
 
-## Phase varpart - Historical phases
-```{r fig.width=10, fig.asp=0.5}
+
+## ----fig.width=10, fig.asp=0.5-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------
 # Phase varpart - Historical phases
@@ -2969,10 +2930,9 @@ original_varpart <- ggplot(r2_partitioned, aes(x = phase_label, y = value, fill 
     plot.margin = ggplot2::margin(0.2, 0.2, 0.2, 0.2, unit = "lines")
   )
 
-```
 
-## Moving window varpart
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------
 # Moving window varpart - Continuous variance decomposition
@@ -3067,10 +3027,9 @@ varpart_moving <- ggplot(r2_windowed, aes(x = midpoint, y = value, fill = compon
   )
 
 
-```
 
-## Moving window varpart - Effect sizes
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------
 # Moving window varpart - Effect sizes
@@ -3164,11 +3123,9 @@ effect_diff <- r2_windowed %>%
   )
 
 
-```
 
-# Figures
-### FIGURE 1 - Map of the Azores with Island DCA's
-```{r fig.asp=0.9, fig.width=12}
+
+## ----fig.asp=0.9, fig.width=12-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --------------------------------------------
 # Define custom plot titles with island abbreviations
@@ -3348,10 +3305,9 @@ ggsave(
 )
 
 
-```
 
-### FIGURE 1b - Regional smooth for inset [combined with Figure 1 in Illustrator]
-```{r fig.asp=0.75, fig.width=12}
+
+## ----fig.asp=0.75, fig.width=12----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------
 # Combine smoothed GAM outputs and DCA scores across groups
@@ -3412,10 +3368,9 @@ ggsave(
 )
 
 
-```
 
-### FIGURE 2 - Trophic structure classification
-```{r fig.width = 14, fig.asp = 1.2}
+
+## ----fig.width = 14, fig.asp = 1.2-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --------------------------------------------
 # Global theme parameters (adjust once here)
@@ -3606,11 +3561,9 @@ ggsave(plot = final_figure,
        width = 14)
 
 
-```
 
 
-### FIGURE 3 - Diversity Dynamics by Functional Group (Standardized Species Richness)
-```{r fig.asp = 0.5, fig.width = 10}
+## ----fig.asp = 0.5, fig.width = 10-------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --------------------------------------------
 # Set common visual parameters (edit these to update all plots)
@@ -3762,10 +3715,9 @@ ggsave(
   width = 10, height = 6
 )
 
-```
 
-## FIGURE 4 - Historical and Moving Window Variance Partitioning
-```{r fig.width = 10, fig.asp = 1}
+
+## ----fig.width = 10, fig.asp = 1---------------------------------------------------------------------------------------------------------------------------------------------------------
 # STEP 1: Define historical transition years
 phase_lines <- c(750, 1050, 1450, 1750)
 
@@ -3868,10 +3820,9 @@ ggsave(
   width = 14, height = 10
 )
 
-```
 
-## SUPPLEMENTARY FIGURE 2 - Climatic reconstructions
-```{r fig.width=12, fig.asp=0.5}
+
+## ----fig.width=12, fig.asp=0.5-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --------------------------------------
 # Plot 1: NH Summer Temperature (Büntgen tree-ring reconstruction)
@@ -3996,10 +3947,9 @@ final_plot_2
 dev.off()
 
 
-```
 
-## SUPPLEMENTARY FIGURE 3 - Pollen GAM
-```{r fig.width = 8, fig.asp = 1.5}
+
+## ----fig.width = 8, fig.asp = 1.5--------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # --------------------------------------
 # Plot 1: Group-Specific Pollen Trends (Tree vs Herb)
@@ -4095,11 +4045,9 @@ final_combined_plot_pollen
 # Close the graphics device
 dev.off()
 
-```
 
 
-### SUPPLEMENTARY FIGURE 4 - Community Trophic Structures over time
-```{r fig.asp = 1.5, fig.width = 12}
+## ----fig.asp = 1.5, fig.width = 12-------------------------------------------------------------------------------------------------------------------------------------------------------
 # -----------------------------------------------
 # Convert PNG tree plot into a ggplot-compatible object
 # -----------------------------------------------
@@ -4178,10 +4126,9 @@ ggsave(
   height = 16
 )
 
-```
 
-### SUPPLEMENTARY FIGURE 5 - Variable Importance Plot
-```{r}
+
+## ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Set PNG output for saving the tree plot
 png("supplementary/supplementary_figure_5_decision_tree.png", width = 7.29, height = 4.51, units = "in", res = 600)
@@ -4192,10 +4139,9 @@ varImpPlot(RFfit_paleo, main = "")
 # Close the graphics device
 dev.off()
 
-```
 
-### SUPPLEMENTARY FIGURE 6 - Variable Importance Plot
-```{r fig.width = 12, fig.asp = 1}
+
+## ----fig.width = 12, fig.asp = 1---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Set PNG output for saving the tree plot
 png("supplementary/supplementary_figure_6_global_rda.png", width = 8, height = 8, units = "in", res = 600)
@@ -4206,5 +4152,4 @@ global_rda
 # Close the graphics device
 dev.off()
 
-```
 

@@ -9,7 +9,7 @@ This repository contains scripts and data for analyzing trophic structure change
 ```
 ├── data/                     # Local data files (climate reconstructions, pollen data, etc.)
 ├── figures/                  # Output plots and figures
-├── supplementary/            # Output plots and figures
+├── supplementary/            # Output supplementary plots and figures
 ├── outputs/                  # Output intermediate figures 
 ├── functions/                # Custom R functions
 └── main_script.Rmd           # Primary analysis script (R Markdown)
@@ -21,66 +21,66 @@ All scripts are written in **R (≥4.2.0)** and rely on the following major pack
 
 ### 🧰 General Data Handling
 - `tidyverse` (includes `dplyr`, `ggplot2`, `tidyr`, `tibble`, `purrr`, `forcats`)
-- `readxl`, `WriteXLS`, `googlesheets4` — for reading Excel and Google Sheets
-- `zoo`, `tidyquant` — for time series and interpolation
-- `rioja` — for paleoecological utilities
-- `parallel`, `furrr` — for parallel processing
-- `scales`, `png`, `Hmisc`
+- `zoo` — for time series manipulation and interpolation
+- `parallel`, `furrr` — for parallel computing
+- `scales`, `png`, `Hmisc`, `ggtext`, `scico` — for plotting utilities, formatting, and color palettes
+- `conflicted` — to manage function name conflicts explicitly
+- `sf` — for spatial vector data
 
 ### 📊 Visualization & Plotting
 - `ggplot2` (via `tidyverse`)
 - `ggrepel`, `ggpmisc`, `viridis`, `cowplot`, `patchwork`
-- `ggtext`, `ggridges`, `ggh4x`, `ggspatial`, `ggordiplots`, `ggnewscale`, `gridExtra`, `grid`
+- `ggtext`, `ggridges`, `ggh4x`, `ggspatial`, `ggordiplots`, `ggnewscale`, `gridExtra`
 
 ### 📈 Statistical Modeling
-- `mgcv`, `scam`, `gratia` — for GAMs and smoothers
-- `vegan`, `codyn` — for community ecology and dynamics
-- `broom` — for tidying model outputs
-- `rshift` — for changepoint detection
-
-### 🔗 Network Analysis
-- `igraph`, `ggnetwork`, `qgraph`
+- `mgcv`, `scam`, `gratia` — for Generalized Additive Models and shape-constrained smoothers
+- `vegan`, `codyn` — for ordination, diversity, and community dynamics
+- `broom` — to convert model outputs into tidy data frames
 
 ### 🤖 Machine Learning & Tree Models
-- `caret`, `randomForest`, `xgboost`, `earth`, `e1071`
-- `rpart`, `rpart.plot`, `evtree` — for decision trees
-- `DALEX`, `DALEXtra` — for model explainability
-- `irr` — inter-rater reliability
-
-### 🔬 Phylogenetics & Spatial
-- `ape` — for phylogenetic trees
-- `sf` — for spatial vector data
-
-### 📂 Project-Specific
-- Custom functions sourced from `functions/source_custom_functions.R`
-
-### Install all packages at once
-
-```r
-install.packages(c(
-  "tidyverse", "readxl", "WriteXLS", "googlesheets4", "zoo", "tidyquant", "rioja", 
-  "parallel", "furrr", "scales", "png", "Hmisc", 
-  "ggrepel", "ggpmisc", "viridis", "cowplot", "patchwork", "ggtext", 
-  "ggridges", "ggh4x", "ggspatial", "ggordiplots", "ggnewscale", "gridExtra", "grid", 
-  "vegan", "codyn", "broom", "mgcv", "scam", "gratia", "rshift",
-  "igraph", "ggnetwork", "qgraph",
-  "caret", "randomForest", "xgboost", "earth", "e1071", "rpart", "rpart.plot", "evtree", 
-  "DALEX", "DALEXtra", "irr", 
-  "ape", "sf"
-))
-```
+- `caret`, `e1071`, `evtree`, `rpart`, `randomForest`, `rpart.plot`, `earth`, `xgboost`
+- `DALEX`, `DALEXtra` — for model interpretability
+- `irr` — for inter-rater agreement metrics
+- `ape` — for tree analysis
 
 ---
 
-## Data
+### 🔧 Setup
 
-Ensure the following datasets are available in the `data/` folder or downloaded from the corresponding sources:
+You can install all required packages using the following R code:
 
-- Lake metadata (`table_lake_metadata.xlsx`)
-- Abundance and diversity of guilds
-- NAO and SST reconstructions
-- HGAM output from vegetation turnover
-- Pollen counts from regional cores
+```r
+required_packages <- c(
+  "tidyverse", "zoo", "parallel", "furrr", "scales", "png", "ggtext", "Hmisc", "scico", "conflicted",
+  "ggrepel", "ggpmisc", "viridis", "cowplot", "patchwork", "gridExtra", "ggnewscale", "ggridges",
+  "ggh4x", "ggspatial", "ggordiplots", "vegan", "codyn", "broom", "mgcv", "scam", "gratia",
+  "caret", "e1071", "evtree", "rpart", "randomForest", "rpart.plot", "earth", "xgboost",
+  "DALEX", "DALEXtra", "irr", "ape", "sf"
+)
+```
+---
+
+# Data
+
+Ensure the following datasets are available in the `data/` directory before running the scripts:
+
+### 🗺 Lake Metadata
+- `table_lake_metadata.csv` — lake names, coordinates, area, and other physical descriptors
+
+### 🌿 Guild Abundances & Diversity
+- `table_abundance_guilds.csv` — relative abundance of trophic guilds per sample
+- `table_diversity_guilds.csv` — diversity metrics (e.g., richness, evenness) per guild
+
+### 🌡 Climate & Environmental Reconstructions
+- `table_nao_hernandez.csv` — NAO index (Hernandez et al.)
+- `table_nhst_buntgen.csv` — Northern Hemisphere summer temperatures (Büntgen et al.)
+- `table_sst_jiang.csv` — Sea Surface Temperature reconstructions (Jiang et al.)
+- `table_sst_abrantes.csv` — Sea Surface Temperature reconstructions (Abrantes et al.)
+
+### 🍃 Vegetation & Pollen Data
+- `table_pollen_azores.csv` — regional pollen group counts and composition
+
+All data files must be placed in the `data/` subfolder of the project root directory.
 
 ## Running the analysis
 
