@@ -126,8 +126,6 @@ div_guilds <- read.table("data/table_diversity_guilds.csv", header = TRUE, sep =
 # ------------------------------------------------------------------------------
 nao_hernandez <- read.table("data/table_nao_hernandez.csv", header = TRUE, sep = ",", dec = ".")
 nhst_buntgen <- read.table("data/table_nhst_buntgen.csv", header = TRUE, sep = ",", dec = ".")
-sst_jiang <- read.table("data/table_sst_jiang.csv", header = TRUE, sep = ",", dec = ".")
-sst_abrantes <- read.table("data/table_sst_abrantes.csv", header = TRUE, sep = ",", dec = ".")
 
 # ------------------------------------------------------------------------------
 # Load pollen group data
@@ -2419,45 +2417,6 @@ nao_binned <- nao_hernandez_interpolated %>%
   summarise(avg_value = mean(NAO_Median_Value, na.rm = TRUE), .groups = "drop")
 
 nao_hernandez <- nao_hernandez %>% mutate(age_ce = round(age_ce))
-
-# ------------------------------------------------------------------------------
-# Prepare and interpolate SST Jiang
-# ------------------------------------------------------------------------------
-
-sst_jiang_interpolated <- approx(
-  x = sst_jiang$age_ce,
-  y = sst_jiang$SST.DTF,
-  xout = interp_years,
-  method = "linear"
-)
-
-sst_jiang <- as.data.frame(sst_jiang_interpolated)
-colnames(sst_jiang) <- c("age_ce", "SST.DTF")
-
-# ------------------------------------------------------------------------------
-# Prepare and interpolate and normalize SST Abrantes
-# ------------------------------------------------------------------------------
-
-sst_abrantes_interpolated <- approx(
-  x = sst_abrantes$age_ce,
-  y = sst_abrantes$SST,
-  xout = interp_years,
-  method = "linear"
-)
-
-sst_abrantes_interpolated$y <- (
-  sst_abrantes_interpolated$y - min(sst_abrantes_interpolated$y, na.rm = TRUE)
-) / (
-  max(sst_abrantes_interpolated$y, na.rm = TRUE) - min(sst_abrantes_interpolated$y, na.rm = TRUE)
-)
-
-sst_abrantes <- as.data.frame(sst_abrantes_interpolated)
-colnames(sst_abrantes) <- c("age_ce", "SST")
-
-sst_abrantes_binned <- sst_abrantes %>%
-  mutate(bin_50yr = floor(age_ce / 50) * 50) %>%
-  group_by(bin_50yr) %>%
-  summarise(avg_value = mean(SST, na.rm = TRUE), .groups = "drop")
 
 # ------------------------------------------------------------------------------
 # Prepare and interpolate NH summer temperatures (Büntgen et al.)

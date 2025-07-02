@@ -80,8 +80,6 @@ Ensure the following datasets are available in the `data/` directory before runn
 ### 🌡 Climate & Environmental Reconstructions
 - `table_nao_hernandez.csv` — NAO index (Hernandez et al.)
 - `table_nhst_buntgen.csv` — Northern Hemisphere summer temperatures (Büntgen et al.)
-- `table_sst_jiang.csv` — Sea Surface Temperature reconstructions (Jiang et al.)
-- `table_sst_abrantes.csv` — Sea Surface Temperature reconstructions (Abrantes et al.)
 
 ### 🍃 Vegetation & Pollen Data
 - `table_pollen_azores.csv` — regional pollen group counts and composition
