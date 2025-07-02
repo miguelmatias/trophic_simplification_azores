@@ -57,6 +57,12 @@ required_packages <- c(
   "caret", "e1071", "evtree", "rpart", "randomForest", "rpart.plot", "earth", "xgboost",
   "DALEX", "DALEXtra", "irr", "ape", "sf"
 )
+
+installed <- required_packages %in% rownames(installed.packages())
+if (any(!installed)) {
+  install.packages(required_packages[!installed])
+}
+
 ```
 ---
 
