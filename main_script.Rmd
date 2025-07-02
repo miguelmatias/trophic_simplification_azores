@@ -73,7 +73,6 @@ library(rpart)          # Classification/regression trees
 library(randomForest)   # Random Forests
 library(rpart.plot)     # Visualize rpart trees
 library(earth)          # MARS regression
-library(xgboost)        # Boosted decision trees
 library(DALEX)          # Model explanation tools
 library(DALEXtra)       # Extra methods for xgboost, caret, etc.
 library(irr)            # Inter-rater agreement (Cohen's Kappa, etc.)
@@ -636,11 +635,8 @@ points(x[asymptote_point], y[asymptote_point], col = "red", pch = 19, cex = 1.5)
 abline(v = x[asymptote_point], col = "blue", lty = 2)
 text(x[asymptote_point], y[asymptote_point], labels = paste0("x = ", x[asymptote_point]), pos = 4)
 
-# Extract cluster number at asymptote (or override below)
+# Extract cluster number at asymptote
 ls_opt_clusts <- as.vector(ls_opt_clusts$results[asymptote_point, 1])$.clusters
-
-# Override cluster number manually if needed
-ls_opt_clusts <- 6
 
 # --------------------------------------------
 # Assign cluster identity to each row (sample)
@@ -823,7 +819,7 @@ highlighted_dates <- c(750, 1050, 1450, 1750)
 # ------------------------------------------------------------------------------
 
 data_combined <- ls_all_hclusts_complete_paleo %>%
-  map_dfr(as.data.frame)  # Combine list elements into one long data frame
+  map_dfr(as.data.frame) # Combine list elements into one long data frame
 
 # ------------------------------------------------------------------------------
 # Compute time range per lake and order lakes from longest to shortest
