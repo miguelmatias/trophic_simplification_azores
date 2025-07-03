@@ -809,121 +809,102 @@ guides("none")
 ```{r fig.asp = 1, fig.width = 12}
 
 # ------------------------------------------------------------------------------
-# Define dates of interest to be highlighted with vertical lines
+# Define vertical reference lines for key historical periods
 # ------------------------------------------------------------------------------
-
 highlighted_dates <- c(750, 1050, 1450, 1750)
 
 # ------------------------------------------------------------------------------
-# Combine hierarchical clustering outputs from all lakes into a single dataframe
+# Combine clustering outputs from all lakes into a single data frame
 # ------------------------------------------------------------------------------
-
 data_combined <- ls_all_hclusts_complete_paleo %>%
-  map_dfr(as.data.frame) # Combine list elements into one long data frame
+  map_dfr(as.data.frame)
 
 # ------------------------------------------------------------------------------
-# Compute time range per lake and order lakes from longest to shortest
+# Compute time coverage per lake and order lakes by coverage length
 # ------------------------------------------------------------------------------
-
 lake_ranges <- data_combined %>%
   group_by(lake) %>%
   summarise(
     min_age = min(age_ce, na.rm = TRUE),
     max_age = max(age_ce, na.rm = TRUE),
-    data_range = max_age - min_age
+    data_range = max_age - min_age,
+    .groups = "drop"
   ) %>%
-  arrange(desc(data_range))  # Order lakes by longest time coverage
+  arrange(desc(data_range))
 
-lake_levels <- lake_ranges$lake  # Store ordered lake names
+lake_levels <- lake_ranges$lake  # Preserve lake order for plotting
 
 # ------------------------------------------------------------------------------
-# Update factor levels and cluster assignments in the combined data
+# Set lake as ordered factor and cluster as categorical
 # ------------------------------------------------------------------------------
-
 data_combined <- data_combined %>%
   mutate(
-    lake = factor(lake, levels = lake_levels),          # Set lake as ordered factor
-    amd_clusts = as.factor(amd_clusts)                  # Convert cluster assignments to factor
+    lake = factor(lake, levels = lake_levels),
+    amd_clusts = as.factor(amd_clusts)
   )
 
 # ------------------------------------------------------------------------------
-# Prepare rectangle overlay data to mask out areas beyond each lake's range
+# Define shaded rectangles to mask periods without data
 # ------------------------------------------------------------------------------
-
 rect_data <- lake_ranges %>%
   select(lake, min_age, max_age) %>%
   mutate(
-    lake = factor(lake, levels = lake_levels),  # Retain lake factor level order
-    xmin1 = 0,                                  # Left trim range
+    lake = factor(lake, levels = lake_levels),
+    xmin1 = 0,
     xmax1 = min_age,
-    xmin2 = max_age,                            # Right trim range
+    xmin2 = max_age,
     xmax2 = 2010
   ) %>%
-  pivot_longer(
-    cols = c(xmin1, xmin2),
-    names_to = "rect_part",
-    values_to = "xmin"
-  ) %>%
-  pivot_longer(
-    cols = c(xmax1, xmax2),
-    names_to = "rect_part2",
-    values_to = "xmax"
-  ) %>%
-  filter(substr(rect_part, 5, 5) == substr(rect_part2, 5, 5)) %>%  # Match xmin-xmax pairs
+  pivot_longer(c(xmin1, xmin2), names_to = "rect_part", values_to = "xmin") %>%
+  pivot_longer(c(xmax1, xmax2), names_to = "rect_part2", values_to = "xmax") %>%
+  filter(substr(rect_part, 5, 5) == substr(rect_part2, 5, 5)) %>%
   select(lake, xmin, xmax) %>%
-  mutate(
-    ymin = -Inf,  # Full y-range for blocking
-    ymax = Inf
-  )
+  mutate(ymin = -Inf, ymax = Inf)
 
 # ------------------------------------------------------------------------------
-# Create final ggplot showing relative abundance of trophic clusters over time
+# Keep only lakes with ≥2 trophic clusters
 # ------------------------------------------------------------------------------
+lake_valid_clusters <- data_combined %>%
+  distinct(lake, amd_clusts) %>%
+  count(lake) %>%
+  filter(n >= 2) %>%
+  pull(lake)
 
+# ------------------------------------------------------------------------------
+# Final filtering: remove sparse groups and ensure valid lake set
+# ------------------------------------------------------------------------------
+data_combined_clean <- data_combined %>%
+  filter(
+    lake %in% lake_valid_clusters,
+    !is.na(age_ce), !is.na(amd_clusts),
+    is.finite(age_ce)
+  ) %>%
+  group_by(lake, amd_clusts) %>%
+  filter(n() >= 3, sd(age_ce, na.rm = TRUE) > 1) %>%
+  ungroup()
+
+rect_data_clean <- rect_data %>%
+  filter(lake %in% lake_valid_clusters)
+
+# ------------------------------------------------------------------------------
+# Build final plot
+# ------------------------------------------------------------------------------
 plot_density_fclusts_time_lines_1B <- 
-  ggplot(data_combined, aes(x = age_ce, fill = amd_clusts)) +
-  facet_wrap(~ lake, ncol = 1, scales = "fixed", strip.position = "right") +  # One column per lake
-
-  # Plot kernel density estimate of cluster proportions
-  geom_density(
-    adjust = 1.5,
-    position = "fill",
-    colour = "white"
-  ) +
-
-  # Overlay white rectangles to mask out time intervals not covered by data
+  ggplot(data_combined_clean, aes(x = age_ce, fill = amd_clusts)) +
+  facet_wrap(~ lake, ncol = 1, scales = "fixed", strip.position = "right") +
+  geom_density(adjust = 1.5, position = "fill", colour = "white") +
   geom_rect(
-    data = rect_data,
+    data = rect_data_clean,
     aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
     inherit.aes = FALSE,
-    fill = "white",
-    colour = "white"
+    fill = "white", colour = "white"
   ) +
-
-  # Add vertical dashed lines for highlighted dates
-  geom_vline(
-    xintercept = highlighted_dates,
-    colour = "white",
-    linetype = "dashed"
-  ) +
-
-  # Color scale for trophic clusters
+  geom_vline(xintercept = highlighted_dates, colour = "white", linetype = "dashed") +
   scale_fill_viridis_d(
-    name = "Community Trophic \nstructures",
-    option = "viridis",
-    direction = -1
+    name = "Community Trophic \nstructures", option = "viridis", direction = -1
   ) +
-
-  # Set x-axis limits
   lims(x = c(0, 2010)) +
-
-  # Y-axis as relative proportion (0 to 1)
-  scale_y_continuous(
-    breaks = c(0, 0.5, 1),
-    labels = c("0", "0.5", "1")
-  ) +
-
-  # Minimalist theme with layout adjustments
+  scale_y_continuous(breaks = c(0, 0.5, 1), labels = c("0", "0.5", "1")) +
   theme_minimal() +
   theme(
     plot.background = element_blank(),
@@ -933,9 +914,8 @@ plot_density_fclusts_time_lines_1B <-
     panel.grid.minor = element_blank(),
     panel.grid.major = element_line(colour = "grey90", linewidth = 0.2),
     strip.text = element_text(size = 10),
-    plot.margin = unit(c(2, 1, 1, 1), "cm")  # Add space for facet labels
+    plot.margin = unit(c(2, 1, 1, 1), "cm")
   ) +
-
   labs(
     x = "Age (CE)",
     y = "Proportion of Community Trophic Structures",
@@ -943,10 +923,9 @@ plot_density_fclusts_time_lines_1B <-
   )
 
 # ------------------------------------------------------------------------------
-# Render the final plot
+# Render final plot (warning suppressed due to known density dropouts)
 # ------------------------------------------------------------------------------
-
-print(plot_density_fclusts_time_lines_1B)
+suppressWarnings(print(plot_density_fclusts_time_lines_1B))
 
 ```
 ## Regional proportions trophic structures 
@@ -995,109 +974,107 @@ plot_stacked_fclusts_time_lines
 ## Ordination with trophic structures
 ```{r fig.asp = 0.5, fig.width = 12}
 
-plot_density_fclusts_fime <- 
-  ls_all_hclusts_complete_paleo %>%
-  map(~.x %>% as.data.frame()) %>% 
-  bind_rows() %>%
-  ggplot(aes(amd_clusts)) +
-  #facet_wrap(~amd_clusts, scales = "free")+
-  geom_density(aes(x = age_ce, fill = amd_clusts, colour = amd_clusts), size = 1) +
-  scale_fill_viridis_d(name = "Community Trophic \nstructures", option = "viridis", direction = -1, alpha = 0.75) +
-  scale_colour_viridis_d(name = "Community Trophic \nstructures", option = "viridis", direction = -1) +
-      theme(plot.background = NULL) +
-      theme_minimal() +
-      theme(
-        plot.title = element_text(size = 12),
-        legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-        legend.justification = c(0, 1),
-        # legend.position = c(0, 1),
-        axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-        panel.grid.minor = element_blank()
-      )
-
-# get ordination
+# ------------------------------------------------------------------------------
+# Compute ordination using PCoA on Bray-Curtis dissimilarity
+# ------------------------------------------------------------------------------
 ordinations_paleo <- norm_abund %>%
-  as.data.frame() %>% 
-  # remove factors
-  select(-c(lake:age_ce)) %>%
-  # transform data
-  #decostand(method = "hellinger") %>%
-  vegdist(method = "bray", na.rm = TRUE) %>%
-  # calculate pcoa
-  cmdscale() %>%
+  as.data.frame() %>%
+  select(-c(lake:age_ce)) %>%                        # Drop metadata columns
+  vegdist(method = "bray", na.rm = TRUE) %>%         # Bray-Curtis distance
+  cmdscale() %>%                                     # PCoA
   scores() %>%
   as.data.frame()
 
-# get fit environmental variables
-fit_env_paleo <- 
-  ordinations_paleo %>%
-  envfit(., env = select(norm_abund, alternative_functional_groups_guilds_globi_merged), scaling = "sites") %>%
+# ------------------------------------------------------------------------------
+# Fit environmental vectors (alternative functional groups) to ordination
+# ------------------------------------------------------------------------------
+fit_env_paleo <- ordinations_paleo %>%
+  envfit(
+    env = select(norm_abund, alternative_functional_groups_guilds_globi_merged),
+    scaling = "sites"
+  ) %>%
   scores("vectors") %>%
   as.data.frame() %>%
-  mutate(Dim1 = Dim1 * 0.75, Dim2 = Dim2 * 0.75) %>%
-  mutate(groups = rownames(.))
+  mutate(
+    Dim1 = Dim1 * 0.75,
+    Dim2 = Dim2 * 0.75,
+    groups = rownames(.)
+  )
 
-hull_paleo <- 
-  bind_cols(
+# ------------------------------------------------------------------------------
+# Compute convex hulls (polygons) for each trophic structure (cluster)
+# ------------------------------------------------------------------------------
+hull_paleo <- bind_cols(
     ordinations_paleo,
     select(norm_abund, alternative_functional_groups_guilds_globi_merged),
-    select(global_matrix_merged_paleo, c(DCA1:amd_clusts))
-    ) %>% 
-  group_by(amd_clusts) %>% 
-  dplyr::slice(chull(Dim1, Dim2))
+    select(global_matrix_merged_paleo, DCA1:amd_clusts)
+  ) %>%
+  group_by(amd_clusts) %>%
+  dplyr::slice(chull(Dim1, Dim2))  # Convex hull per cluster
 
-# Rename the factor levels of amd_clusts
+# ------------------------------------------------------------------------------
+# Rename cluster levels for better readability (CTS1–CTS5)
+# ------------------------------------------------------------------------------
 global_matrix_merged_paleo$amd_clusts <- factor(
   global_matrix_merged_paleo$amd_clusts,
   levels = 1:5,
   labels = c("CTS1", "CTS2", "CTS3", "CTS4", "CTS5")
 )
 
-# Do the same for hull_paleo if it uses the same column
 hull_paleo$amd_clusts <- factor(
   hull_paleo$amd_clusts,
   levels = 1:5,
   labels = c("CTS1", "CTS2", "CTS3", "CTS4", "CTS5")
 )
 
-ordinations_fclusts_1 <- 
-  ordinations_paleo %>%
+# ------------------------------------------------------------------------------
+# Assemble full ordination plot with polygons, points, and fitted vectors
+# ------------------------------------------------------------------------------
+ordinations_fclusts_1 <- ordinations_paleo %>%
   bind_cols(
     select(norm_abund, -alternative_functional_groups_guilds_globi_merged),
     .,
-    select(global_matrix_merged_paleo, c(DCA1:amd_clusts))
-    ) %>% 
+    select(global_matrix_merged_paleo, DCA1:amd_clusts)
+  ) %>%
   ggplot(aes(x = Dim1, y = Dim2)) +
   
-  # Polygons
-  geom_polygon(aes(fill = as.factor(amd_clusts)), data = hull_paleo, alpha = 0.2) +
-  scale_fill_viridis_d(option = "viridis", direction = -1, name = NULL, guide = "none") +
+  # Polygons for each trophic structure
+  geom_polygon(
+    data = hull_paleo,
+    aes(fill = as.factor(amd_clusts)),
+    alpha = 0.2
+  ) +
+  scale_fill_viridis_d(option = "viridis", direction = -1, guide = "none") +
   ggnewscale::new_scale_fill() +
   
-  # Points
+  # Points colored by cluster
   geom_point(aes(colour = as.factor(amd_clusts)), size = 3) +
-  scale_colour_viridis_d(option = "viridis", direction = -1, name = "Community Trophic Structures") +
+  scale_colour_viridis_d(
+    option = "viridis", direction = -1,
+    name = "Community Trophic Structures"
+  ) +
   ggnewscale::new_scale_colour() +
-  
+
+  # Environmental vectors
   geom_segment(
-      data = fit_env_paleo,
-      aes(x = 0, xend = Dim1, y = 0, yend = Dim2),
-      arrow = arrow(length = unit(0.1, "cm"))
-    ) +
-  
-  # Labels
+    data = fit_env_paleo,
+    aes(x = 0, xend = Dim1, y = 0, yend = Dim2),
+    arrow = arrow(length = unit(0.1, "cm"))
+  ) +
+
+  # Environmental labels
   ggrepel::geom_label_repel(
-      max.overlaps = 12,
-      data = fit_env_paleo,
-      aes(x = Dim1, y = Dim2, label = groups), 
-      cex = 3, direction = "both", segment.size = 0.25
-    ) +
-  theme(plot.background = NULL) +
-  scale_fill_manual(values = rep("grey", 9), name = NULL, guide = "none") +
-  ggnewscale::new_scale_colour() +
-  labs(title = "") +
+    data = fit_env_paleo,
+    aes(x = Dim1, y = Dim2, label = groups),
+    max.overlaps = 12,
+    size = 3,
+    direction = "both",
+    segment.size = 0.25
+  ) +
+
+  # Styling
   theme_bw() +
+  labs(title = "") +
   theme(
     plot.title = element_text(size = 12),
     legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
@@ -1106,9 +1083,12 @@ ordinations_fclusts_1 <-
     axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
     panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
     panel.grid.minor = element_blank()
-    ) +
+  ) +
   guides(fill = "none")
 
+# ------------------------------------------------------------------------------
+# Render plot
+# ------------------------------------------------------------------------------
 ordinations_fclusts_1
 
 ```
@@ -1324,211 +1304,6 @@ plot_time_dev_diatoms
 
 ```
 
-### Prediction [lake scale]
-```{r}
-
-pred_modGI_DCA_diatoms <-
-  df_partial_residuals_diatoms %>%
-  group_split(lake) %>%
-  map(., ~ .x %>% mutate(age_ce = seq(min(age_ce), max(age_ce), length = length(age_ce)))) %>%
-  map(., ~ .x %>% mutate(lake = levels(as.factor(lake)))) %>%
-  bind_rows()
-
-### predict fitted values
-pred_modGI_DCA_diatoms <- cbind(
-  pred_modGI_DCA_diatoms,
-  predict(modGI_diatoms,
-    pred_modGI_DCA_diatoms,
-    se.fit = TRUE,
-    type = "response"
-  )
-)
-
-plots_partial_residuals_diatoms <- 
-  ggplot(data = df_partial_residuals_diatoms, aes(x = age_ce, y = DCA1, group = lake)) +
-  geom_point(aes(color = lake)) +
-  facet_wrap(~lake, scales = "free") +
-  geom_line(aes(y = (fit), color = lake), data = pred_modGI_DCA_diatoms) +
-  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit), x = age_ce, fill = lake),
-    data = pred_modGI_DCA_diatoms,
-    alpha = 0.3,
-    inherit.aes = FALSE
-  ) +
-  scale_color_manual("Lake", values = lakes_col) +
-  scale_fill_manual("Lake", values = lakes_col) +
-  scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-  theme_classic(base_size = 12) +
-  lims(x = c(0, 2020)) +
-  theme(
-    legend.position = c(1, 0), # c(0,0) bottom left, c(1,1) top-right.
-    legend.background = element_rect(fill = "white", colour = NA)
-  )
-
-plots_partial_residuals_diatoms + theme(legend.position="bottom", legend.box = "horizontal")
-
-```
-
-### Response derivative for each group
-
-```{r}
-
-# compute response derivatives
-resp_dev_diatoms <- 
-  response_derivatives(
-    mod_diatoms, data = b_ls_dca_diatoms, 
-    focal = "age_ce",
-    eps = 10, seed = 42
-    )
-```
-
-```{r}
-### plot the response derivative ####
-plot_res_dev_diatoms <- 
-  resp_dev_diatoms %>%
-  group_split(lake) %>% 
-  map(~ .x %>%
-        ggplot(aes(x = age_ce, colour = lake, y = .derivative)) +
-        geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci, fill = lake,
-                        colour = NULL), alpha = 0.1) +
-        geom_line(aes(x = age_ce, y = .derivative, linewidth = (.lower_ci) > 0 | (.upper_ci) < 0, group = 1),
-            show.legend = FALSE) +
-        scale_discrete_manual("linewidth", values = c(0.5, 1.5)) +
-        scale_color_manual("Lake", values = lakes_col) +
-        scale_fill_manual("Lake", values = lakes_col) +
-        scale_x_continuous(n.breaks = 10, limits = c(0, 2020))+
-        scale_y_continuous(n.breaks = 3) +
-        labs(y = "Derivative", x = "year CE") +
-        theme_minimal(base_size = 12) +
-        theme(legend.position = "none")
-  )
-  
-#plot_res_dev_diatoms
-
-```
-
-### flat bars
-
-```{r fig.asp=.75, fig.width=8}
-
-lake_island_match <- 
-  rbind(
-    cbind(island = "Sao Miguel", lake = "Azul"),
-    cbind("Corvo",	"Caldeirao"),
-    cbind("Pico", "Caveiro"),
-    cbind("Sao Miguel",	"Empadadas Norte"),
-    cbind("Flores",	"Funda"),
-    cbind("Terceira",	"Ginjal"),
-    cbind("Pico",	"Peixinho"),
-    cbind("Sao Miguel",	"Prata"),
-    cbind("Sao Miguel",	"Santiago")
-    ) %>% 
-  as.data.frame() %>% 
-  as.tibble()
-
-all_devs_diatoms <- 
-  bind_rows(
-  dev_mod_diatoms %>% select(age_ce, .lower_ci, .upper_ci) %>% bind_cols(lake = rep("Archipelago", nrow(dev_mod_diatoms)), .),
-  resp_dev_diatoms %>% select(lake, age_ce, .lower_ci, .upper_ci)
-)
-
-all_devs_diatoms <- 
-  all_devs_diatoms %>% 
-  left_join(x = ., y = lake_island_match, by = "lake")
-
-all_devs_diatoms$lake = factor(all_devs_diatoms$lake, 
-                             levels = c(
-                                 "Archipelago",
-                                 "Azul",
-                                 "Empadadas Norte",
-                                 "Prata", 
-                                 "Santiago",
-                                 "Caveiro",
-                                 "Peixinho",
-                                 "Ginjal",
-                                 "Funda",
-                                 "Caldeirao"
-                               )
-)
-
-# flat bars
-all_devs_diatoms_2 <- 
-  all_devs_diatoms %>% mutate(lake_2 = as.numeric(lake))
-
-# flat bars
-plot_res_dev_diatoms <- 
-  all_devs_diatoms_2 %>%
-  ggplot(aes(colour = lake)) +
-  #geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci, fill = lake,
-                  #colour = NULL), alpha = 0.1) +
-  #geom_segment(aes(x = 0, xend = 2020, y = lake_2, yend = lake_2), colour = "grey", linewidth = 0.1) +
-  geom_line(aes(x = age_ce, y = lake_2, linewidth = (.lower_ci) > 0 | (.upper_ci) < 0, group = lake),
-      show.legend = FALSE) +
-  scale_discrete_manual("linewidth", values = c(1, 10)) +
-  scale_color_manual("Lake", values = lakes_col_10) +
-  scale_fill_manual("Lake", values = lakes_col_10) +
-  scale_x_continuous(n.breaks = 10, limits = c(0, 2020))+
-  scale_y_continuous(breaks = c(1:10),
-                     labels = c("Archipelago",
-                                 "Azul",
-                                 "Empadadas Norte",
-                                 "Prata", 
-                                 "Santiago",
-                                 "Caveiro",
-                                 "Peixinho",
-                                 "Ginjal",
-                                 "Funda",
-                                 "Caldeirao"
-                                )
-                     ) +
-  labs(y = "Lakes", x = "year CE") +
-  labs(title = "Significant periods of change (HGAM): Archipelago vs individual lakes [diatoms]") +
-  theme_minimal(base_size = 12) +
-  theme(
-    title = element_text(size = 10),
-    legend.position = "none",
-    strip.text.x = element_text(hjust = 0),
-    #panel.border = element_rect(linewidth = 0.5),
-    panel.background = element_blank(),
-    panel.grid.major.x = element_line(color = "grey",
-                                  size = 0.1,
-                                  linetype = 1),
-    panel.grid.minor.x = element_blank(),
-    panel.grid.major.y = element_blank(),
-    axis.title.x=element_blank(),
-    axis.ticks.x=element_blank(),
-    axis.text.y=element_text(angle = 0),
-    )
-
-plot_res_dev_diatoms
-
-```
-
-```{r}
-## Fitted trends for each lake ####
-fit_modGI_diatoms <- fitted_values(mod_diatoms, data = b_ls_dca_diatoms, scale = "response")
-
-## plot the fitted trends per lake
-plot_fitted_DCA1 <- 
-  fit_modGI_diatoms |>
-  ggplot(aes(x = age_ce, y = .fitted, colour = lake)) +
-  geom_point(data = b_ls_dca_diatoms, mapping = aes(y = DCA1, color = lake), alpha = 0.5, size = 2) +
-  geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci,
-                  fill = lake,
-                  colour = NULL), alpha = 0.2) +
-  geom_line() +
-  labs(y = "DCA axis-1")+
-  scale_x_continuous(n.breaks = 10, limits = c(0, 2012)) +
-  scale_color_manual("Lake", values = lakes_col)+
-  scale_fill_manual("Lake", values = lakes_col)+
-  theme_minimal(base_size = 12) +
-  theme(panel.grid.minor.y = element_blank())+
-  theme(legend.position = "top", legend.title = element_text(size=10, face = "bold")
-  )
-
-plot_fitted_DCA1
-```
-
-
 ## GAM - Chironomids
 ### Regional Smooth
 
@@ -1630,198 +1405,6 @@ plot_time_dev_chiro <-
 plot_time_dev_chiro
 ```
 
-### Prediction [lake scale]
-
-```{r}
-
-pred_modGI_DCA_chiro <-
-  df_partial_residuals_chiro %>%
-  group_split(lake) %>%
-  map(., ~ .x %>% mutate(age_ce = seq(min(age_ce), max(age_ce), length = length(age_ce)))) %>%
-  map(., ~ .x %>% mutate(lake = levels(as.factor(lake)))) %>%
-  bind_rows()
-
-### predict fitted values
-pred_modGI_DCA_chiro <- cbind(
-  pred_modGI_DCA_chiro,
-  predict(modGI_chiro,
-    pred_modGI_DCA_chiro,
-    se.fit = TRUE,
-    type = "response"
-  )
-)
-
-plots_partial_residuals_chiro <- 
-  ggplot(data = df_partial_residuals_chiro, aes(x = age_ce, y = DCA1, group = lake)) +
-  geom_point(aes(color = lake)) +
-  facet_wrap(~lake, scales = "free") +
-  geom_line(aes(y = (fit), color = lake), data = pred_modGI_DCA_chiro) +
-  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit), x = age_ce, fill = lake),
-    data = pred_modGI_DCA_chiro,
-    alpha = 0.3,
-    inherit.aes = FALSE
-  ) +
-  scale_color_manual("Lake", values = lakes_col) +
-  scale_fill_manual("Lake", values = lakes_col) +
-  scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-  theme_classic(base_size = 12) +
-  lims(x = c(0, 2020)) +
-  theme(
-    legend.position = c(1, 0), # c(0,0) bottom left, c(1,1) top-right.
-    legend.background = element_rect(fill = "white", colour = NA)
-  )
-
-plots_partial_residuals_chiro + theme(legend.position="bottom", legend.box = "horizontal")
-
-```
-
-### Response derivative for each group
-
-```{r}
-
-# compute response derivatives
-resp_dev_chiro <- 
-  response_derivatives(
-    mod_chiro, data = b_ls_dca_chiro, 
-    focal = "age_ce",
-    eps = 10, seed = 42
-    )
-```
-
-```{r}
-### plot the response derivative ####
-plot_res_dev_chiro <- 
-  resp_dev_chiro %>%
-  group_split(lake) %>% 
-  map(~ .x %>%
-        ggplot(aes(x = age_ce, colour = lake, y = .derivative)) +
-        geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci, fill = lake,
-                        colour = NULL), alpha = 0.1) +
-        geom_line(aes(x = age_ce, y = .derivative, linewidth = (.lower_ci) > 0 | (.upper_ci) < 0, group = 1),
-            show.legend = FALSE) +
-        scale_discrete_manual("linewidth", values = c(0.5, 1.5)) +
-        scale_color_manual("Lake", values = lakes_col) +
-        scale_fill_manual("Lake", values = lakes_col) +
-        scale_x_continuous(n.breaks = 10, limits = c(0, 2020))+
-        scale_y_continuous(n.breaks = 3) +
-        labs(y = "Derivative", x = "year CE") +
-        theme_minimal(base_size = 12) +
-        theme(legend.position = "none")
-  )
-  
-#plot_res_dev_chiro
-
-```
-
-### flat bars
-```{r fig.asp=.75, fig.width=8}
-
-all_devs_chiro <- 
-  bind_rows(
-  dev_mod_chiro %>% select(age_ce, .lower_ci, .upper_ci) %>% bind_cols(lake = rep("Archipelago", nrow(dev_mod_chiro)), .),
-  resp_dev_chiro %>% select(lake, age_ce, .lower_ci, .upper_ci)
-)
-
-all_devs_chiro <- 
-  all_devs_chiro %>% 
-  left_join(x = ., y = lake_island_match, by = "lake")
-
-all_devs_chiro$lake = factor(all_devs_chiro$lake, 
-                             levels = c(
-                                 "Archipelago",
-                                 "Azul",
-                                 "Empadadas Norte",
-                                 "Prata", 
-                                 "Santiago",
-                                 "Caveiro",
-                                 "Peixinho",
-                                 "Ginjal",
-                                 "Funda",
-                                 "Caldeirao"
-                               )
-)
-
-lakes_col_10 <- c("black", viridis::viridis(9, option = "plasma", alpha = 0.8))
-
-# flat bars
-all_devs_chiro_2 <- 
-  all_devs_chiro %>% mutate(lake_2 = as.numeric(lake))
-
-# flat bars
-plot_res_dev_chiro <- 
-  all_devs_chiro_2 %>%
-  ggplot(aes(colour = lake)) +
-  #geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci, fill = lake,
-                  #colour = NULL), alpha = 0.1) +
-  #geom_segment(aes(x = 0, xend = 2020, y = lake_2, yend = lake_2), colour = "grey", linewidth = 0.1) +
-  geom_line(aes(x = age_ce, y = lake_2, linewidth = (.lower_ci) > 0 | (.upper_ci) < 0, group = lake),
-      show.legend = FALSE) +
-  scale_discrete_manual("linewidth", values = c(1, 10)) +
-  scale_color_manual("Lake", values = lakes_col_10) +
-  scale_fill_manual("Lake", values = lakes_col_10) +
-  scale_x_continuous(n.breaks = 10, limits = c(0, 2020))+
-  scale_y_continuous(breaks = c(1:10),
-                     labels = c("Archipelago",
-                                 "Azul",
-                                 "Empadadas Norte",
-                                 "Prata", 
-                                 "Santiago",
-                                 "Caveiro",
-                                 "Peixinho",
-                                 "Ginjal",
-                                 "Funda",
-                                 "Caldeirao"
-                                )
-                     ) +
-  labs(y = "Lakes", x = "year CE") +
-  labs(title = "Significant periods of change (HGAM): Archipelago vs individual lakes [chiro]") +
-  theme_minimal(base_size = 12) +
-  theme(
-    title = element_text(size = 10),
-    legend.position = "none",
-    strip.text.x = element_text(hjust = 0),
-    #panel.border = element_rect(linewidth = 0.5),
-    panel.background = element_blank(),
-    panel.grid.major.x = element_line(color = "grey",
-                                  size = 0.1,
-                                  linetype = 1),
-    panel.grid.minor.x = element_blank(),
-    panel.grid.major.y = element_blank(),
-    axis.title.x=element_blank(),
-    axis.ticks.x=element_blank(),
-    axis.text.y=element_text(angle = 0),
-    )
-
-plot_res_dev_chiro
-
-```
-
-```{r}
-## Fitted trends for each lake ####
-fit_modGI_chiro <- fitted_values(mod_chiro, data = b_ls_dca_chiro, scale = "response")
-
-## plot the fitted trends per lake
-plot_fitted_DCA1 <- 
-  fit_modGI_chiro |>
-  ggplot(aes(x = age_ce, y = .fitted, colour = lake)) +
-  geom_point(data = b_ls_dca_chiro, mapping = aes(y = DCA1, color = lake), alpha = 0.5, size = 2) +
-  geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci,
-                  fill = lake,
-                  colour = NULL), alpha = 0.2) +
-  geom_line(aes(x = age_ce, y = .fitted, colour = lake)) +
-  labs(y = "DCA axis-1")+
-  scale_x_continuous(n.breaks = 10, limits = c(0, 2012)) +
-  scale_color_manual("Lake", values = lakes_col)+
-  scale_fill_manual("Lake", values = lakes_col)+
-  theme_minimal(base_size = 12) +
-  theme(panel.grid.minor.y = element_blank())+
-  theme(legend.position = "top", legend.title = element_text(size=10, face = "bold")
-  )
-
-plot_fitted_DCA1
-```
-
-
 ## GAM - Fgroups
 ### Regional Smooth
 
@@ -1921,198 +1504,6 @@ plot_time_dev_fgroup <-
   theme(panel.grid.minor.y = element_blank())
 
 plot_time_dev_fgroup
-```
-
-### Prediction [lake scale]
-
-```{r}
-
-pred_modGI_DCA_fgroup <-
-  df_partial_residuals_fgroup %>%
-  group_split(lake) %>%
-  map(., ~ .x %>% mutate(age_ce = seq(min(age_ce), max(age_ce), length = length(age_ce)))) %>%
-  map(., ~ .x %>% mutate(lake = levels(as.factor(lake)))) %>%
-  bind_rows()
-
-### predict fitted values
-pred_modGI_DCA_fgroup <- cbind(
-  pred_modGI_DCA_fgroup,
-  predict(modGI_fgroup,
-    pred_modGI_DCA_fgroup,
-    se.fit = TRUE,
-    type = "response"
-  )
-)
-
-plots_partial_residuals_fgroup <- 
-  ggplot(data = df_partial_residuals_fgroup, aes(x = age_ce, y = DCA1, group = lake)) +
-  geom_point(aes(color = lake)) +
-  facet_wrap(~lake, scales = "free") +
-  geom_line(aes(y = (fit), color = lake), data = pred_modGI_DCA_fgroup) +
-  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit), x = age_ce, fill = lake),
-    data = pred_modGI_DCA_fgroup,
-    alpha = 0.3,
-    inherit.aes = FALSE
-  ) +
-  scale_color_manual("Lake", values = lakes_col) +
-  scale_fill_manual("Lake", values = lakes_col) +
-  scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-  theme_classic(base_size = 12) +
-  lims(x = c(0, 2020)) +
-  theme(
-    legend.position = c(1, 0), # c(0,0) bottom left, c(1,1) top-right.
-    legend.background = element_rect(fill = "white", colour = NA)
-  )
-
-plots_partial_residuals_fgroup + theme(legend.position="bottom", legend.box = "horizontal")
-
-```
-
-### Lake scale derivatives
-
-```{r}
-
-# compute response derivatives
-resp_dev_fgroup <- 
-  response_derivatives(
-    mod_fgroup, data = b_ls_dca_fgroup, 
-    focal = "age_ce",
-    eps = 10, seed = 42
-    )
-```
-
-```{r}
-### plot the response derivative ####
-plot_res_dev_fgroup <- 
-  resp_dev_fgroup %>%
-  group_split(lake) %>% 
-  map(~ .x %>%
-        ggplot(aes(x = age_ce, colour = lake, y = .derivative)) +
-        geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci, fill = lake,
-                        colour = NULL), alpha = 0.1) +
-        geom_line(aes(x = age_ce, y = .derivative, linewidth = (.lower_ci) > 0 | (.upper_ci) < 0, group = 1),
-            show.legend = FALSE) +
-        scale_discrete_manual("linewidth", values = c(0.5, 1.5)) +
-        scale_color_manual("Lake", values = lakes_col) +
-        scale_fill_manual("Lake", values = lakes_col) +
-        scale_x_continuous(n.breaks = 10, limits = c(0, 2020))+
-        scale_y_continuous(n.breaks = 3) +
-        labs(y = "Derivative", x = "year CE") +
-        theme_minimal(base_size = 12) +
-        theme(legend.position = "none")
-  )
-  
-#plot_res_dev_fgroup
-
-```
-
-### flat bars
-
-```{r fig.asp=.75, fig.width=8}
-
-all_devs_fgroup <- 
-  bind_rows(
-  dev_mod_fgroup %>% select(age_ce, .lower_ci, .upper_ci) %>% bind_cols(lake = rep("Archipelago", nrow(dev_mod_fgroup)), .),
-  resp_dev_fgroup %>% select(lake, age_ce, .lower_ci, .upper_ci)
-)
-
-all_devs_fgroup <- 
-  all_devs_fgroup %>% 
-  left_join(x = ., y = lake_island_match, by = "lake")
-
-all_devs_fgroup$lake = factor(all_devs_fgroup$lake, 
-                             levels = c(
-                                 "Archipelago",
-                                 "Azul",
-                                 "Empadadas Norte",
-                                 "Prata", 
-                                 "Santiago",
-                                 "Caveiro",
-                                 "Peixinho",
-                                 "Ginjal",
-                                 "Funda",
-                                 "Caldeirao"
-                               )
-)
-
-lakes_col_10 <- c("black", viridis::viridis(9, option = "plasma", alpha = 0.8))
-
-# flat bars
-all_devs_fgroup_2 <- 
-  all_devs_fgroup %>% mutate(lake_2 = as.numeric(lake))
-
-# flat bars
-plot_res_dev_fgroup <- 
-  all_devs_fgroup_2 %>%
-  ggplot(aes(colour = lake)) +
-  #geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci, fill = lake,
-                  #colour = NULL), alpha = 0.1) +
-  #geom_segment(aes(x = 0, xend = 2020, y = lake_2, yend = lake_2), colour = "grey", linewidth = 0.1) +
-  geom_line(aes(x = age_ce, y = lake_2, linewidth = (.lower_ci) > 0 | (.upper_ci) < 0, group = lake),
-      show.legend = FALSE, ) +
-  scale_discrete_manual("linewidth", values = c(1, 10)) +
-  scale_color_manual("Lake", values = lakes_col_10) +
-  scale_fill_manual("Lake", values = lakes_col_10) +
-  scale_x_continuous(n.breaks = 10, limits = c(0, 2020))+
-  scale_y_continuous(breaks = c(1:10),
-                     labels = c("Archipelago",
-                                 "Azul",
-                                 "Empadadas Norte",
-                                 "Prata", 
-                                 "Santiago",
-                                 "Caveiro",
-                                 "Peixinho",
-                                 "Ginjal",
-                                 "Funda",
-                                 "Caldeirao"
-                                )
-                     ) +
-  labs(y = "Lakes", x = "year CE") +
-  labs(title = "Significant periods of change (HGAM): Archipelago vs individual lakes [fgroup]") +
-  theme_minimal(base_size = 12) +
-  theme(
-    title = element_text(size = 10),
-    legend.position = "none",
-    strip.text.x = element_text(hjust = 0),
-    #panel.border = element_rect(linewidth = 0.5),
-    panel.background = element_blank(),
-    panel.grid.major.x = element_line(color = "grey",
-                                  size = 0.1,
-                                  linetype = 1),
-    panel.grid.minor.x = element_blank(),
-    panel.grid.major.y = element_blank(),
-    axis.title.x=element_blank(),
-    axis.ticks.x=element_blank(),
-    axis.text.y=element_text(angle = 0),
-    )
-
-plot_res_dev_fgroup
-
-```
-
-```{r}
-## Fitted trends for each lake ####
-fit_modGI_fgroup <- fitted_values(mod_fgroup, data = b_ls_dca_fgroup, scale = "response")
-
-## plot the fitted trends per lake
-plot_fitted_DCA1_fgroup <- 
-  fit_modGI_fgroup |>
-  ggplot(aes(x = age_ce, y = .fitted, colour = lake)) +
-  geom_point(data = b_ls_dca_fgroup, mapping = aes(y = DCA1, color = lake), alpha = 0.5, size = 2) +
-  geom_ribbon(aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci,
-                  fill = lake,
-                  colour = NULL), alpha = 0.2) +
-  geom_line() +
-  labs(y = "DCA axis-1")+
-  scale_x_continuous(n.breaks = 10, limits = c(0, 2012)) +
-  scale_color_manual("Lake", values = lakes_col)+
-  scale_fill_manual("Lake", values = lakes_col)+
-  theme_minimal(base_size = 12) +
-  theme(panel.grid.minor.y = element_blank())+
-  theme(legend.position = "top", legend.title = element_text(size=10, face = "bold")
-  )
-
-plot_fitted_DCA1_fgroup
 ```
 
 # Multivariate Analysis - Redundancy Analysis and Variance Partitioning
@@ -3201,7 +2592,7 @@ panel_a <- ggplot() +
   geom_sf(data = azores_bbox, fill = NA, color = "red", linetype = "dashed", size = 0.7) +
   coord_sf(xlim = c(-80, 10), ylim = c(30, 50), datum = sf::st_crs(4326), expand = FALSE) +
   theme_void() +
-  ggtitle("(A) North Atlantic context of the Azores Archipelago") +
+  ggtitle("(a) North Atlantic context of the Azores Archipelago") +
   annotation_scale(location = "bl", width_hint = 0.3)
 
 # --------------------------------------------
@@ -3255,7 +2646,7 @@ panel_b <- ggplot() +
     aes(x = x, y = y, xend = xend, yend = yend),
     color = "grey", size = 0.5
   ) +
-  ggtitle("(B) Detailed map of the Azores Archipelago")
+  ggtitle("(b) Detailed map of the Azores Archipelago")
 
 # --------------------------------------------
 # Overlay scatterplots at corresponding positions
@@ -3386,7 +2777,7 @@ plot_title_size <- 15
 # --------------------------------------------
 ordinations_fclusts_1 <- ordinations_fclusts_1 + 
   guides(fill = "none") +
-  ggtitle("(A) Functional Structure Space") +
+  ggtitle("(a) Functional Structure Space") +
   theme(
     plot.margin = unit(c(1, 2, 1, 2), "pt"),
     axis.text = element_text(size = axis_text_size),
@@ -3401,7 +2792,7 @@ tree_grob <- grid::rasterGrob(png::readPNG("outputs/decision_tree_paleo.png"))
 plot_decision_tree_paleo <- ggplot() +
   annotation_custom(tree_grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
   theme_void() +
-  ggtitle("(B) Classification Tree") +
+  ggtitle("(b) Classification Tree") +
   theme(plot.title = element_text(size = plot_title_size, face = "bold"))
 
 # --------------------------------------------
@@ -3455,7 +2846,7 @@ boxplots <-
       )
     )
   ) +
-  ggtitle("(C) Guild Composition by Structure") +
+  ggtitle("(c) Guild Composition by Structure") +
   theme(
     plot.margin = unit(c(1, 2, 1, 2), "pt"),
     plot.title = element_text(size = plot_title_size, face = "bold"),
@@ -3500,7 +2891,7 @@ p_combined <- plot_stacked_fclusts_time_lines +
     )
   ) +
   theme_minimal(base_size = 12) +
-  ggtitle("(D) Proportion of Community Trophic Structures Over Time") +
+  ggtitle("(d) Proportion of Community Trophic Structures Over Time") +
   theme(
     plot.title = element_text(size = plot_title_size, face = "bold"),
     axis.text = element_text(size = axis_text_size),
@@ -3512,7 +2903,7 @@ p_combined <- plot_stacked_fclusts_time_lines +
 # --------------------------------------
 box_plot_clusts_mod <- box_plot_clusts_mod +
   scale_x_discrete(labels = c("CTS5", "CTS4", "CTS3", "CTS2", "CTS1")) +
-  ggtitle("(E) Number of Species per Community Trophic Structure") +
+  ggtitle("(e) Number of Species per Community Trophic Structure") +
   theme(
     plot.title = element_text(size = plot_title_size, face = "bold"),
     axis.text = element_text(size = axis_text_size),
@@ -3741,7 +3132,7 @@ varpart_moving <- ggplot(r2_windowed, aes(x = midpoint, y = value, fill = veg_pe
   labs(
     x = NULL,
     y = "Adjusted R² (Variance explained)",
-    title = "(A) Variance partitioning over time"
+    title = "(a) Variance partitioning over time"
   ) +
   theme_minimal(base_size = 13) +
   theme(
@@ -3790,7 +3181,7 @@ effect_diff_plot <- ggplot(effect_diff, aes(x = midpoint, y = effect_diff, fill 
   labs(
     x = "Year (CE)",
     y = "Effect size (Vegetation − Climate)",
-    title = "(B) Relative dominance of VegChange vs. climate"
+    title = "(b) Relative dominance of VegChange vs. climate"
   ) +
   theme_minimal(base_size = 13) +
   theme(
@@ -3800,11 +3191,25 @@ effect_diff_plot <- ggplot(effect_diff, aes(x = midpoint, y = effect_diff, fill 
     plot.margin = ggplot2::margin(0.2, 0.2, 0.2, 0.2, unit = "lines")
   )
 
+
+# Apply title formatting in each subplot
+original_varpart <- original_varpart + 
+  ggtitle("(a) Historical phases") +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0))
+
+varpart_moving <- varpart_moving +
+  ggtitle("(b) Moving window") +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0))
+
+effect_diff_plot <- effect_diff_plot +
+  ggtitle("(c) Climate vs VegChange") +
+  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0))
+
 # Build the combined plot
 combined_varplot <- (
-  (original_varpart + ggtitle("(A) Historical phases")) /
-  (varpart_moving + ggtitle("(B) Moving window")) /
-  (effect_diff_plot + ggtitle("(C) Climate vs VegChange"))
+  (original_varpart + ggtitle("(a) Historical phases")) /
+  (varpart_moving + ggtitle("(b) Moving window")) /
+  (effect_diff_plot + ggtitle("(c) Climate vs VegChange"))
 ) +
   #plot_layout(guides = "collect") &
   theme(
@@ -3870,28 +3275,6 @@ nao_plot <- ggplot(nao_hernandez, aes(x = age_ce, y = NAO_Median_Value)) +
     title = "NAO Anomaly",
     x = "Year CE",
     y = "NAO Median",
-    color = NULL
-  ) +
-  theme(legend.position = "none")
-
-# --------------------------------------
-# Plot 3: Sea Surface Temperature (SST) reconstruction from sst_abrantes
-# --------------------------------------
-sst_abrantes_plot <- ggplot(sst_abrantes, aes(x = age_ce, y = SST)) +
-  geom_line(size = 1, color = "grey") +  # Raw SST signal
-  geom_point(size = 1) +                 # SST points (uncolored here)
-  scale_color_manual() +                # Placeholder (does nothing currently)
-  geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +
-
-  # Optional: add smoothed SST curve if needed
-  # geom_line(data = sst_abrantes_binned, aes(x = bin_50yr, y = avg_value),
-  #           color = "steelblue", linewidth = 2) +
-
-  theme_minimal(base_size = 14) +
-  labs(
-    title = "SST Surface Temperature Reconstruction",
-    x = "Year CE",
-    y = "Temperature (normalized)",
     color = NULL
   ) +
   theme(legend.position = "none")
@@ -4008,7 +3391,7 @@ regional_smooth_plot <- interpolated_df %>%
 # Panel A: Regional pollen turnover with label
 # --------------------------------------
 regional_panel_A <- regional_smooth_plot +
-  labs(title = "(A) Regional Pollen Community Turnover") +
+  labs(title = "(a) Regional Pollen Community Turnover") +
   theme(
     plot.title = element_text(face = "bold", size = 13),
     axis.title = element_text(size = 11),
@@ -4019,7 +3402,7 @@ regional_panel_A <- regional_smooth_plot +
 # Panel B: Tree vs Herb pollen dynamics with label
 # --------------------------------------
 group_panel_B <- group_trend_plot +
-  labs(title = "(B) Tree and Herb pollen dynamics") +
+  labs(title = "(b) Tree and Herb pollen dynamics") +
   theme(
     plot.title = element_text(face = "bold", size = 13),
     axis.title = element_text(size = 11),
