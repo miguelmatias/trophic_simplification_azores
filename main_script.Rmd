@@ -3471,23 +3471,28 @@ DDDD
 # Assemble Supplementary Figure 4
 # -----------------------------------------------
 
-# Panel A: Stacked community trophic structures at regional scale
+# Panel A: Regional scale
 panel_regional_stacked <- plot_stacked_fclusts_time_lines +
-  ggtitle("Community Trophic Structures over time [regional scale]") +
+  ggtitle(" (a) Community Trophic Structures over time [regional scale]") +
   theme(
-    plot.margin = unit(c(1, 2, 1, 2), "pt")  # Tighten margins
+    plot.margin = unit(c(1, 2, 1, 2), "pt"),
+    axis.title = element_text(size = 15),
+    axis.text = element_text(size = 12),
+    plot.title = element_text(size = 14, face = "bold")
   )
 
-# Panel C: Community trophic structures at lake scale (density plot)
+# Panel B: Lake scale
 panel_lake_density <- lake_scale_density_plot +
-  ggtitle("Community Trophic Structures over time [lake scale]") +
+  ggtitle(" (b) Community Trophic Structures over time [lake scale]") +
   theme(
     plot.margin = unit(c(1, 2, 1, 2), "pt"),
     legend.position = "top",
     legend.key.size = unit(0.5, "lines"),
-    legend.text = element_text(size = 8)
+    legend.text = element_text(size = 10),
+    axis.title = element_text(size = 15),
+    axis.text = element_text(size = 12),
+    plot.title = element_text(size = 14, face = "bold")
   )
-
 # Combine panels using patchwork with layout control
 supplementary_figure_4 <- 
   (panel_regional_stacked + panel_lake_density) +
@@ -3496,7 +3501,7 @@ supplementary_figure_4 <-
     heights = c(40, 80),
     guides = "collect"
   ) +
-  patchwork::plot_annotation(tag_levels = 'A') &
+  #patchwork::plot_annotation(tag_levels = 'A') &
   theme(
     plot.margin = unit(c(0, 0, 0, 0), "pt"),  # Minimize outer spacing
     legend.position = 'bottom'               # Merge legends at the bottom
@@ -3534,7 +3539,7 @@ dev.off()
 
 ```
 
-### SUPPLEMENTARY FIGURE 6 - Variable Importance Plot
+### SUPPLEMENTARY FIGURE 6 - Global RDA
 ```{r fig.width = 12, fig.asp = 1}
 
 # Set PNG output for saving the tree plot
