@@ -2538,11 +2538,19 @@ custom_titles <- c(
 # --------------------------------------------
 ls_plot_df_dca_multi_all_named <- imap(ls_plot_df_dca_multi_all, function(plot, name) {
   if (name %in% names(custom_titles)) {
-    plot + ggtitle(custom_titles[[name]])
+    plot +
+      ggtitle(custom_titles[[name]]) +
+      theme(
+        plot.title = element_text(size = 8, face = "bold"),
+        axis.title = element_text(size = 7),
+        axis.text = element_text(size = 6),
+        text = element_text(size = 8)  # general fallback
+      )
   } else {
     plot
   }
 })
+
 
 # --------------------------------------------
 # Remove Furnas and Fogo plots and convert remaining plots to grobs
@@ -2593,6 +2601,7 @@ panel_a <- ggplot() +
   coord_sf(xlim = c(-80, 10), ylim = c(30, 50), datum = sf::st_crs(4326), expand = FALSE) +
   theme_void() +
   ggtitle("(a) North Atlantic context of the Azores Archipelago") +
+  theme(plot.title = element_text(size = 8, face = "bold")) +
   annotation_scale(location = "bl", width_hint = 0.3)
 
 # --------------------------------------------
@@ -2646,7 +2655,8 @@ panel_b <- ggplot() +
     aes(x = x, y = y, xend = xend, yend = yend),
     color = "grey", size = 0.5
   ) +
-  ggtitle("(b) Detailed map of the Azores Archipelago")
+  ggtitle("(b) Detailed map of the Azores Archipelago") +
+  theme(plot.title = element_text(size = 8, face = "bold"))
 
 # --------------------------------------------
 # Overlay scatterplots at corresponding positions
@@ -2690,9 +2700,9 @@ print(combined_plot_map)
 # Export figure to file
 # --------------------------------------------
 ggsave(
-  "figures/FIGURE_1_azores_map_DCA_all_types_two_panels.svg",
+  "figures/FIGURE_1_azores_map_DCA_all_types_two_panels.pdf",
   plot = combined_plot_map,
-  dpi = 600, width = 14, height = 14
+  dpi = 300, width = 180, height = 190, units = "mm"
 )
 
 
