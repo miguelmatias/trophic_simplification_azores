@@ -2988,35 +2988,29 @@ axis_text_size  <- 11
 legend_text_size <- 10
 plot_title_size <- 14
 
-# --------------------------------------------
-# Helper: Standardize and summarize species richness
-# --------------------------------------------
-summarize_richness <- function(df, producer = TRUE) {
-  df %>%
-    select(-name) %>%
-    group_by(lake, core_depth_id, fgroup) %>%
-    summarise(
-      species_richness = sum(value > 0, na.rm = TRUE),
-      total_abundance  = sum(value, na.rm = TRUE),
-      .groups = "drop"
-    ) %>%
-    group_by(lake, fgroup) %>%
-    mutate(
-      standardized_species_richness = (species_richness - min(species_richness, na.rm = TRUE)) / 
-                                      (max(species_richness, na.rm = TRUE) - min(species_richness, na.rm = TRUE))
-    ) %>%
-    left_join(df_age_model, by = "core_depth_id") %>%
-    filter(if (producer) !fgroup %in% c("algivore", "detritivore", "plantivore", "predator") else fgroup %in% c("algivore", "detritivore", "plantivore", "predator"))
-}
+# Define custom labels for functional groups
+prod_labels <- c(
+  "high_profile" = "High-profile",
+  "low_profile" = "Low-profile",
+  "motile" = "Motile",
+  "euplanktonic" = "Euplanktonic"
+)
 
+# Define custom labels for functional groups
+cons_labels <- c(
+  "plantivore" = "Plantivore",
+  "algivore" = "Algivore",
+  "detritivore" = "Detritivore",
+  "predator" = "Predator"
+)
 # --------------------------------------------
-# Global consumer richness trend
+# Regional consumer richness trend
 # --------------------------------------------
-cons_glob_div_plt <- summarize_richness(df_comm, producer = FALSE) %>%
+cons_glob_div_plt <- cons_glob_div_plt_data %>%
   ggplot(aes(age_ce, standardized_species_richness)) +
   geom_smooth(aes(color = fgroup), se = TRUE) +
-  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
-  scale_color_viridis_d(name = "Consumer guilds", option = "B", direction = -1, alpha = 0.5) +
+  geom_smooth(color = "red", linetype = "dotted", alpha = 0.7, se = FALSE) +
+  scale_color_viridis_d(name = "Consumer guilds", option = "B", direction = -1, alpha = 0.5, labels = cons_labels) +
   scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
   labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
   theme_minimal() +
@@ -3031,36 +3025,13 @@ cons_glob_div_plt <- summarize_richness(df_comm, producer = FALSE) %>%
   lims(x = c(0, 2010))
 
 # --------------------------------------------
-# Per-lake consumer richness trends
+# Regional producer richness trend
 # --------------------------------------------
-cons_lake_div_plt <- summarize_richness(df_comm, producer = FALSE) %>%
-  ggplot(aes(age_ce, standardized_species_richness)) +
-  facet_wrap(~lake, scales = "free", nrow = 3) +
-  geom_point(aes(color = fgroup), alpha = 0.6) +
-  geom_smooth(aes(color = fgroup), se = FALSE) +
-  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
-  scale_color_viridis_d(name = "Consumer guilds", option = "B", direction = -1, alpha = 0.5) +
-  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
-  labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    panel.grid.minor = element_blank(),
-    axis.title = element_text(size = axis_title_size),
-    axis.text  = element_text(size = axis_text_size),
-    plot.title = element_text(size = plot_title_size, face = "bold")
-  ) +
-  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
-  lims(x = c(0, 2010))
-
-# --------------------------------------------
-# Global producer richness trend
-# --------------------------------------------
-prod_glob_div_plt <- summarize_richness(df_comm, producer = TRUE) %>%
+prod_glob_div_plt <- prod_glob_div_plt_data %>%
   ggplot(aes(age_ce, standardized_species_richness)) +
   geom_smooth(aes(color = fgroup), se = TRUE) +
-  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
-  scale_color_viridis_d(name = "Producer guilds", option = "D", direction = -1, alpha = 0.5) +
+  geom_smooth(color = "red", linetype = "dotted", alpha = 0.7, se = FALSE) +
+  scale_color_viridis_d(name = "Producer guilds", option = "D", direction = 1, alpha = 0.5, labels = prod_labels) +
   scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
   labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
   theme_minimal() +
@@ -3075,30 +3046,7 @@ prod_glob_div_plt <- summarize_richness(df_comm, producer = TRUE) %>%
   lims(x = c(0, 2010))
 
 # --------------------------------------------
-# Per-lake producer richness trends
-# --------------------------------------------
-prod_lake_div_plt <- summarize_richness(df_comm, producer = TRUE) %>%
-  ggplot(aes(age_ce, standardized_species_richness)) +
-  facet_wrap(~lake, scales = "free", nrow = 3) +
-  geom_point(aes(color = fgroup), alpha = 0.6) +
-  geom_smooth(aes(color = fgroup), se = FALSE) +
-  geom_smooth(aes(linetype = "Overall mean"), color = "red", alpha = 0.7, se = FALSE) +
-  scale_color_viridis_d(name = "Producer guilds", option = "D", direction = -1, alpha = 0.5) +
-  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
-  labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    panel.grid.minor = element_blank(),
-    axis.title = element_text(size = axis_title_size),
-    axis.text  = element_text(size = axis_text_size),
-    plot.title = element_text(size = plot_title_size, face = "bold")
-  ) +
-  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
-  lims(x = c(0, 2010))
-
-# --------------------------------------------
-# Optional: Remove y-axis for consumer global plot to align with producer
+# Remove y-axis for consumer global plot to align with producer
 # --------------------------------------------
 cons_glob_div_plt <- cons_glob_div_plt +
   theme(
@@ -3113,7 +3061,7 @@ plot_div_per_fgroup_regional_scale <-
   prod_glob_div_plt + cons_glob_div_plt +
   patchwork::plot_layout(guides = "collect", widths = c(1, 1)) +
   patchwork::plot_annotation(
-    tag_levels = 'A',
+    tag_levels = 'a',
     theme = theme(
       legend.position = "bottom",
       legend.text = element_text(size = legend_text_size)
