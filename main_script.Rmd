@@ -3010,7 +3010,8 @@ cons_glob_div_plt <- cons_glob_div_plt_data %>%
   ggplot(aes(age_ce, standardized_species_richness)) +
   geom_smooth(aes(color = fgroup), se = TRUE) +
   geom_smooth(color = "red", linetype = "dotted", alpha = 0.7, se = FALSE) +
-  scale_color_viridis_d(name = "Consumer guilds", option = "B", direction = -1, alpha = 0.5, labels = cons_labels) +
+  scale_color_scico_d(name = "Consumer guilds", palette = "lajolla", direction = -1) +
+  #scale_color_viridis_d(name = "Consumer guilds", option = "B", direction = -1, alpha = 0.5, labels = cons_labels) +
   scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
   labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
   theme_minimal() +
