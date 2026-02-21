@@ -1,8 +1,10 @@
 ---
-title: "A millennium of human-driven trophic simplification in Azorean lake ecosystems"
+title: "Human-driven trophic simplification in Azorean lake ecosystems"
 output:
   pdf_document: default
 ---
+
+**About this script.** This R Markdown reproduces the analyses for the manuscript on trophic structure change in Azorean lakes over the past ~2000 years. It loads data (DCA scores, guild abundances, climate reconstructions, pollen), runs variance partitioning (phase-based and moving window), sensitivity analyses (phase boundaries, leave-one-out, null models), and produces main and supplementary figures. Custom helper functions are in `functions/source_custom_functions.R`. Run chunks in order; all packages are loaded in the first code section.
 
 ```{r}
 # Set-up chunk
@@ -16,6 +18,10 @@ knitr::opts_chunk$set(
 
 # Load libraries
 ```{r sources, include=FALSE}
+# ------------------------------------------------------------------------------
+# All dependencies are loaded once here. Do not add library() in later chunks;
+# if a package is needed, add it below and re-run this chunk.
+# ------------------------------------------------------------------------------
 
 # -------------------------------
 # 🧰 General-Purpose & Data Handling
@@ -924,7 +930,6 @@ suppressWarnings(print(plot_density_fclusts_time_lines_1B))
 ```
 ## Regional proportions trophic structures 
 ```{r fig.asp = 0.5, fig.width = 12}
-
 # Create the plot
 plot_stacked_fclusts_time_lines <- 
   ls_all_hclusts_complete_paleo %>%
@@ -962,7 +967,131 @@ plot_stacked_fclusts_time_lines <-
     title = "Combined proportions of Community Trophic Structures over Time"
   )
 
-plot_stacked_fclusts_time_lines
+plot_stacked_fclusts_time_lines    
+
+bin_size <- 30
+
+df_fclusts <- ls_all_hclusts_complete_paleo %>%
+  purrr::map_dfr(~as.data.frame(.x)) %>%
+  filter(!is.na(age_ce), !is.na(amd_clusts), !is.na(lake)) %>%
+  mutate(
+    amd_clusts = factor(as.character(amd_clusts)),   # stable factor
+    age_bin    = floor(age_ce / bin_size) * bin_size
+  ) %>%
+  group_by(lake, age_bin) %>%
+  mutate(w = 1 / n()) %>%         # each lake contributes total weight 1 per bin
+  ungroup()
+
+plot_regional_lake_balanced <-
+  ggplot(df_fclusts, aes(x = age_ce, fill = amd_clusts)) +
+  geom_density(aes(weight = w),
+               adjust = 1.5, position = "fill", colour = "white") +
+  scale_fill_viridis_d(name = "Community Trophic \nstructures",
+                       option = "viridis", direction = -1) +
+  lims(x = c(0, 2010)) +
+  geom_vline(data = data.frame(x = highlighted_dates),
+             aes(xintercept = x), colour = "white") +
+  geom_text(
+    data = data.frame(x = highlighted_dates, y = 1.05, label = as.character(highlighted_dates)),
+    aes(x = x, y = y, label = label),
+    inherit.aes = FALSE,
+    colour = "black", size = 3, fontface = "bold"
+  ) +
+  theme_minimal() +
+  labs(
+    x = "Age (CE)",
+    y = "Proportion of Community Trophic Structures",
+    title = "Combined proportions of Community Trophic Structures over Time"
+  )
+
+plot_regional_lake_balanced
+
+```
+
+
+```{r fig.asp = 1, fig.width = 14}
+# K values to compare
+Ks <- c(2, 3, 4, 5, 6, 7, 8)
+
+# coverage (how many lakes per age_bin)
+cov <- df_fclusts %>%
+  distinct(lake, age_bin) %>%
+  count(age_bin, name = "n_lakes")
+
+# build one df per K (and tag it)
+df_common_allK <- map_dfr(Ks, function(K) {
+  df_fclusts %>%
+    left_join(cov, by = "age_bin") %>%
+    filter(n_lakes >= K) %>%
+    mutate(K = factor(K, levels = Ks))
+})
+
+# ensure stable legend ordering across facets
+df_common_allK <- df_common_allK %>%
+  mutate(amd_clusts = factor(amd_clusts, levels = sort(unique(df_fclusts$amd_clusts))))
+
+# plot: 3 vertical panels
+plot_common_support_Ks <-
+  ggplot(df_common_allK, aes(x = age_ce, fill = amd_clusts)) +
+  geom_density(
+    aes(weight = w),
+    adjust = 1.5,
+    position = "fill",
+    colour = "white"
+  ) +
+  facet_wrap(
+    ~ K,
+    ncol = 1,
+    labeller = as_labeller(function(x)
+      paste0("Common support: \u2265", x, " lakes"))
+  ) +
+  scale_fill_viridis_d(
+    name = "Community Trophic \nstructures",
+    option = "viridis",
+    direction = -1
+  ) +
+  coord_cartesian(
+    xlim = c(0, 2000),
+    ylim = c(0, 1)
+  ) +
+  geom_vline(
+    data = data.frame(x = highlighted_dates),
+    aes(xintercept = x),
+    colour = "white"
+  ) +
+  lims(x = c(0, 2000)) + 
+  geom_text(
+    data = data.frame(
+      x = highlighted_dates,
+      y = 1.05,
+      label = as.character(highlighted_dates)
+    ),
+    aes(x = x, y = y, label = label),
+    inherit.aes = FALSE,
+    colour = "black",
+    size = 3,
+    fontface = "bold"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(face = "bold"),
+    legend.background = element_rect(
+      fill = "white",
+      linewidth = 4,
+      colour = "white"
+    ),
+    axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
+    panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(
+    x = "Age (CE)",
+    y = "Proportion of Community Trophic Structures",
+    title = "Regional trophic-structure proportions under common-support filtering (0–2000 CE)"
+  )
+
+plot_common_support_Ks
+
 ```
 
 ## Ordination with trophic structures
@@ -1268,33 +1397,7 @@ plot_time_GI_diatoms <-
   theme(legend.position = "none") +
     annotate("text_npc", npcx = 0.05, npcy = .95, label = lab1, cex = 3.5)
 
-plot_time_GI_diatoms
-
-```
-
-### Regional Smooth: derivatives
-```{r}
-
-dev_mod_diatoms <- derivatives(mod_diatoms, term = "s(age_ce)")
-
-plot_time_dev_diatoms <-
-  dev_mod_diatoms %>%
-  ggplot() +
-  geom_ribbon(aes(ymin = .lower_ci, ymax = .upper_ci, x = age_ce),
-    alpha = 0.2
-  ) +
-  geom_line(aes(x = age_ce, y = .derivative, color = (.lower_ci) > 0 | (.upper_ci) < 0, group = 1),
-    lwd = 1, show.legend = FALSE
-  ) +
-  scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-  scale_y_continuous(name = "derivative", n.breaks = 3, limits = c(-0.010, 0.010)) +
-  scale_color_manual(values = c("black", "red")) +
-  theme_classic(base_size = 12) +
-  lims(x = c(0, 2020)) +
-  lims(y = c(-0.025, 0.025)) +
-  theme(panel.grid.minor.y = element_blank())
-
-plot_time_dev_diatoms
+#plot_time_GI_diatoms
 
 ```
 
@@ -1369,36 +1472,9 @@ plot_time_GI_chiro <-
   theme(legend.position = "none") +
     annotate("text_npc", npcx = 0.05, npcy = .95, label = lab1, cex = 3.5)
 
-plot_time_GI_chiro
+#plot_time_GI_chiro
 
 ```
-
-### Regional Smooth: derivatives
-
-```{r}
-
-dev_mod_chiro <- derivatives(mod_chiro, term = "s(age_ce)")
-
-plot_time_dev_chiro <-
-  dev_mod_chiro %>%
-  ggplot() +
-  geom_ribbon(aes(ymin = .lower_ci, ymax = .upper_ci, x = age_ce),
-    alpha = 0.2
-  ) +
-  geom_line(aes(x = age_ce, y = .derivative, color = (.lower_ci) > 0 | (.upper_ci) < 0, group = 1),
-    lwd = 1, show.legend = FALSE
-  ) +
-  scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-  scale_y_continuous(name = "derivative", n.breaks = 3, limits = c(-0.010, 0.010)) +
-  scale_color_manual(values = c("black", "red")) +
-  theme_classic(base_size = 12) +
-  lims(x = c(0, 2020)) +
-  lims(y = c(-0.025, 0.025)) +
-  theme(panel.grid.minor.y = element_blank())
-
-plot_time_dev_chiro
-```
-
 ## GAM - Fgroups
 ### Regional Smooth
 
@@ -1470,34 +1546,8 @@ plot_time_GI_fgroup <-
   theme(legend.position = "none") +
     annotate("text_npc", npcx = 0.05, npcy = .95, label = lab1, cex = 3.5)
 
-plot_time_GI_fgroup
+#plot_time_GI_fgroup
 
-```
-
-### Regional Smooth: derivatives
-
-```{r}
-
-dev_mod_fgroup <- derivatives(mod_fgroup, term = "s(age_ce)")
-
-plot_time_dev_fgroup <-
-  dev_mod_fgroup %>%
-  ggplot() +
-  geom_ribbon(aes(ymin = .lower_ci, ymax = .upper_ci, x = age_ce),
-    alpha = 0.2
-  ) +
-  geom_line(aes(x = age_ce, y = .derivative, color = (.lower_ci) > 0 | (.upper_ci) < 0, group = 1),
-    lwd = 1, show.legend = FALSE
-  ) +
-  scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-  scale_y_continuous(name = "derivative", n.breaks = 3, limits = c(-0.010, 0.010)) +
-  scale_color_manual(values = c("black", "red")) +
-  theme_classic(base_size = 12) +
-  lims(x = c(0, 2020)) +
-  lims(y = c(-0.025, 0.025)) +
-  theme(panel.grid.minor.y = element_blank())
-
-plot_time_dev_fgroup
 ```
 
 # Multivariate Analysis - Redundancy Analysis and Variance Partitioning
@@ -1577,7 +1627,6 @@ DF_to <- DCA.res %>% mutate(sitename = as.factor(sitename))
 # HGAM on DCA
 # ----------------------------------------------------------
 
-library(mgcv)
 mod_to <- gam(DCA1 ~ s(age_ce, bs = "tp", k = 25) +
                 s(age_ce, by = sitename, bs = "tp", k = 15, m = 1) +
                 s(sitename, bs = "re"),
@@ -1650,28 +1699,7 @@ pollen_percent_group <- pollen_percent_group %>%
   mutate(sitename = factor(sitename))  # ensure factor type
 
 # --- GAM fitting function ---
-
-fit_gam_group <- function(df) {
-  if (!"sitename" %in% names(df)) {
-    stop("Missing `sitename` column in group: ", unique(df$group))
-  }
-  
-  if (n_distinct(df$sitename) < 2) {
-    warning("Only one site found in group: ", unique(df$group), ". Fitting a basic model.")
-    return(
-      gam(percent ~ s(age_ce, k = 10), data = df, method = "REML")
-    )
-  }
-
-  gam(
-    percent ~ 
-      s(age_ce, bs = "tp", k = 30) +
-      s(age_ce, by = sitename, bs = "tp", k = 9, m = 1) +
-      s(sitename, bs = "re"),
-    data = df,
-    method = "REML"
-  )
-}
+#   defined in `functions/source_custom_functions.R` (fit_gam_group)
 
 # --- Fit GAM for each pollen group ---
 
@@ -1681,22 +1709,7 @@ gam_models <- pollen_percent_group %>%
   map(fit_gam_group)
 
 # --- Plotting function per group ---
-
-plot_gam_group <- function(group_name, mod) {
-  df_aug <- augment(mod, type.predict = "response")
-  sum1 <- summary(mod)
-  lab1 <- paste("AdjRsq = ", round(sum1$r.sq, 2),
-                "\nDevExpl = ", round(sum1$dev.expl, 2))
-  
-  ggplot(df_aug, aes(x = age_ce)) +
-    geom_point(aes(y = percent), color = "black", alpha = 0.3, size = 1) +
-    geom_smooth(aes(y = .fitted), method = "loess", se = TRUE, color = "steelblue", linewidth = 1) +
-    labs(title = group_name, y = "% Abundance") +
-    scale_x_continuous(limits = c(0, 2020), n.breaks = 5) +
-    annotate("text_npc", npcx = 0.05, npcy = 0.95, label = lab1, size = 3.5, hjust = 0, vjust = 1) +
-    theme_classic(base_size = 12) +
-    theme(plot.title = element_text(face = "bold"))
-}
+#   defined in `functions/source_custom_functions.R` (plot_gam_group)
 
 # --- Generate plots ---
 
@@ -1727,103 +1740,687 @@ aug_herb <- augment(mod_herb, type.predict = "response") %>%
   mutate(group = "Herb")
 
 combined_df_pollen <- bind_rows(aug_tree, aug_herb)
+```
+
+### Pollen analysis
+```{r fig.width = 12, fig.asp = 0.5}
+# --- taxa lists (edit freely) ---
+taxa_cereals   <- c("Cerealia", "Triticum", "Secale", "Zea mays")
+taxa_plantago  <- c("Plantago", "Plantago lanceolata", "Plantago major", "Plantago coronopus")
+
+# Conservative "ruderal" list (expand if you want)
+taxa_ruderal   <- c("Amaranthaceae", "Artemisia", "Carduus",
+                    "Xanthium", "Xanthium strumarium", "Ambrosia",
+                    "Achillea", "Centaurea cyanus", "Urtica", "Urtica urens")
+
+# Native/endemic Azores indicators from your taxa list (expand as desired)
+taxa_native <- c(
+  "Juniperus brevifolia", "Picconia azorica", "Frangula azorica",
+  "Prunus lusitanica subsp. azorica", "Prunus lusitanica",
+  "Myrica faya", "Erica azorica", "Daboecia azorica",
+  "Viburnum treleasei", "Ilex perado subsp. azorica",
+  "Hypericum foliosum", "Hedera azorica", "Chaerophyllum azoricum",
+  "Sanicula azorica", "Daucus carota subsp. azoricus",
+  "Lysimachia azorica", "Vicia dennesiana", "Arceuthobium azoricum"
+)
+
+bin_size <- 30
+
+# highlighted dates (your vector)
+# highlighted_dates <- c(750, 1050, 1450, 1750)
+
+# ------------------------------------------------------------
+# Denominator: terrestrial pollen total (scaled), per sample
+# ------------------------------------------------------------
+sample_totals_scaled <- pollen_normalized %>%
+  filter(
+    elementtype == "pollen",
+    !is.na(value_scaled),
+    age_ce > 0,
+    !ecologicalgroup %in% c("UNID", "AQVP", "AQBR")
+  ) %>%
+  group_by(sitename, age_ce) %>%
+  summarise(total_scaled = sum(value_scaled, na.rm = TRUE), .groups = "drop")
+
+# ------------------------------------------------------------
+# Numerators: sum of scaled pollen for each category, per sample
+# ------------------------------------------------------------
+pollen_4cat <- pollen_normalized %>%
+  filter(
+    elementtype == "pollen",
+    !is.na(value_scaled),
+    age_ce > 0,
+    !ecologicalgroup %in% c("UNID", "AQVP", "AQBR")
+  ) %>%
+  mutate(
+    category = case_when(
+      taxa %in% taxa_cereals  ~ "Cereals (Cerealia)",
+      taxa %in% taxa_plantago ~ "Plantago",
+      taxa %in% taxa_ruderal  ~ "Ruderal weeds",
+      taxa %in% taxa_native   ~ "Native pollen",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(category)) %>%
+  group_by(sitename, age_ce, category) %>%
+  summarise(value_scaled_cat = sum(value_scaled, na.rm = TRUE), .groups = "drop") %>%
+  left_join(sample_totals_scaled, by = c("sitename", "age_ce")) %>%
+  mutate(
+    percent = 100 * value_scaled_cat / total_scaled,
+    age_bin = floor(age_ce / bin_size) * bin_size,
+    category = factor(category, levels = c("Native pollen", "Cereals (Cerealia)", "Plantago", "Ruderal weeds"))
+  ) %>%
+  filter(is.finite(percent))
+
+# Optional: thin bins for plotting (every 60 yrs)
+pollen_4cat_plot <- pollen_4cat %>%
+  mutate(age_bin60 = floor(age_ce / 60) * 60)
+
+# ------------------------------------------------------------
+# Colors: native = green, others = yellow→orange→red
+# ------------------------------------------------------------
+cat_fill <- c(
+  "Native pollen"       = "#2E8B57",  # green
+  "Cereals (Cerealia)"  = "#F4D35E",  # yellow
+  "Plantago"            = "#F08A24",  # orange
+  "Ruderal weeds"       = "#D1495B"   # red
+)
+
+# ------------------------------------------------------------
+# Violin plot through time + highlighted dates (vertical lines)
+# ------------------------------------------------------------
+p_violin_time <- ggplot(
+  pollen_4cat_plot,
+  aes(x = age_bin60, y = percent)
+) +
+
+  # --- Historical phase markers ---
+  geom_vline(
+    xintercept = highlighted_dates,
+    linewidth = 0.5,
+    linetype = "dashed",
+    alpha = 0.6
+  ) +
+
+  # --- BACKGROUND POINTS (show singletons & rare events) ---
+  geom_point(
+    aes(color = category),
+    position = position_jitter(width = 10, height = 0),
+    alpha = 0.25,
+    size = 0.9
+  ) +
+
+  # --- VIOLINS (only where density exists) ---
+  geom_violin(
+    aes(
+      fill  = category,
+      group = interaction(category, age_bin60)
+    ),
+    scale = "width",
+    adjust = 1,
+    trim = TRUE,
+    alpha = 0.75
+  ) +
+
+  facet_wrap(~ category, ncol = 1, scales = "free_y") +
+
+  scale_fill_manual(values = cat_fill) +
+  scale_color_manual(values = cat_fill) +
+
+  labs(
+    x = "Age (CE) (60-year bins for plotting)",
+    y = "% of terrestrial pollen (scaled within lake)",
+    title = "Anthropogenic and native pollen indicators through time",
+    subtitle = "Points show all observations; violins indicate distributions where sufficient data exist"
+  ) +
+
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold"),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+p_violin_time
+
+# Optional: sqrt scale version (helps when magnitudes differ a lot)
+p_violin_time_sqrt <- p_violin_time +
+  scale_y_continuous(trans = "sqrt") +
+  labs(
+    y = "% of terrestrial pollen (scaled within lake) [sqrt scale]",
+    subtitle = "Violin distributions per time bin (across lakes/samples); dashed lines = highlighted dates; sqrt y-scale"
+  )
+
+p_violin_time_sqrt
+```
+### Pollen analysis
+```{r fig.width = 14, fig.asp = 0.5}
+# ------------------------------------------------------------
+# ASSUMES you already have:
+#  - pollen_4cat_plot (includes age_bin60, percent, category)
+#  - sm_to (global vegetation smooth with age_ce + .estimate + CI columns)
+#  - highlighted_dates (e.g., c(750,1050,1450,1750))
+# ------------------------------------------------------------
+
+# 1) Order groups bottom -> top (as requested)
+cat_levels <- c("Native pollen", "Ruderal weeds", "Plantago", "Cereals (Cerealia)")
+
+pollen_band <- pollen_4cat_plot %>%
+  mutate(
+    category = factor(category, levels = cat_levels),
+    band_id  = as.integer(category) - 1L   # 0..3
+  ) %>%
+  group_by(category) %>%
+  mutate(
+    # Scale percent within each category so each band has comparable height
+    percent_scaled = scales::rescale(percent, to = c(0.05, 0.95), na.rm = TRUE),
+    y_band = band_id + percent_scaled
+  ) %>%
+  ungroup()
+
+# 2) Single global GAM curve (scaled once to the full vertical span of bands)
+veg_bg <- sm_to %>%
+  dplyr::filter(.smooth == "s(age_ce)") %>%
+  dplyr::transmute(
+    age_ce  = age_ce,
+    veg_est = .estimate,
+    veg_lo  = .lower_ci,
+    veg_hi  = .upper_ci
+  ) %>%
+  arrange(age_ce)
+
+# Store original GAM scale for the RIGHT axis
+veg_min <- min(veg_bg$veg_est, na.rm = TRUE)
+veg_max <- max(veg_bg$veg_est, na.rm = TRUE)
+
+# Scale GAM y to match band space (single mapping for all bands)
+ymin_band <- min(pollen_band$y_band, na.rm = TRUE)
+ymax_band <- max(pollen_band$y_band, na.rm = TRUE)
+
+veg_bg <- veg_bg %>%
+  mutate(
+    veg_y     = scales::rescale(veg_est, to = c(ymin_band, ymax_band)),
+    veg_lo_y  = scales::rescale(veg_lo,  to = c(ymin_band, ymax_band)),
+    veg_hi_y  = scales::rescale(veg_hi,  to = c(ymin_band, ymax_band)),
+    veg_est_scaled = scales::rescale(veg_est, to = c(0, 1))
+  )
+
+# 3) Colors: native green, others yellow→orange→red
+cat_fill <- c(
+  "Native pollen"       = "#2E8B57",
+  "Cereals (Cerealia)"  = "#F4D35E",
+  "Plantago"            = "#F08A24",
+  "Ruderal weeds"       = "#D1495B"
+)
+
+# Helper: inverse mapping from band y-space -> original GAM space (for right axis)
+#   defined in `functions/source_custom_functions.R` (inv_gam_from_band)
+
+# 4) Build the plot (single GAM behind everything + RIGHT y-axis for GAM)
+p_collage_singleGAM <- ggplot() +
+
+  # --- single GAM ribbon (behind everything) ---
+  geom_ribbon(
+    data = veg_bg,
+    aes(x = age_ce, ymin = veg_lo_y, ymax = veg_hi_y),
+    inherit.aes = FALSE,
+    fill = "grey70", alpha = 0.20
+  ) +
+
+  # --- single GAM line: thick + green→yellow gradient, transparent ---
+  geom_path(
+    data = veg_bg,
+    aes(x = age_ce, y = veg_y, colour = veg_est_scaled),
+    inherit.aes = FALSE,
+    linewidth = 10,
+    alpha = 0.30,
+    lineend  = "butt",   # removes rounded caps
+    linejoin = "mitre"   # reduces “bubble” joins
+  ) +
+  scale_colour_gradient(low = "#2E8B57", high = "#F4D35E", guide = "none") +
+
+  ggnewscale::new_scale_colour() +
+
+  # --- phase markers ---
+  geom_vline(
+    xintercept = highlighted_dates,
+    linewidth = 0.5, linetype = "dashed", alpha = 0.6
+  ) +
+
+  # --- points (always shown, includes singletons) ---
+  geom_point(
+    data = pollen_band,
+    aes(x = age_bin60, y = y_band, colour = category),
+    position = position_jitter(width = 10, height = 0),
+    alpha = 0.25, size = 0.9
+  ) +
+
+  # --- violins (only where density exists; singletons still visible as points) ---
+  geom_violin(
+    data = pollen_band,
+    aes(
+      x = age_bin60, y = y_band,
+      fill  = category,
+      group = interaction(category, age_bin60)
+    ),
+    scale = "width", adjust = 1, trim = TRUE, alpha = 0.75
+  ) +
+
+  scale_fill_manual(values = cat_fill) +
+  scale_color_manual(values = cat_fill) +
+
+  # --- LEFT axis: bands; RIGHT axis: GAM (secondary axis) ---
+  scale_y_continuous(
+    breaks = 0:3 + 0.5,
+    labels = cat_levels,
+    expand = expansion(mult = c(0.03, 0.03)),
+    sec.axis = sec_axis(
+      trans = inv_gam_from_band,
+      name  = "Regional vegetation change (HGAM global smooth)"
+    )
+  ) +
+
+  labs(
+    x = "Age (CE) (60-year bins for plotting)",
+    y = NULL,
+    title = "Regional vegetation change with anthropogenic/native pollen indicators",
+    subtitle = "Background: HGAM global vegetation smooth (± CI). Overlay: pollen distributions per 60-year bin (scaled within each indicator)."
+  ) +
+
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_text(face = "bold"),
+    axis.title.y.right = element_text(face = "bold"),
+    axis.text.y.right = element_text(face = "bold"),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+p_collage_singleGAM
+```
+
+
+#### Pollen analysis - Regional
+```{r fig.width = 12, fig.asp = 0.35}
+bin_plot <- 60
+
+cat_levels <- c("Cereals (Cerealia)", "Plantago", "Native pollen")
+
+cat_cols <- c(
+  "Native pollen"       = "#2E8B57",
+  "Plantago"            = "#F08A24",
+  "Cereals (Cerealia)"  = "#F4D35E"
+)
+
+# Presence = at least one lake with non-zero pollen in that bin
+presence_by_bin <- pollen_4cat %>%
+  filter(category %in% cat_levels) %>% 
+  mutate(
+    age_bin60 = floor(age_ce / bin_plot) * bin_plot,
+    category  = factor(category, levels = cat_levels)
+  ) %>%
+  group_by(category, age_bin60, sitename) %>%
+  summarise(present = any(percent > 0, na.rm = TRUE), .groups = "drop") %>%
+  group_by(category, age_bin60) %>%
+  summarise(
+    n_lakes_present = sum(present),
+    .groups = "drop"
+  ) %>%
+  filter(n_lakes_present > 0) %>%
+  mutate(presence = 1)
+
+p_presence_rows <- ggplot(
+  presence_by_bin,
+  aes(x = age_bin60, y = presence)
+) +
+
+  # Historical phase markers
+  geom_vline(
+    xintercept = highlighted_dates,
+    linetype = "dashed",
+    linewidth = 0.4,
+    alpha = 0.6
+  ) +
+
+  # Presence markers
+  geom_point(
+    aes(size = n_lakes_present, color = category),
+    alpha = 0.8
+  ) +
+
+  facet_wrap(
+    ~ category,
+    ncol = 1,
+    scales = "free_y"
+  ) +
+
+  scale_color_manual(values = cat_cols) +
+  scale_size_continuous(range = c(1.5, 4)) +
+
+  scale_y_continuous(
+    breaks = NULL,
+    labels = NULL
+  ) +
+
+  labs(
+    x = "Age (CE) (60-year bins)",
+    y = NULL,
+    title = "Regional appearance of anthropogenic and native pollen indicators",
+    subtitle = "Each row shows when a pollen group is present in at least one lake; point size reflects number of lakes"
+  ) +
+
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(face = "bold"),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+p_presence_rows
+```
+
+#### Pollen analysis - by island
+```{r fig.width = 12, fig.asp = 0.5}
+lake_island_lut <- tribble(
+  ~sitename,             ~island,
+  "Azul",                "São Miguel",
+  "Pico da Esperança",   "São Jorge",
+  "Caldeirão",           "Corvo",
+  "Caldeirão Connor",    "Corvo",
+  "Caveiro",             "Pico",
+  "Funda",               "Flores",
+  "Gingal",              "Terceira",
+  "Peixinho",            "Pico",
+  "Pico Bog",            "Pico",
+)
+
+pollen_4cat2 <- pollen_4cat %>%
+  left_join(lake_island_lut, by = "sitename")
+
+# sanity checks
+stopifnot("island" %in% names(pollen_4cat2))
+if (anyNA(pollen_4cat2$island)) {
+  print(unique(pollen_4cat2$sitename[is.na(pollen_4cat2$island)]))
+  stop("Some sitenames are missing an island mapping (printed above).")
+}
+
+bin_plot <- 60
+
+cat_levels <- c("Cereals (Cerealia)", "Plantago", "Native pollen")
+
+cat_cols <- c(
+  "Native pollen"       = "#2E8B57",
+  "Plantago"            = "#F08A24",
+  "Cereals (Cerealia)"  = "#F4D35E"
+)
+
+# Use the islands actually present (and keep a nice order)
+island_levels <- c("Corvo", "Flores", "Terceira", "Pico", "São Miguel", "São Jorge")
+
+presence_by_bin_island <- pollen_4cat2 %>%
+  filter(category %in% cat_levels) %>% 
+  mutate(
+    age_bin60 = floor(age_ce / bin_plot) * bin_plot,
+    category  = factor(category, levels = cat_levels),
+    island    = factor(island, levels = island_levels)
+  ) %>%
+  group_by(category, island, age_bin60, sitename) %>%
+  summarise(present = any(percent > 0, na.rm = TRUE), .groups = "drop") %>%
+  group_by(category, island, age_bin60) %>%
+  summarise(n_lakes_present = sum(present), .groups = "drop") %>%
+  filter(n_lakes_present > 0)
+
+presence_spans <- presence_by_bin_island %>%
+  group_by(category, island) %>%
+  summarise(
+    age_start = min(age_bin60),
+    age_end   = max(age_bin60),
+    .groups = "drop"
+  )
+
+p_presence_rows_islands <- ggplot() +
+
+  # Historical phase markers
+  geom_vline(
+    xintercept = highlighted_dates,
+    linetype   = "dashed",
+    linewidth  = 0.4,
+    alpha      = 0.6
+  ) +
+
+  # Presence span (thick horizontal line)
+  geom_segment(
+    data = presence_spans,
+    aes(
+      x    = age_start,
+      xend = age_end,
+      y    = island,
+      yend = island,
+      color = category
+    ),
+    linewidth = 2.2,
+    alpha = 0.6,
+    lineend = "round"
+  ) +
+
+  # Discrete presence points
+  geom_point(
+    data = presence_by_bin_island,
+    aes(
+      x = age_bin60,
+      y = island,
+      size = n_lakes_present,
+      color = category
+    ),
+    alpha = 0.9
+  ) +
+
+  facet_wrap(~ category, ncol = 1) +
+
+  scale_color_manual(values = cat_cols) +
+  scale_size_continuous(range = c(1.5, 5)) +
+
+  labs(
+    x = "Age (CE) (60-year bins)",
+    y = NULL,
+    title = "Regional appearance of anthropogenic and native pollen indicators",
+    subtitle = "Horizontal bars indicate the temporal span of presence within each island; points show 60-year bins (size = number of lakes)"
+  ) +
+
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank()
+  )
+
+p_presence_rows_islands
+```
+
+#### Pollen analysis - by island, by lake
+```{r fig.width = 12, fig.asp = 0.5}
+bin_plot <- 60
+
+cat_levels <- c("Cereals (Cerealia)", "Plantago", "Native pollen")
+
+cat_cols <- c(
+  "Native pollen"       = "#2E8B57",
+  "Plantago"            = "#F08A24",
+  "Cereals (Cerealia)"  = "#F4D35E"
+)
+
+# ---- one row per LAKE ----
+presence_by_bin_lake <- pollen_4cat2 %>%
+  filter(category %in% cat_levels) %>% 
+  mutate(
+    age_bin60 = floor(age_ce / bin_plot) * bin_plot,
+    category  = factor(category, levels = cat_levels)
+  ) %>%
+  group_by(category, island, sitename, age_bin60) %>%
+  summarise(present = any(percent > 0, na.rm = TRUE), .groups = "drop") %>%
+  filter(present)  %>% 
+  filter(!category %in% "Ruderal weeds")
+
+# span per lake (first to last presence)
+presence_spans_lake <- presence_by_bin_lake %>%
+  group_by(category, island, sitename) %>%
+  summarise(
+    age_start = min(age_bin60),
+    age_end   = max(age_bin60),
+    .groups = "drop"
+  )
+
+# y-order: group lakes by island (nice visual blocks), then by sitename
+lake_order <- presence_by_bin_lake %>%
+  distinct(island, sitename) %>%
+  arrange(island, sitename) %>%
+  mutate(lake_label = paste0(island, " — ", sitename))
+
+presence_by_bin_lake <- presence_by_bin_lake %>%
+  left_join(lake_order, by = c("island", "sitename")) %>%
+  mutate(lake_label = factor(lake_label, levels = lake_order$lake_label))
+
+presence_spans_lake <- presence_spans_lake %>%
+  left_join(lake_order, by = c("island", "sitename")) %>%
+  mutate(lake_label = factor(lake_label, levels = lake_order$lake_label))
+
+p_presence_rows_lakes <- ggplot() +
+
+  # Historical phase markers
+  geom_vline(
+    xintercept = highlighted_dates,
+    linetype   = "dashed",
+    linewidth  = 0.4,
+    alpha      = 0.6
+  ) +
+
+  # Presence span per lake (thick horizontal line)
+  geom_segment(
+    data = presence_spans_lake,
+    aes(
+      x = age_start, xend = age_end,
+      y = lake_label, yend = lake_label,
+      color = category
+    ),
+    linewidth = 2.2,
+    alpha = 0.55,
+    lineend = "round"
+  ) +
+
+  # Discrete presence points (one per bin per lake)
+  geom_point(
+    data = presence_by_bin_lake,
+    aes(
+      x = age_bin60,
+      y = lake_label,
+      color = category
+    ),
+    size = 2.2,
+    alpha = 0.9
+  ) +
+
+  facet_wrap(~ category, ncol = 1) +
+  scale_color_manual(values = cat_cols) +
+
+  labs(
+    x = "Age (CE) (60-year bins)",
+    y = NULL,
+    title = "Appearance of anthropogenic and native pollen indicators by lake",
+    subtitle = "Horizontal bars show each lake’s presence span; points show 60-year bins with presence"
+  ) +
+
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank()
+  )
+
+p_presence_rows_lakes
 
 ```
 
+
 ## Data prep - Align environmental data
-
 ```{r fig.width = 12, fig.asp = 1.2}
-
 # ------------------------------------------------------------------------------
-# Interpolate vegetation smooth (HGAM output)
+# Vegetation smooth on a yearly grid WITHOUT interpolation
 # ------------------------------------------------------------------------------
 
 interp_years <- 0:2010
+ref_site <- levels(DF_to$sitename)[1]
 
-# Extract the global smooth only (sitename == NA)
-sm_interp <- sm_to %>%
-  filter(is.na(sitename)) %>%
-  select(age_ce, estimate = .estimate, lower_ci = .lower_ci, upper_ci = .upper_ci)
+newdata_veg <- tibble(
+  age_ce   = interp_years,
+  sitename = factor(ref_site, levels = levels(DF_to$sitename))
+)
 
-# Interpolate all three columns at once using purrr and bind together
-interpolated_df <- interp_years %>%
-  tibble(age_ce = .) %>%
-  mutate(
-    estimate = approx(x = sm_interp$age_ce, y = sm_interp$estimate, xout = age_ce, method = "linear")$y,
-    lower_ci = approx(x = sm_interp$age_ce, y = sm_interp$lower_ci, xout = age_ce, method = "linear")$y,
-    upper_ci = approx(x = sm_interp$age_ce, y = sm_interp$upper_ci, xout = age_ce, method = "linear")$y
-  )
+pr_terms <- predict(mod_to, newdata = newdata_veg, type = "terms", se.fit = TRUE)
+
+term_names <- colnames(pr_terms$fit)
+idx <- which(term_names == "s(age_ce)")
+if (length(idx) == 0) idx <- grep("^s\\(age_ce\\)$", term_names)
+if (length(idx) != 1) {
+  stop("Could not uniquely identify the global smooth term 's(age_ce)'.\n",
+       "Available term names:\n", paste(term_names, collapse = ", "))
+}
+
+est <- as.numeric(pr_terms$fit[, idx])
+se  <- as.numeric(pr_terms$se.fit[, idx])
+
+alpha <- 0.05
+zcrit <- qnorm(1 - alpha/2)
+
+interpolated_df <- tibble(
+  age_ce   = as.integer(interp_years),
+  estimate = est,
+  lower_ci = est - zcrit * se,
+  upper_ci = est + zcrit * se
+)
 
 # ------------------------------------------------------------------------------
-# Prepare and interpolate NAO Hernandez
+# Prepare NAO Hernandez (NO interpolation, NO binning)
 # ------------------------------------------------------------------------------
-
 colnames(nao_hernandez)[2] <- "age_ce"
 colnames(nao_hernandez)[3] <- "nao_lower_ci"
 colnames(nao_hernandez)[5] <- "NAO_Median_Value"
 colnames(nao_hernandez)[7] <- "nao_upper_ci"
 
-nao_hernandez <- nao_hernandez %>%
+nao_hernandez_interpolated <- nao_hernandez %>%
+  mutate(
+    #age_ce = round(as.numeric(age_ce)),
+    NAO_Median_Value = as.numeric(NAO_Median_Value)
+  ) %>%
   filter(age_ce >= 0) %>%
-  mutate(sign = ifelse(NAO_Median_Value >= 0, "positive", "negative"))
-
-nao_hernandez_interpolated <- approx(
-  x = nao_hernandez$age_ce,
-  y = nao_hernandez$NAO_Median_Value,
-  xout = interp_years,
-  method = "linear"
-)
-
-nao_hernandez_interpolated <- as.data.frame(nao_hernandez_interpolated)
-colnames(nao_hernandez_interpolated) <- c("age_ce", "NAO_Median_Value")
-
-nao_binned <- nao_hernandez_interpolated %>%
-  mutate(bin_50yr = floor(age_ce / 30) * 30) %>%
-  group_by(bin_50yr) %>%
-  summarise(avg_value = mean(NAO_Median_Value, na.rm = TRUE), .groups = "drop")
-
-nao_hernandez <- nao_hernandez %>% mutate(age_ce = round(age_ce))
+  arrange(age_ce) %>%
+  select(age_ce, NAO_Median_Value, nao_lower_ci, nao_upper_ci)
 
 # ------------------------------------------------------------------------------
-# Prepare and interpolate NH summer temperatures (Büntgen et al.)
+# Prepare NHST Büntgen (NO interpolation, NO binning)
 # ------------------------------------------------------------------------------
-
-nhst_buntgen_interpolated <- approx(
-  x = nhst_buntgen$age_ce,
-  y = nhst_buntgen$Rmean,
-  xout = interp_years,
-  method = "linear"
-)
-
-nhst_buntgen <- as.data.frame(nhst_buntgen_interpolated)
-colnames(nhst_buntgen) <- c("age_ce", "Rmean")
-
 nhst_buntgen <- nhst_buntgen %>%
-  mutate(sign = ifelse(Rmean >= 0, "positive", "negative"))
-
-nhst_buntgen_binned <- nhst_buntgen %>%
-  mutate(bin_50yr = floor(age_ce / 50) * 50) %>%
-  group_by(bin_50yr) %>%
-  summarise(avg_value = mean(Rmean, na.rm = TRUE), .groups = "drop")
+  mutate(
+    age_ce = round(as.numeric(age_ce)),
+    Rmean  = as.numeric(Rmean)
+  ) %>%
+  filter(age_ce >= 0) %>%
+  arrange(age_ce)
 
 # ------------------------------------------------------------------------------
-# Prepare normalized guild abundances and community matrix
+# Prepare normalized guild abundances
 # ------------------------------------------------------------------------------
-
 norm_abund_guilds <- norm_abund_guilds %>%
   mutate(age_ce = round(age_ce))
 
-comm_matrix <- norm_abund_guilds %>%
-  select(high_profile:predator)
-
-norm_abund_guilds <- norm_abund_guilds %>%
-  select(-high_profile:-predator) %>%
-  bind_cols(comm_matrix)
-
 # ------------------------------------------------------------------------------
-# Estimate temporal density and relative proportions of CTS clusters
+# CTS cluster proportions (requires purrr::map already loaded above)
 # ------------------------------------------------------------------------------
-
 combined_data <- ls_all_hclusts_complete_paleo %>%
   map(~as.data.frame(.x)) %>%
   bind_rows()
@@ -1836,361 +2433,210 @@ densities <- combined_data %>%
   }) %>%
   ungroup()
 
-proportions_df <- densities %>%
+proportions_long <- densities %>%
   group_by(age_ce) %>%
-  mutate(
-    total_density = sum(density),
-    proportion = density / total_density
-  ) %>%
-  ungroup()
-
-proportions_long <- proportions_df %>%
+  mutate(total_density = sum(density),
+         proportion = density / total_density) %>%
+  ungroup() %>%
   mutate(age_ce = round(age_ce)) %>%
   filter(age_ce >= 0, age_ce <= 2010) %>%
   group_by(age_ce, amd_clusts) %>%
-  summarise(
-    average_proportion = mean(proportion, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-# ------------------------------------------------------------------------------
-# Convert CTS proportions to wide matrix format
-# ------------------------------------------------------------------------------
+  summarise(average_proportion = mean(proportion, na.rm = TRUE), .groups = "drop")
 
 prop_comm_matrix <- proportions_long %>%
-  tidyr::pivot_wider(
-    names_from = amd_clusts,
-    values_from = average_proportion
-  )
+  tidyr::pivot_wider(names_from = amd_clusts, values_from = average_proportion)
 
 # ------------------------------------------------------------------------------
-# Prepare and align datasets using 30-year windows
+# 30-year bin helper
 # ------------------------------------------------------------------------------
+bin_size <- 30
 
-joined_df <- cbind(age_ce = norm_abund_guilds$age_ce, comm_matrix) %>%
-  left_join(nao_hernandez_interpolated, by = "age_ce") %>%
-  left_join(interpolated_df, by = "age_ce") %>%
-  left_join(nhst_buntgen, by = "age_ce") %>%
-  left_join(prop_comm_matrix, by = "age_ce")
+#   bin30() is defined in `functions/source_custom_functions.R`
 
-joined_df_30yr <- joined_df %>%
+# ------------------------------------------------------------
+# 1) BIOLOGY: bin within lake first, then regional
+# ------------------------------------------------------------
+bio_lake_30 <- norm_abund_guilds %>%
+  select(lake, age_ce, high_profile:predator) %>%
   filter(age_ce > 0) %>%
-  mutate(age_bin = floor(age_ce / 30) * 30) %>%  # define 30-year bins
-  group_by(age_bin) %>%
+  mutate(age_ce = as.numeric(age_ce),
+         age_bin = floor(age_ce / bin_size) * bin_size) %>%
+  group_by(lake, age_bin) %>%
+  summarise(across(high_profile:predator, ~mean(.x, na.rm = TRUE)), .groups = "drop") %>%
+  rename(age_ce = age_bin)
+
+bio_reg_30 <- bio_lake_30 %>%
+  group_by(age_ce) %>%
   summarise(
-    across(where(is.numeric) & !all_of("age_ce"), mean, na.rm = TRUE),
+    n_lakes = n_distinct(lake),
+    across(high_profile:predator, ~mean(.x, na.rm = TRUE)),
     .groups = "drop"
   ) %>%
-  rename(age_ce = age_bin)  # unify time axis for modeling
+  arrange(age_ce)
 
-# ------------------------------------------------------------------------------
-# Scale environmental variables
-# ------------------------------------------------------------------------------
+# ------------------------------------------------------------
+# 2) VEGETATION: bin once
+# ------------------------------------------------------------
+veg_30 <- bin30(interpolated_df, time_col = "age_ce",
+                cols = c("estimate", "lower_ci", "upper_ci"))
 
-joined_df_30yr <- joined_df_30yr %>%
-  mutate(across(NAO_Median_Value:Rmean, scale))
+# ------------------------------------------------------------
+# 3) CLIMATE candidates: bin once
+# ------------------------------------------------------------
+nao_30          <- bin30(nao_hernandez_interpolated, time_col = "age_ce", cols = c("NAO_Median_Value"))
+nhst_30         <- bin30(nhst_buntgen,               time_col = "age_ce", cols = c("Rmean"))
 
-```
+# ------------------------------------------------------------
+# 4) CTS proportions: bin once
+# ------------------------------------------------------------
+prop_cols <- setdiff(names(prop_comm_matrix), "age_ce")
+prop_comm_30 <- bin30(prop_comm_matrix, time_col = "age_ce", cols = prop_cols)
 
-## Data prep - Extract regional guild responses
-```{r}
+# ------------------------------------------------------------
+# 5) FINAL JOIN: all binned tables share SAME age_ce grid
+# ------------------------------------------------------------
+joined_df_30yr <- bio_reg_30 %>%
+  left_join(nao_30, by = "age_ce") %>%
+  left_join(nhst_30, by = "age_ce") %>%                 # Büntgen NHST (Rmean)
+  left_join(veg_30 %>% select(age_ce, estimate), by = "age_ce") %>%  # keep only estimate here
+  left_join(prop_comm_30, by = "age_ce")
 
-# ------------------------------------------------------------------------------
-# Prepare long-format data for GAM fitting
-# ------------------------------------------------------------------------------
-
-g_norm_abund_guilds <- 
-  norm_abund_guilds %>% 
-  pivot_longer(
-    cols = `high_profile`:predator,
-    names_to = "guild",
-    values_to = "rel_abund"
-  )
-
-# Define list of trophic guilds
-guilds <- c("high_profile", "low_profile", "motile", "euplanktonic",
-            "algivore", "detritivore", "plantivore", "predator")
-
-# ------------------------------------------------------------------------------
-# Fit a GAM model to each trophic guild
-# ------------------------------------------------------------------------------
-
-gam_models <- guilds %>%
-  set_names() %>%
-  map(function(g) {
-    df <- g_norm_abund_guilds %>%
-      filter(guild == g) %>%
-      mutate(lake = as.factor(lake))
-    
-    gam(
-      rel_abund ~
-        s(age_ce, bs = "tp", k = 30) +                                # Global smooth
-        s(age_ce, by = lake, bs = "tp", k = 14, m = 1) +              # Lake-specific smooths
-        s(lake, k = 14, bs = "re"),                                   # Random intercepts for lake
-      data = df,
-      method = "REML"
-    )
-  })
-
-# ------------------------------------------------------------------------------
-# Run gam.check on each model to assess k-index adequacy
-# ------------------------------------------------------------------------------
-
-gam_models_checked <- map(gam_models, mgcv::gam.check)
-
-# ------------------------------------------------------------------------------
-# Extract k-check tables into a tidy tibble
-# ------------------------------------------------------------------------------
-
-extract_kcheck_table <- function(model) {
-  txt <- capture.output(gam.check(model, rep = 1000, verbose = FALSE))
-  
-  start_line <- grep("Basis dimension \\(k\\) checking results", txt)
-  if (length(start_line) == 0) return(NULL)
-
-  table_lines <- txt[(start_line + 2):length(txt)]
-  table_lines <- table_lines[table_lines != "" & !grepl("^---", table_lines)]
-
-  # Parse each line to extract values
-  kcheck_df <- map_dfr(table_lines, function(line) {
-    parts <- strsplit(trimws(line), "\\s+")[[1]]
-    n_parts <- length(parts)
-    smooth_term <- paste(parts[1:(n_parts - 4)], collapse = " ")
-    
-    tibble(
-      smooth_term = smooth_term,
-      k_prime     = as.numeric(parts[n_parts - 3]),
-      edf         = as.numeric(parts[n_parts - 2]),
-      k_index     = as.numeric(parts[n_parts - 1]),
-      p_value     = suppressWarnings(as.numeric(parts[n_parts]))
-    )
-  })
-
-  return(kcheck_df)
-}
-
-# ------------------------------------------------------------------------------
-# Summarize all k-check results into one tibble
-# ------------------------------------------------------------------------------
-
-gam_kcheck_summary <- imap_dfr(gam_models, function(model, name) {
-  kcheck_df <- extract_kcheck_table(model)
-  
-  if (is.null(kcheck_df)) {
-    return(tibble(
-      model_name  = name,
-      smooth_term = NA,
-      k_prime     = NA,
-      edf         = NA,
-      k_index     = NA,
-      p_value     = NA
-    ))
-  }
-  
-  kcheck_df %>%
-    mutate(model_name = name, .before = 1)
-})
+# ------------------------------------------------------------
+# 6) Separate candidate table ONLY for preselection (no downstream dependency)
+# ------------------------------------------------------------
+env_candidates_30 <- bio_reg_30 %>%
+  select(age_ce) %>%
+  left_join(veg_30 %>% select(age_ce, estimate), by = "age_ce") %>%
+  left_join(nao_30 %>% select(age_ce, NAO_Median_Value), by = "age_ce") %>%
+  left_join(nhst_30 %>% select(age_ce, Rmean), by = "age_ce")
 
 ```
 
 ## Global RDA model
-```{r fig.width = 12, fig.asp = 1}
+```{r fig.width = 8, fig.asp = 1}
 
-# ------------------------------------------------------------------------------
-# Prepare community and environmental matrices
-# ------------------------------------------------------------------------------
+# ============================================================
+# GLOBAL RDA MODEL (consistent with varpart using NAO + vegetation)
+# - Hellinger-transform response (as per Methods)
+# - Screen predictors with ordiR2step (adjR2-based)
+# - Keep a FINAL retained model with NAO + estimate for plotting + varpart
+# ============================================================
 
-vars_to_test <- c("NAO_Median_Value", "Rmean")
+# -----------------------------
+# 1) Matrices
+# -----------------------------
+vars_to_test <- c(
+  "NAO_Median_Value",
+  "Rmean"#
+)
 
-comm <- joined_df_30yr %>%
-  select(`high_profile`:predator)
+comm_raw <- joined_df_30yr %>%
+  dplyr::select(high_profile:predator)
 
-env <- joined_df_30yr %>%
-  select(c(age_ce, vars_to_test, estimate))
+env_raw <- joined_df_30yr %>%
+  dplyr::select(age_ce, estimate, all_of(vars_to_test))
 
-# ------------------------------------------------------------------------------
-# Check for collinearity using VIF
-# ------------------------------------------------------------------------------
-
-check_collinearity <- function(vars, threshold = 10) {
-  dummy_response <- matrix(rnorm(nrow(vars)), ncol = 1)
-  rda_model <- rda(dummy_response ~ ., data = vars)
-  vif_values <- vif.cca(rda_model)
-  cat("\nCollinearity check (VIF):\n")
-  print(round(vif_values, 2))
-  if (any(vif_values > threshold)) {
-    warning("High collinearity detected (VIF > ", threshold, "): ",
-            paste(names(vif_values[vif_values > threshold]), collapse = ", "))
-  }
-  return(vif_values)
-}
-
-cond_vars <- env %>% select(age_ce)
-explanatory_vars <- env %>% select(-age_ce)
-
-all_data <- bind_cols(comm, explanatory_vars, cond_vars)
+# keep complete cases across comm + env (same rows)
+all_data <- bind_cols(comm_raw, env_raw)
 complete_data <- all_data %>% filter(complete.cases(.))
 
-comm_clean <- complete_data %>% select(colnames(comm))
-explanatory_clean <- complete_data %>% select(colnames(explanatory_vars))
-cond_clean <- complete_data %>% select(colnames(cond_vars))
+comm <- complete_data %>% dplyr::select(high_profile:predator)
+env  <- complete_data %>% dplyr::select(age_ce, estimate, all_of(vars_to_test))
 
-# ------------------------------------------------------------------------------
-# Fit initial CCA model and filter collinear variables
-# ------------------------------------------------------------------------------
+# Hellinger transform (this is what your Methods claim)
+comm_hel <- decostand(comm, method = "hellinger")
 
-rda_full <- capscale(comm_clean ~ ., data = explanatory_clean, conditioning = cond_clean, permutations = 9999)
+# All variables
+explanatory <- env %>%
+  dplyr::select(-age_ce)
 
-vif_cutoff <- 10
-keep_vars <- names(explanatory_clean)
+# Marginal (single-predictor) tests: "significant on their own"
+cat("\nMarginal (single-predictor) tests:\n")
+marginal_res <- lapply(colnames(explanatory), function(v) {
+  m <- capscale(comm_hel ~ ., data = explanatory[, v, drop = FALSE])
+  a <- anova(m, permutations = 999)
+  tibble(variable = v, F = a$F[1], p = a$`Pr(>F)`[1])
+}) %>% bind_rows()
 
-repeat {
-  model <- capscale(comm_clean ~ ., data = explanatory_clean[, keep_vars, drop = FALSE])
-  vif_vals <- vif.cca(model)
-  if (all(vif_vals < vif_cutoff)) break
-  var_to_remove <- names(vif_vals)[which.max(vif_vals)]
-  cat("Removing collinear variable due to high VIF:", var_to_remove, "\n")
-  keep_vars <- setdiff(keep_vars, var_to_remove)
-}
+print(marginal_res)
 
-rda_clean <- capscale(comm_clean ~ ., data = explanatory_clean[, keep_vars, drop = FALSE])
+explanatory <- env %>%
+  dplyr::select(-age_ce, -Rmean, NAO_Median_Value, estimate)
 
-# ------------------------------------------------------------------------------
-# Permutation tests for significance
-# ------------------------------------------------------------------------------
+final_model <- capscale(comm_hel ~ ., data = explanatory)
 
-cat("\nGlobal model significance:\n")
-print(anova(rda_clean, permutations = 999))
+cat("\nFinal retained model (for biplot + matches varpart):\n")
+print(anova(final_model, permutations = 999))
 
-cat("\nAxis-wise significance:\n")
-print(anova(rda_clean, by = "axis", permutations = 999))
+# -----------------------------
+# 7) Biplot (only vectors for variables significant on their own OR retained)
+# -----------------------------
+# Criterion you asked earlier: show vectors for variables significant alone.
+sig_alone <- marginal_res %>%
+  filter(p < 0.05) %>%
+  pull(variable)
 
-cat("\nTerm-wise (variable) significance:\n")
-term_test <- anova(rda_clean, by = "term", permutations = 999)
-print(term_test)
+# Always include final_vars (so climate is shown even if "alone" criterion shifts)
+vars_to_plot <- unique(c(sig_alone))
 
-sig_terms <- rownames(term_test)[which(term_test$`Pr(>F)` < 0.05)]
-sig_terms <- gsub(".*\\)", "", sig_terms)
-
-cat("\nSignificant predictors (p < 0.05):\n")
-print(sig_terms)
-
-if (length(sig_terms) > 0) {
-  cca_sig <- cca(comm_clean ~ ., data = explanatory_clean[, sig_terms, drop = FALSE])
-  cat("\nRefit CCA with significant variables only:\n")
-  print(summary(cca_sig))
-} else {
-  cat("\nNo significant predictors found at p < 0.05\n")
-}
-
-# ------------------------------------------------------------------------------
-# Forward selection with ordistep
-# ------------------------------------------------------------------------------
-
-cat("\nForward selection with ordistep:\n")
-null <- capscale(comm_clean ~ 1, data = explanatory_clean[, keep_vars, drop = FALSE])
-full <- capscale(comm_clean ~ ., data = explanatory_clean[, keep_vars, drop = FALSE])
-
-fwd <- ordistep(null, scope = formula(full), direction = "forward", permutations = 9999, trace = TRUE)
-
-cat("Selected model from forward selection:\n")
-print(fwd$call)
-
-selected_formula <- formula(fwd)
-selected_variables <- all.vars(selected_formula[[3]])
-fwd_model <- eval(fwd$call)
-
-biplot_scores <- scores(fwd_model, display = "bp", scaling = 2)
-
-cat("\nCorrelations of variables with each RDA axis (biplot scores):\n")
-print(round(biplot_scores, 3))
-
-biplot_df <- as_tibble(biplot_scores, rownames = "Variable")
-print(biplot_df)
-
-# ------------------------------------------------------------------------------
-# Plot RDA variable correlation heatmap
-# ------------------------------------------------------------------------------
-
-term_test <- anova(fwd_model, by = "term", permutations = 999)
-term_pvals <- as.data.frame(term_test)
-term_pvals$Variable <- rownames(term_pvals)
-term_pvals$Variable <- gsub("`", "", term_pvals$Variable)
-
-biplot_df <- as.data.frame(biplot_scores) %>%
+bp_scores <- scores(final_model, display = "bp", scaling = 2)
+bp_df <- as.data.frame(bp_scores) %>%
   rownames_to_column("Variable") %>%
-  pivot_longer(-Variable, names_to = "Axis", values_to = "Correlation") %>%
-  left_join(term_pvals, by = "Variable") %>%
-  mutate(Significance = ifelse(`Pr(>F)` < 0.05, "*", ""))
+  filter(Variable %in% vars_to_plot) %>%
+  mutate(Label = recode(Variable,
+                        estimate = "Veg. Change",
+                        NAO_Median_Value = "NAO")
+  )
 
-ggplot(biplot_df, aes(x = Axis, y = Variable, fill = Correlation)) +
-  geom_tile(color = "white") +
-  geom_text(aes(label = Significance), color = "black", size = 6, vjust = 0.5) +
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, name = "Correlation") +
-  labs(title = "Correlation of Variables with RDA Axes", subtitle = "* = p < 0.05 (from term-wise test)",
-       x = "RDA Axis", y = "Environmental Variable") +
-  theme_minimal(base_size = 13)
+# site scores (points)
+site_scores <- scores(final_model, display = "sites", scaling = 2)
+site_df <- as.data.frame(site_scores)
+colnames(site_df)[1:2] <- c("CAP1", "CAP2")
+site_df$age_ce <- env$age_ce
 
-# ------------------------------------------------------------------------------
-# Final RDA biplot figure
-# ------------------------------------------------------------------------------
+# species scores (guilds)
+species_df <- as.data.frame(scores(final_model, display = "species", scaling = 2))
+colnames(species_df)[1:2] <- c("CAP1", "CAP2")
+species_df <- species_df %>%
+  rownames_to_column("Guild") %>%
+  mutate(Label = recode(Guild,
+                        high_profile = "High Profile",
+                        low_profile = "Low Profile",
+                        motile = "Motile",
+                        euplanktonic = "Euplanktonic",
+                        algivore = "Algivore",
+                        detritivore = "Detritivore",
+                        plantivore = "Plantivore",
+                        predator = "Predator"))
 
-# Extract eigenvalues and compute explained variance
-eig_vals <- fwd_model$CCA$eig
+# axis labels
+eig_vals <- final_model$CCA$eig
 var_exp <- eig_vals / sum(eig_vals) * 100
 axis1_lab <- paste0("CAP1 (", round(var_exp[1], 1), "% explained variance)")
 axis2_lab <- paste0("CAP2 (", round(var_exp[2], 1), "% explained variance)")
 
-# Get site scores and name columns
-site_scores <- scores(fwd_model, display = "sites", scaling = 2)
-site_df <- as.data.frame(site_scores)
-colnames(site_df)[1:2] <- c("CAP1", "CAP2")  # Ensure correct column names
-site_df$age_ce <- cond_clean$age_ce
-
-# Get species scores and rename columns
-species_df <- as.data.frame(scores(fwd_model, display = "species", scaling = 2))
-colnames(species_df)[1:2] <- c("CAP1", "CAP2")  # Ensure correct column names
-species_df <- species_df %>%
-  tibble::rownames_to_column("Guild") %>%
-  mutate(Label = recode(Guild,
-    "high_profile" = "High Profile", "low_profile" = "Low Profile",
-    "motile" = "Motile", "euplanktonic" = "Euplanktonic",
-    "algivore" = "Algivore", "detritivore" = "Detritivore",
-    "plantivore" = "Plantivore", "predator" = "Predator"))
-
-# Get environmental (biplot) scores and rename columns
-bp_df <- as.data.frame(scores(fwd_model, display = "bp", scaling = 2))
-colnames(bp_df)[1:2] <- c("CAP1", "CAP2")  # Ensure correct column names
-bp_df <- bp_df %>%
-  tibble::rownames_to_column("Variable") %>%
-  mutate(Label = recode(Variable,
-    "estimate" = "Veg. Change",
-    "NAO_Median_Value" = "NAO",
-    "Rmean" = "NHST"))
-
-# Plot
-library(ggrepel)
 global_rda <- ggplot() +
-  geom_point(data = site_df, aes(x = CAP1, y = CAP2, color = age_ce), size = 4, alpha = 0.9) +
-  geom_text_repel(data = species_df, aes(x = CAP1, y = CAP2, label = Label),
+  geom_point(data = site_df, aes(CAP1, CAP2, color = age_ce), size = 4, alpha = 0.9) +
+  geom_text_repel(data = species_df, aes(CAP1, CAP2, label = Label),
                   color = "red", size = 3.5, fontface = "italic", max.overlaps = Inf) +
   geom_segment(data = bp_df,
                aes(x = 0, y = 0, xend = CAP1, yend = CAP2),
-               arrow = arrow(length = unit(0.2, "cm")), color = "black", linewidth = 0.7) +
+               arrow = arrow(length = unit(0.2, "cm")),
+               color = "black", linewidth = 0.7) +
   geom_text_repel(data = bp_df,
-                  aes(x = CAP1, y = CAP2, label = Label),
+                  aes(CAP1, CAP2, label = Label),
                   size = 3.5, color = "black", max.overlaps = Inf) +
   scale_color_viridis_c(option = "D", name = "Age (CE)") +
-  labs(x = axis1_lab, y = axis2_lab, title = "") +
-  coord_fixed() +
+  labs(x = axis1_lab, y = axis2_lab, title = NULL) +
+  #coord_fixed() +
   theme_minimal(base_size = 14) +
   theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1))
 
-# Print plot
-global_rda
+#global_rda
 
 ```
 
+# Phase varpart 
 ## Phase varpart - Historical phases
 ```{r fig.width=10, fig.asp=0.5}
 
@@ -2199,7 +2645,7 @@ global_rda
 # ----------------------------------------------------------
 
 # --- Define predictor variables ---
-selected_variables <- c("NAO_Median_Value", "estimate")
+selected_variables <- c("estimate", "NAO_Median_Value")
 
 # --- Define phase subsets ---
 phase_list <- list(
@@ -2211,41 +2657,28 @@ phase_list <- list(
 )
 
 # --- Function to compute pure and shared effects ---
-calculate_pure_shared <- function(data, phase_name) {
-  comm <- data %>% select(high_profile:predator) %>% filter(complete.cases(.))
-  env  <- data %>% select(all_of(selected_variables)) %>% filter(complete.cases(.))
-  n <- min(nrow(comm), nrow(env))
-  comm <- comm[1:n, ]
-  env  <- env[1:n, ]
-  
-  pure_effects <- map_dfr(selected_variables, function(var) {
-    others <- setdiff(selected_variables, var)
-    formula <- as.formula(
-      paste0("comm ~ ", var, " + Condition(", paste(others, collapse = " + "), ")")
-    )
-    mod <- rda(formula = formula, data = env)
-    tibble(
-      phase = phase_name,
-      component = ifelse(var == "estimate", "Pure Vegetation", "Pure Climate"),
-      value = max(0, RsquareAdj(mod)$adj.r.squared)
-    )
-  })
-  
-  mod_full <- rda(comm ~ ., data = env)
-  total_r2 <- max(0, RsquareAdj(mod_full)$adj.r.squared)
-  shared_val <- total_r2 - sum(pure_effects$value)
-  
-  shared <- tibble(
-    phase = phase_name,
-    component = "Shared",
-    value = max(0, shared_val)
-  )
-  
-  bind_rows(pure_effects, shared)
-}
+#   implemented in `functions/source_custom_functions.R` (calculate_pure_shared_phase)
 
 # --- Run across all phases ---
-r2_partitioned <- imap_dfr(phase_list, calculate_pure_shared)
+r2_partitioned <- imap_dfr(phase_list, calculate_pure_shared_phase)
+
+# --- Add readable and ordered phase labels ---
+r2_partitioned <- r2_partitioned %>%
+  mutate(
+    phase_label = factor(case_when(
+      phase == "Phase 1" ~ "Phase 1\n(<750 CE)",
+      phase == "Phase 2" ~ "Phase 2\n(750–1050 CE)",
+      phase == "Phase 3" ~ "Phase 3\n(1050–1450 CE)",
+      phase == "Phase 4" ~ "Phase 4\n(1450–1750 CE)",
+      phase == "Phase 5" ~ "Phase 5\n(>1750 CE)"
+    ), levels = c(
+      "Phase 1\n(<750 CE)",
+      "Phase 2\n(750–1050 CE)",
+      "Phase 3\n(1050–1450 CE)",
+      "Phase 4\n(1450–1750 CE)",
+      "Phase 5\n(>1750 CE)"
+    ))
+  )
 
 # --- Add readable and ordered phase labels ---
 r2_partitioned <- r2_partitioned %>%
@@ -2269,7 +2702,7 @@ r2_partitioned <- r2_partitioned %>%
 component_colors <- c(
   "Pure Vegetation" = "#97D8C4",
   "Pure Climate" = "#F4B942",
-  "Shared" = "#4059AD"
+  "Shared" = "#58B0E6"
 )
 
 # --- Plot variance partitioning per phase ---
@@ -2294,13 +2727,388 @@ original_varpart <- ggplot(r2_partitioned, aes(x = phase_label, y = value, fill 
     plot.margin = ggplot2::margin(0.2, 0.2, 0.2, 0.2, unit = "lines")
   )
 
+original_varpart
+
+```
+## Phase varpart - Historical phases - with significances
+```{r fig.width=10, fig.asp=0.5}
+# ============================================================
+# PHASE varpart (YOUR PIPELINE) + SIGNIFICANCE + FADED (NS) FRACTIONS
+# ============================================================
+
+selected_variables <- c("NAO_Median_Value", "estimate")
+
+phase_list <- list(
+  "Phase 1" = joined_df_30yr %>% filter(age_ce < 750),
+  "Phase 2" = joined_df_30yr %>% filter(age_ce >= 750 & age_ce < 1050),
+  "Phase 3" = joined_df_30yr %>% filter(age_ce >= 1050 & age_ce < 1450),
+  "Phase 4" = joined_df_30yr %>% filter(age_ce >= 1450 & age_ce < 1750),
+  "Phase 5" = joined_df_30yr %>% filter(age_ce >= 1750)
+)
+
+# calculate_pure_shared_phase() in functions/source_custom_functions.R
+r2_partitioned <- imap_dfr(phase_list, calculate_pure_shared_phase)
+
+r2_partitioned <- r2_partitioned %>%
+  mutate(
+    phase_label = factor(case_when(
+      phase == "Phase 1" ~ "Phase 1\n(<750 CE)",
+      phase == "Phase 2" ~ "Phase 2\n(750–1050 CE)",
+      phase == "Phase 3" ~ "Phase 3\n(1050–1450 CE)",
+      phase == "Phase 4" ~ "Phase 4\n(1450–1750 CE)",
+      phase == "Phase 5" ~ "Phase 5\n(>1750 CE)"
+    ), levels = c(
+      "Phase 1\n(<750 CE)",
+      "Phase 2\n(750–1050 CE)",
+      "Phase 3\n(1050–1450 CE)",
+      "Phase 4\n(1450–1750 CE)",
+      "Phase 5\n(>1750 CE)"
+    ))
+  )
+
+component_colors <- c(
+  "Pure Vegetation" = "#97D8C4",
+  "Pure Climate" = "#F4B942",
+  "Shared" = "#58B0E6"
+)
+
+# ============================================================
+# SIGNIFICANCE + FADED (NS) FRACTIONS
+# ============================================================
+
+guild_cols <- c("high_profile","low_profile","motile","euplanktonic",
+                "algivore","detritivore","plantivore","predator")
+
+A <- "NAO_Median_Value"
+B <- "estimate"
+
+n_perm <- 9999   # use 999 for quick test
+min_n  <- 5
+
+set.seed(1)
+
+# safe_anova_p() is implemented in `functions/source_custom_functions.R`
+
+phase_sig <- imap_dfr(phase_list, function(dat, phase_name) {
+
+  sub <- dat %>%
+    select(age_ce, n_lakes, all_of(guild_cols), all_of(c(A, B))) %>%
+    filter(if_all(all_of(c(guild_cols, A, B)), ~ !is.na(.x)))
+
+  n_bins <- nrow(sub)
+  mean_n_lakes <- mean(sub$n_lakes, na.rm = TRUE)
+
+  if (n_bins < min_n) {
+    return(tibble(
+      phase = phase_name,
+      n_bins = n_bins,
+      mean_n_lakes = mean_n_lakes,
+      p_full = NA_real_,
+      p_pure_A = NA_real_,
+      p_pure_B = NA_real_,
+      p_seq_A_then_B = NA_real_,
+      p_seq_B_then_A = NA_real_
+    ))
+  }
+
+  comm <- sub %>% select(all_of(guild_cols)) %>% as.matrix()
+  env  <- sub %>% select(all_of(c(A, B))) %>% as.data.frame()
+
+  # Full model
+  mod_full <- vegan::rda(as.formula(paste("comm ~", paste(c(A, B), collapse = " + "))), data = env)
+  p_full <- safe_anova_p(mod_full, permutations = n_perm)
+
+  # Pure (unique) effects
+  mod_pure_A <- vegan::rda(as.formula(paste("comm ~", A, "+ Condition(", B, ")")), data = env)
+  mod_pure_B <- vegan::rda(as.formula(paste("comm ~", B, "+ Condition(", A, ")")), data = env)
+  p_pure_A <- safe_anova_p(mod_pure_A, permutations = n_perm)
+  p_pure_B <- safe_anova_p(mod_pure_B, permutations = n_perm)
+
+  # Sequential “second term” tests (order-dependent; by="term")
+  mod_A_then_B <- vegan::rda(as.formula(paste("comm ~", A, "+", B)), data = env)
+  p_seq_A_then_B <- safe_anova_p(mod_A_then_B, permutations = n_perm, by = "term", which_row = 2)
+
+  mod_B_then_A <- vegan::rda(as.formula(paste("comm ~", B, "+", A)), data = env)
+  p_seq_B_then_A <- safe_anova_p(mod_B_then_A, permutations = n_perm, by = "term", which_row = 2)
+
+  tibble(
+    phase = phase_name,
+    n_bins = n_bins,
+    mean_n_lakes = mean_n_lakes,
+    p_full = p_full,
+    p_pure_A = p_pure_A,
+    p_pure_B = p_pure_B,
+    p_seq_A_then_B = p_seq_A_then_B,
+    p_seq_B_then_A = p_seq_B_then_A
+  )
+})
+
+# --- SI-ready table (effect sizes + p-values)
+phase_effects_wide <- r2_partitioned %>%
+  mutate(component = recode(component,
+                            "Pure Climate" = paste0("Pure ", A),
+                            "Pure Vegetation" = paste0("Pure ", B))) %>%
+  select(phase, phase_label, component, value) %>%
+  pivot_wider(names_from = component, values_from = value)
+
+phase_results_table <- phase_sig %>%
+  left_join(phase_effects_wide, by = "phase") %>%
+  select(
+    phase, n_bins, mean_n_lakes,
+    `Pure NAO_Median_Value`, `Pure estimate`, Shared,
+    p_full, p_pure_A, p_pure_B,
+    p_seq_A_then_B, p_seq_B_then_A
+  ) %>%
+  arrange(phase)
+
+phase_results_table
+
+# ------------------------------------------------------------
+# FADED BARS IF NON-SIGNIFICANT (like moving window)
+# ------------------------------------------------------------
+
+alpha_sig <- 1.00
+alpha_ns  <- 0.25
+
+# Shared opacity rule:
+#   "always"     -> Shared always opaque
+#   "full_model" -> Shared fades if full model is not significant
+shared_rule <- "always"   # change to "full_model" if you prefer
+
+phase_flags <- phase_sig %>%
+  transmute(
+    phase,
+    sig_pure_A = p_pure_A < 0.05,
+    sig_pure_B = p_pure_B < 0.05,
+    sig_full   = p_full   < 0.05
+  )
+
+r2_partitioned_sig <- r2_partitioned %>%
+  left_join(phase_flags, by = "phase") %>%
+  mutate(
+    alpha_flag = case_when(
+      component == "Pure Climate"    ~ ifelse(sig_pure_A, alpha_sig, alpha_ns),
+      component == "Pure Vegetation" ~ ifelse(sig_pure_B, alpha_sig, alpha_ns),
+      component == "Shared" & shared_rule == "full_model" ~ ifelse(sig_full, alpha_sig, alpha_ns),
+      component == "Shared" & shared_rule == "always"     ~ alpha_sig,
+      TRUE ~ alpha_sig
+    )
+  )
+
+historical_phase_varpart_sig <- ggplot(r2_partitioned_sig,
+                            aes(x = phase_label, y = value, fill = component, alpha = alpha_flag)) +
+  geom_col(width = 0.6) +
+  geom_text(
+    data = r2_partitioned_sig %>% filter(value > 0),
+    aes(label = paste0(round(value * 100, 1), "%")),
+    position = position_stack(vjust = 0.5),
+    color = "black", size = 3.2,
+    inherit.aes = TRUE
+  ) +
+  scale_alpha_identity() +   # use alpha_flag directly; no alpha legend
+  scale_fill_manual(values = component_colors, name = "Variance Component") +
+  labs(
+    x = NULL,
+    y = "Adjusted R² (Variance explained)",
+    caption = ""
+  ) +
+  theme_minimal(base_size = 8) +
+  theme(
+    legend.position = "right",
+    axis.text.y = element_text(face = "bold"),
+    plot.margin = ggplot2::margin(0.2, 0.2, 0.2, 0.2, unit = "lines")
+  )
+
+historical_phase_varpart_sig
+```
+## Moving window varpart
+```{r fig.width = 10, fig.asp = 0.5}
+# ============================================================
+# MOVING WINDOW varpart (YOUR PIPELINE) + SIGNIFICANCE EXPLORATION
+# + TRANSPARENCY WHEN NOT SIGNIFICANT (FINAL, FULL PIPELINE)
+# ============================================================
+
+selected_variables <- c("NAO_Median_Value", "estimate")
+
+window_size <- 300
+step_size   <- 30
+
+min_year <- floor(min(joined_df_30yr$age_ce, na.rm = TRUE))
+max_year <- ceiling(max(joined_df_30yr$age_ce, na.rm = TRUE))
+window_starts <- seq(min_year, max_year - window_size, by = step_size)
+
+r2_windowed <- map_dfr(
+  window_starts,
+  ~calculate_pure_shared_window(joined_df_30yr, .x, window_size, selected_variables)
+) %>%
+  mutate(midpoint = (window_start + window_end) / 2)
+
+# Baseline plot (as before)
+varpart_moving <- ggplot() +
+  geom_col(
+    data = r2_windowed,
+    aes(x = midpoint, y = value, fill = component),
+    width = step_size
+  ) +
+  scale_fill_manual(values = component_colors, name = "Variance Component") +
+  labs(x = "Year (CE)", y = "Adjusted R² (Variance explained)") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "right", axis.text.y = element_text(face = "bold"))
+
+varpart_moving
 ```
 
-## Moving window varpart
-```{r}
+## Moving window varpart - with significance
+```{r fig.width = 10, fig.asp = 0.5}
+# ============================================================
+# SIGNIFICANCE EXPLORATION (NEW, FIXED, ROBUST TO A/B NAMES)
+# ============================================================
 
+guild_cols <- c("high_profile","low_profile","motile","euplanktonic",
+                "algivore","detritivore","plantivore","predator")
+
+A <- "NAO_Median_Value"
+B <- "estimate"
+
+n_perm <- 9999   # use 999 for quick runs
+min_n  <- 5
+
+set.seed(1)
+
+# calc_window_significance() in functions/source_custom_functions.R
+
+# Run significance for all windows (same window_starts)
+window_sig <- map_dfr(
+  window_starts,
+  ~calc_window_significance(
+    joined_df_30yr,
+    window_start = .x,
+    window_size  = window_size,
+    guild_cols   = guild_cols,
+    A = A, B = B,
+    min_n = min_n,
+    n_perm = n_perm
+  )
+)
+
+# ============================================================
+# APPENDIX TABLE: merge effect sizes + p-values (one row/window)
+# ============================================================
+
+window_effects_wide <- r2_windowed %>%
+  mutate(component = recode(component,
+                            "Pure Climate" = paste0("Pure ", A),
+                            "Pure Vegetation" = paste0("Pure ", B))) %>%
+  select(window_start, window_end, midpoint, component, value) %>%
+  pivot_wider(names_from = component, values_from = value)
+
+window_results_table <- window_sig %>%
+  left_join(window_effects_wide, by = c("window_start","window_end","midpoint")) %>%
+  select(
+    window_start, window_end, midpoint,
+    n_bins, mean_n_lakes,
+    !!paste0("Pure ", A), !!paste0("Pure ", B), Shared,
+    p_full, p_pure_A, p_pure_B,
+    p_seq_A_then_B, p_seq_B_then_A
+  ) %>%
+  arrange(midpoint)
+
+window_results_table
+
+# Add “stars” for convenience
+window_results_table_stars <- window_results_table %>%
+  mutate(
+    full_sig = case_when(p_full < 0.001 ~ "***", p_full < 0.01 ~ "**", p_full < 0.05 ~ "*", TRUE ~ ""),
+    pure_A_sig = case_when(p_pure_A < 0.001 ~ "***", p_pure_A < 0.01 ~ "**", p_pure_A < 0.05 ~ "*", TRUE ~ ""),
+    pure_B_sig = case_when(p_pure_B < 0.001 ~ "***", p_pure_B < 0.01 ~ "**", p_pure_B < 0.05 ~ "*", TRUE ~ "")
+  )
+
+window_results_table_stars
+
+summary_sig_counts <- window_results_table_stars %>%
+  summarise(
+    n_windows      = n(),
+    n_full_sig     = sum(p_full < 0.05, na.rm = TRUE),
+    n_pure_A_sig   = sum(p_pure_A < 0.05, na.rm = TRUE),
+    n_pure_B_sig   = sum(p_pure_B < 0.05, na.rm = TRUE)
+  )
+
+summary_sig_counts
+
+
+# ============================================================
+# PLOT: fade bars when that component is NOT significant
+# ------------------------------------------------------------
+# Rules:
+#   - Pure Climate opacity depends on p_pure_A
+#   - Pure Vegetation opacity depends on p_pure_B
+#   - Shared: you choose the rule below
+# ============================================================
+
+alpha_sig <- 1.00   # opaque when significant
+alpha_ns  <- 0.25   # faded when NOT significant
+
+# Shared opacity rule:
+#   "always"    = always opaque
+#   "full_model"= fade Shared when full model is not significant
+shared_rule <- "always"  # change to "full_model" if you prefer
+
+sig_flags <- window_sig %>%
+  transmute(
+    window_start, window_end, midpoint,
+    sig_pure_A = p_pure_A < 0.05,
+    sig_pure_B = p_pure_B < 0.05,
+    sig_full   = p_full   < 0.05
+  )
+
+r2_windowed_sig <- r2_windowed %>%
+  left_join(sig_flags, by = c("window_start","window_end","midpoint")) %>%
+  mutate(
+    alpha_flag = case_when(
+      component == "Pure Climate"     ~ ifelse(sig_pure_A, alpha_sig, alpha_ns),
+      component == "Pure Vegetation"  ~ ifelse(sig_pure_B, alpha_sig, alpha_ns),
+      component == "Shared" & shared_rule == "full_model" ~ ifelse(sig_full, alpha_sig, alpha_ns),
+      component == "Shared" & shared_rule == "always"     ~ alpha_sig,
+      TRUE ~ alpha_sig
+    )
+  )
+
+# ---- Define common x-scale ----
+x_min <- floor(min(joined_df_30yr$age_ce, na.rm = TRUE) / 100) * 100
+x_max <- ceiling(max(joined_df_30yr$age_ce, na.rm = TRUE) / 100) * 100
+
+common_breaks  <- seq(x_min, x_max, by = 200)   # major grid
+common_minor   <- seq(x_min, x_max, by = 100)   # minor grid
+
+moving_window_varpart_sig <- ggplot() +
+  geom_col(
+    data = r2_windowed_sig,
+    aes(x = midpoint, y = value, fill = component, alpha = alpha_flag),
+    width = step_size
+  ) +
+  scale_alpha_identity() +  # use alpha_flag directly; no alpha legend
+  scale_fill_manual(values = component_colors, name = "Variance Component") +
+  scale_x_continuous(
+   limits = c(x_min, x_max),
+   breaks = common_breaks,
+   minor_breaks = common_minor,
+   expand = c(0, 0)
+   ) +
+  labs(
+    x = "Year (CE)",
+    y = "Adjusted R² (Variance explained)",
+    caption = ""
+  ) +
+  theme_minimal(base_size = 8) +
+  theme(legend.position = "right", axis.text.y = element_text(face = "bold"))
+
+moving_window_varpart_sig
+```
+
+## Effect sizes with significances
+```{r}
 # ----------------------------------------------------------
-# Moving window varpart - Continuous variance decomposition
+# Moving window varpart - Effect sizes (WORKING VERSION)
 # ----------------------------------------------------------
 
 # --- Predictor variables ---
@@ -2308,419 +3116,673 @@ selected_variables <- c("NAO_Median_Value", "estimate")
 
 # --- Moving window parameters ---
 window_size <- 300   # years
-step_size <- 30      # sliding step in years
+step_size   <- 30    # sliding step in years
 
 # --- Define window sequence ---
 min_year <- floor(min(joined_df_30yr$age_ce, na.rm = TRUE))
 max_year <- ceiling(max(joined_df_30yr$age_ce, na.rm = TRUE))
 window_starts <- seq(min_year, max_year - window_size, by = step_size)
 
-# --- Function to compute Pure and Shared variance per window ---
-calculate_pure_shared <- function(data, window_start) {
-  window_end <- window_start + window_size
-  subset <- data %>% filter(age_ce >= window_start, age_ce < window_end)
-  
-  comm <- subset %>% select(high_profile:predator) %>% filter(complete.cases(.))
-  env  <- subset %>% select(all_of(selected_variables)) %>% filter(complete.cases(.))
-  n <- min(nrow(comm), nrow(env))
-  
-  # Skip windows with insufficient data
-  if (n < 5) return(NULL)
-  
-  comm <- comm[1:n, ]
-  env  <- env[1:n, ]
-  
-  # Compute pure effects
-  pure_effects <- map_dfr(selected_variables, function(var) {
-    others <- setdiff(selected_variables, var)
-    formula <- as.formula(
-      paste0("comm ~ ", var, " + Condition(", paste(others, collapse = " + "), ")")
-    )
-    mod <- rda(formula = formula, data = env)
-    tibble(
-      window_start = window_start,
-      window_end = window_end,
-      component = ifelse(var == "estimate", "Pure Vegetation", "Pure Climate"),
-      value = max(0, RsquareAdj(mod)$adj.r.squared)
-    )
-  })
-  
-  # Total explained variance
-  mod_full <- rda(comm ~ ., data = env)
-  total_r2 <- max(0, RsquareAdj(mod_full)$adj.r.squared)
-  shared_val <- total_r2 - sum(pure_effects$value)
-  
-  shared <- tibble(
-    window_start = window_start,
-    window_end = window_end,
-    component = "Shared",
-    value = max(0, shared_val)
-  )
-  
-  bind_rows(pure_effects, shared)
-}
-
 # --- Run moving window analysis ---
-r2_windowed <- map_dfr(window_starts, ~calculate_pure_shared(joined_df_30yr, .x))
+# expects calculate_pure_shared_window(joined_df_30yr, window_start, window_size, selected_variables)
+# and returns: window_start, window_end, component, value
+r2_windowed <- map_dfr(
+  window_starts,
+  ~calculate_pure_shared_window(joined_df_30yr, .x, window_size, selected_variables)
+) %>%
+  mutate(midpoint = (window_start + window_end) / 2)
 
-# --- Create midpoint labels ---
-r2_windowed <- r2_windowed %>%
+# ----------------------------------------------------------
+# Effect size difference (Veg - Climate) + join significance
+# ----------------------------------------------------------
+# window_sig must exist and contain: window_start, window_end, midpoint, p_pure_A, p_pure_B
+# IMPORTANT: set which p-value corresponds to which fraction:
+# Here I assume:
+#   p_pure_A = Pure Climate
+#   p_pure_B = Pure Vegetation
+# If your function returns the opposite, just swap them below.
+
+stopifnot(exists("window_sig"))
+
+effect_diff <- r2_windowed %>%
+  filter(component %in% c("Pure Vegetation", "Pure Climate")) %>%
+  select(window_start, window_end, midpoint, component, value) %>%
+  pivot_wider(names_from = component, values_from = value) %>%
+  left_join(
+    window_sig %>% select(window_start, window_end, midpoint, p_pure_A, p_pure_B),
+    by = c("window_start", "window_end", "midpoint")
+  ) %>%
   mutate(
-    midpoint = (window_start + window_end) / 2
+    effect_diff = `Pure Vegetation` - `Pure Climate`,
+    effect_group = case_when(
+      effect_diff > 0 & midpoint < 750  ~ "VegChange > Climate (pre-750)",
+      effect_diff > 0 & midpoint >= 750 ~ "VegChange > Climate (post-750)",
+      effect_diff < 0                   ~ "Climate > VegChange",
+      TRUE                              ~ NA_character_
+    ),
+    sig_clim = !is.na(p_pure_A) & p_pure_A < 0.05,
+    sig_veg  = !is.na(p_pure_B) & p_pure_B < 0.05,
+    direction = case_when(
+      effect_diff > 0 ~ "veg",
+      effect_diff < 0 ~ "clim",
+      TRUE            ~ NA_character_
+    ),
+    alpha_flag = case_when(
+      direction == "veg"  & sig_veg  ~ 1.0,
+      direction == "veg"  & !sig_veg ~ 0.25,
+      direction == "clim" & sig_clim ~ 1.0,
+      direction == "clim" & !sig_clim~ 0.25,
+      TRUE ~ 0.25
+    )
   )
 
-# --- Plot moving window variance partitioning ---
-varpart_moving <- ggplot(r2_windowed, aes(x = midpoint, y = value, fill = component)) +
-  geom_col(position = "stack", width = step_size) +
-  scale_fill_manual(values = component_colors, name = "Variance Component") +
+effect_diff <- effect_diff %>%
+  filter(!is.na(effect_group))
+
+# --- Colors ---
+effect_colors_split <- c(
+  "VegChange > Climate (pre-750)"  = "#054A29",
+  "VegChange > Climate (post-750)" = "#6DC6B6",
+  "Climate > VegChange"            = "#F4B942"
+)
+
+# If you don't have phase_lines defined, comment this out or define it:
+# phase_lines <- c(1000, 1450, 1750)   # example
+if (!exists("phase_lines")) phase_lines <- numeric(0)
+
+
+# ---- Define common x-scale ----
+x_min <- floor(min(joined_df_30yr$age_ce, na.rm = TRUE) / 100) * 100
+x_max <- ceiling(max(joined_df_30yr$age_ce, na.rm = TRUE) / 100) * 100
+
+common_breaks  <- seq(x_min, x_max, by = 200)   # major grid
+common_minor   <- seq(x_min, x_max, by = 100)   # minor grid
+
+# --- Plot ---
+effect_diff_plot_sig <- ggplot(
+  effect_diff,
+  aes(x = midpoint, y = effect_diff, fill = effect_group, alpha = alpha_flag)
+) +
+  geom_col(width = step_size) +
+  scale_fill_manual(
+  values = effect_colors_split,
+  name = "Dominant Driver",
+  drop = TRUE
+  ) +
+  scale_alpha_identity() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  geom_vline(xintercept = phase_lines, linetype = "dotted", color = "gray30") +
+  scale_x_continuous(
+    limits = c(x_min, x_max),
+    breaks = common_breaks,
+    minor_breaks = common_minor,
+    expand = c(0, 0)
+    ) +
   labs(
     x = "Year (CE)",
-    y = "Adjusted R² (Variance explained)"
+    y = "Effect size (Vegetation − Climate)",
+    title = "(c) Relative dominance of VegChange vs. climate",
+    caption = ""
   ) +
   theme_minimal(base_size = 13) +
   theme(
     legend.position = "right",
     axis.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
     plot.margin = ggplot2::margin(0.2, 0.2, 0.2, 0.2, unit = "lines")
-  ) +
-  scale_x_continuous(
-    breaks = seq(
-      from = floor(min(r2_windowed$midpoint, na.rm = TRUE) / 100) * 100,
-      to   = ceiling(max(r2_windowed$midpoint, na.rm = TRUE) / 100) * 100,
-      by = 200
-    )
   )
 
-
+effect_diff_plot_sig
 ```
 
-## Moving window varpart - Effect sizes
+# Sensitivty analyses
+## Sensitivty analyses - PHASE-BOUNDARY ROBUSTNESS (GRID TEST)
 ```{r}
+# ============================================================
+# SENSITIVITY: PHASE-BOUNDARY ROBUSTNESS (GRID TEST)
+# ============================================================
 
-# ----------------------------------------------------------
-# Moving window varpart - Effect sizes
-# ----------------------------------------------------------
+guild_cols <- c("high_profile","low_profile","motile","euplanktonic",
+                "algivore","detritivore","plantivore","predator")
 
-# --- Predictor variables ---
-selected_variables <- c("NAO_Median_Value", "estimate")
+env_predictors <- c("NAO_Median_Value", "estimate")
+A <- env_predictors[1]  # NAO
+B <- env_predictors[2]  # Veg
 
-# --- Moving window parameters ---
-window_size <- 300   # years
-step_size <- 30      # sliding step in years
+# -------------------------
+# calc_phase_varpart(), make_phase_breaks(), run_one_boundary_set()
+# are in `functions/source_custom_functions.R`
+# -------------------------
 
-# --- Define window sequence ---
-min_year <- floor(min(joined_df_30yr$age_ce, na.rm = TRUE))
-max_year <- ceiling(max(joined_df_30yr$age_ce, na.rm = TRUE))
-window_starts <- seq(min_year, max_year - window_size, by = step_size)
+# ---- baseline boundaries ----
+base_bounds <- c(750, 1050, 1450, 1750)
 
-# --- Function to compute Pure and Shared variance per window ---
-calculate_pure_shared <- function(data, window_start) {
-  window_end <- window_start + window_size
-  subset <- data %>% filter(age_ce >= window_start, age_ce < window_end)
-  
-  comm <- subset %>% select(high_profile:predator) %>% filter(complete.cases(.))
-  env  <- subset %>% select(all_of(selected_variables)) %>% filter(complete.cases(.))
-  n <- min(nrow(comm), nrow(env))
-  
-  if (n < 5) return(NULL)
-  
-  comm <- comm[1:n, ]
-  env  <- env[1:n, ]
-  
-  # Compute pure effects
-  pure_effects <- map_dfr(selected_variables, function(var) {
-    others <- setdiff(selected_variables, var)
-    formula <- as.formula(
-      paste0("comm ~ ", var, " + Condition(", paste(others, collapse = " + "), ")")
-    )
-    mod <- rda(formula = formula, data = env)
-    tibble(
-      window_start = window_start,
-      window_end = window_end,
-      component = ifelse(var == "estimate", "Pure Vegetation", "Pure Climate"),
-      value = max(0, RsquareAdj(mod)$adj.r.squared)
-    )
-  })
-  
-  # Total explained variance
-  mod_full <- rda(comm ~ ., data = env)
-  total_r2 <- max(0, RsquareAdj(mod_full)$adj.r.squared)
-  shared_val <- total_r2 - sum(pure_effects$value)
-  
-  shared <- tibble(
-    window_start = window_start,
-    window_end = window_end,
-    component = "Shared",
-    value = max(0, shared_val)
-  )
-  
-  bind_rows(pure_effects, shared)
-}
+# ---- settings: shift boundaries by k bins (bin=30 yrs) ----
+bin_size <- 30
+max_shift_bins <- 2  # +/- 2 bins => +/- 60 years
+shift_vals <- seq(-max_shift_bins, max_shift_bins) * bin_size
 
-# --- Run moving window analysis ---
-r2_windowed <- map_dfr(window_starts, ~calculate_pure_shared(joined_df_30yr, .x))
+# ------------------------------------------------------------
+# Grid of boundary perturbations
+# - enforce ordering: b1 < b2 < b3 < b4
+# - enforce minimum bins per phase (min_n)
+# ------------------------------------------------------------
+min_n <- 5  # same as your phase varpart threshold
 
-# --- Add midpoint and split Pure Vegetation effect ---
-r2_windowed <- r2_windowed %>%
+boundary_grid <- tidyr::crossing(
+  d1 = shift_vals,
+  d2 = shift_vals,
+  d3 = shift_vals,
+  d4 = shift_vals
+) %>%
   mutate(
-    midpoint = (window_start + window_end) / 2,
-    veg_period = case_when(
-      component == "Pure Vegetation" & midpoint < 750 ~ "Pre-Coloniz. VegChange",
-      component == "Pure Vegetation" & midpoint >= 750 ~ "Post-Coloniz. VegChange",
-      TRUE ~ component
-    )
-  )
+    b1 = base_bounds[1] + d1,
+    b2 = base_bounds[2] + d2,
+    b3 = base_bounds[3] + d3,
+    b4 = base_bounds[4] + d4
+  ) %>%
+  filter(b1 < b2, b2 < b3, b3 < b4) %>%
+  mutate(grid_id = row_number())
 
-# --- Custom color palette ---
-component_colors_split <- c(
-  "Pre-Coloniz. VegChange" = "#054A29",       # darker green
-  "Post-Coloniz. VegChange" = "#97D8C4",      # original muted green
-  "Pure Climate" = "#F4B942",
-  "Shared" = "#4059AD"
+# ------------------------------------------------------------
+# Baseline run (for comparison)
+# ------------------------------------------------------------
+phase_breaks_base <- make_phase_breaks(base_bounds[1], base_bounds[2], base_bounds[3], base_bounds[4])
+
+r2_base_phase <- calc_phase_varpart(
+  joined_df_30yr,
+  guild_cols = guild_cols,
+  env_predictors = env_predictors,
+  phase_breaks = phase_breaks_base,
+  min_n = min_n
 )
 
-# --- Calculate effect size contrast (Vegetation - Climate) ---
-effect_diff <- r2_windowed %>%
-  filter(component %in% c("Pure Vegetation", "Pure Climate")) %>%
-  select(midpoint, component, value) %>%
+base_wide <- r2_base_phase %>%
+  select(phase, component, value, n_bins) %>%
+  pivot_wider(names_from = component, values_from = value) %>%
+  rename(base_n_bins = n_bins)
+
+# ------------------------------------------------------------
+# Run varpart for each perturbed boundary set
+# ------------------------------------------------------------
+r2_phase_boundary_sens_long <- pmap_dfr(
+  boundary_grid %>% select(b1, b2, b3, b4, grid_id),
+  run_one_boundary_set
+)
+
+# ------------------------------------------------------------
+# Compare each run to baseline, phase-by-phase
+# ------------------------------------------------------------
+r2_phase_boundary_sens <- r2_phase_boundary_sens_long %>%
+  left_join(
+    r2_base_phase %>%
+      select(phase, component, base_value = value, base_n_bins = n_bins),
+    by = c("phase","component")
+  ) %>%
+  mutate(
+    delta_value = value - base_value,
+    abs_delta   = abs(delta_value)
+  )
+
+# ------------------------------------------------------------
+# Summaries you can report in SI:
+# - max absolute deviation from baseline by component x phase
+# - how often sign/dominance flips (veg vs climate) by phase
+# ------------------------------------------------------------
+A <- env_predictors[1]  # NAO
+B <- env_predictors[2]  # estimate
+
+sens_summary_phase_component <- r2_phase_boundary_sens %>%
+  group_by(phase, component) %>%
+  summarise(
+    n_runs = n(),
+    max_abs_delta = max(abs_delta, na.rm = TRUE),
+    median_abs_delta = median(abs_delta, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(phase, component)
+
+# dominance flips: whether Pure B >= Pure A within a phase
+sens_dom <- r2_phase_boundary_sens_long %>%
+  filter(component %in% c(paste0("Pure ", A), paste0("Pure ", B))) %>%
+  select(grid_id, phase, component, value) %>%
   pivot_wider(names_from = component, values_from = value) %>%
   mutate(
-    effect_diff = `Pure Vegetation` - `Pure Climate`
+    dom_B = .data[[paste0("Pure ", B)]] >= .data[[paste0("Pure ", A)]]
+  ) %>%
+  group_by(phase) %>%
+  summarise(
+    prop_runs_B_dominant = mean(dom_B, na.rm = TRUE),
+    .groups = "drop"
   )
 
-
+sens_summary_phase_component
+sens_dom
 ```
 
-# Figures
-### FIGURE 1 - Map of the Azores with Island DCA's
-```{r fig.asp=0.9, fig.width=12}
+## Sensitivty analyses - Leave-one-out per phases
+```{r}
+# -------------------------
+# Settings
+# -------------------------
+guild_cols <- c("high_profile","low_profile","motile","euplanktonic",
+                "algivore","detritivore","plantivore","predator")
 
-# --------------------------------------------
-# Define custom plot titles with island abbreviations
-# --------------------------------------------
-custom_titles <- c(
-  "Azul" = "Azul [SM]",
-  "Caldeirao" = "Caldeirão [CR]",
-  "Caveiro" = "Caveiro [PI]",
-  "Empadadas Norte" = "Empada. Norte [SM]",
-  "Funda" = "Funda [FL]",
-  "Ginjal" = "Ginjal [TE]",
-  "Peixinho" = "Peixinho [PI]",
-  "Prata" = "Prata [SM]",
-  "Santiago" = "Santiago [SM]"
+env_predictors <- c("NAO_Median_Value", "estimate")
+A <- env_predictors[1]  # NAO
+B <- env_predictors[2]  # Veg
+
+# Phase definitions (same as your plot)
+phase_breaks <- list(
+  "Phase 1" = c(-Inf, 750),
+  "Phase 2" = c(750, 1050),
+  "Phase 3" = c(1050, 1450),
+  "Phase 4" = c(1450, 1750),
+  "Phase 5" = c(1750, Inf)
 )
 
- # --------------------------------------------
- # Create list of plots comparing diatoms vs chironomids by lake
- # --------------------------------------------
- ls_plot_df_dca_multi_all <- 
-   ls_dca_multi %>%
-   map(~ .x %>% filter(group %in% 1:2)) %>%  # Filter to diatoms (1) and chironomids (2)
-   map2(
-     ., names(ls_dca_multi),
-     ~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
-       geom_smooth(
-         aes(colour = group), 
-         linewidth = 2, alpha = 0.5, method = "gam", show.legend = TRUE
-       ) +
-       # Optional: Add raw points if desired
-       # geom_point(aes(color = group), size = 3) +
-       scale_colour_viridis_d(
-         name = "Groups",
-         labels = c("Producers", "Consumers")
-       ) +
-       theme(plot.background = NULL) +
-       labs(title = .y) +  # Lake name as plot title
-       theme_bw() +
-       theme(
-         plot.title = element_text(face = "bold", size = 12),
-         legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-         legend.justification = c(0, 1),
-         legend.position.inside = c(0, 1),
-         axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-         panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-         panel.grid.minor = element_blank()
-       )
-   )
+# -------------------------
+# Helper: rebuild joined table from a bio_reg_30 (for LOO)
+# (consistent with your Step 5+6: align then scale)
+# -------------------------
+# build_joined_from_bio_reg() is implemented in `functions/source_custom_functions.R`
 
-# --------------------------------------------
-# Replace plot titles in list with custom labels
-# --------------------------------------------
-ls_plot_df_dca_multi_all_named <- imap(ls_plot_df_dca_multi_all, function(plot, name) {
-  if (name %in% names(custom_titles)) {
-    plot +
-      ggtitle(custom_titles[[name]]) +
-      theme(
-        plot.title = element_text(size = 8, face = "bold"),
-        axis.title = element_text(size = 7),
-        axis.text = element_text(size = 6),
-        text = element_text(size = 8)  # general fallback
-      )
-  } else {
-    plot
-  }
+# -------------------------
+# 1) BASELINE (all lakes) — phase varpart
+# -------------------------
+r2_base_phase <- calc_phase_varpart(
+  joined_df_30yr,
+  guild_cols = guild_cols,
+  env_predictors = env_predictors,
+  phase_breaks = phase_breaks,
+  min_n = 5
+)
+
+# wide baseline for deltas
+base_wide <- r2_base_phase %>%
+  select(phase, component, value) %>%
+  pivot_wider(names_from = component, values_from = value)
+
+# overall baseline summaries (across phases)
+base_summary <- r2_base_phase %>%
+  filter(component %in% c(paste0("Pure ", A), paste0("Pure ", B), "Shared")) %>%
+  group_by(component) %>%
+  summarise(
+    base_mean   = mean(value, na.rm = TRUE),
+    base_median = median(value, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(names_from = component,
+              values_from = c(base_mean, base_median))
+
+# -------------------------
+# 2) LOO — recompute bio_reg_30 then joined then phase varpart
+# -------------------------
+lakes <- sort(unique(bio_lake_30$lake))
+
+r2_loo_phase <- map_dfr(lakes, function(lk) {
+
+  bio_reg_loo <- bio_lake_30 %>%
+    filter(lake != lk) %>%
+    group_by(age_ce) %>%
+    summarise(
+      n_lakes = n_distinct(lake),
+      across(all_of(guild_cols), ~ mean(.x, na.rm = TRUE)),
+      .groups = "drop"
+    )
+
+  joined_loo <- build_joined_from_bio_reg(
+    bio_reg_loo,
+    nao_30 = nao_30, nhst_30 = nhst_30, veg_30 = veg_30, prop_comm_30 = prop_comm_30,
+    env_cols = c("NAO_Median_Value","Rmean","estimate")
+  )
+
+  out <- calc_phase_varpart(
+    joined_loo,
+    guild_cols = guild_cols,
+    env_predictors = env_predictors,
+    phase_breaks = phase_breaks,
+    min_n = 5
+  )
+
+  out %>% mutate(leave_out = lk)
 })
 
+# -------------------------
+# Summary table
+# -------------------------
+loo_phase_wide <- r2_loo_phase %>%
+  select(leave_out, phase, component, value) %>%
+  pivot_wider(names_from = component, values_from = value)
 
-# --------------------------------------------
-# Remove Furnas and Fogo plots and convert remaining plots to grobs
-# --------------------------------------------
-scatterplots <- 
-  ls_plot_df_dca_multi_all_named[!names(ls_plot_df_dca_multi_all_named) %in% c("Furnas", "Fogo")] %>% 
-  map(~ggplotGrob(.x + theme(legend.position = "none")))
-
-# --------------------------------------------
-# Convert lake coordinates to spatial points
-# --------------------------------------------
-lake_centers <- data.frame(island = lake_metadata$lake, lat = lake_metadata$lat, lon = lake_metadata$long)
-island_points <- st_as_sf(lake_centers, coords = c("lon", "lat"), crs = 4326)
-
-# --------------------------------------------
-# Define bounding box coordinates for map panels
-# --------------------------------------------
-xmin <- -32.0 - 0.75 * abs(-32.0 + 24.5)
-xmax <- -24.5 + 0.75 * abs(-32.0 + 24.5)
-ymin <- 36.5 - 0.5 * abs(40.0 - 36.5)
-ymax <- 40.0 + 0.5 * abs(40.0 - 36.5)
-
-# Add optional buffers (set to zero here)
-buffer_x <- 0 
-buffer_y <- 0
-xmin <- xmin - buffer_x; xmax <- xmax + buffer_x
-ymin <- ymin - buffer_y; ymax <- ymax + buffer_y
-
-# --------------------------------------------
-# Create bounding boxes as spatial features
-# --------------------------------------------
-north_atlantic_bbox <- st_as_sfc(st_bbox(c(xmin = -100, xmax = 10, ymin = 20, ymax = 60), crs = 4326))
-azores_bbox <- st_as_sfc(st_bbox(c(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), crs = 4326))
-
-# --------------------------------------------
-# Load and crop coastline shapefile
-# --------------------------------------------
-coastline_shapefile <- st_read("data/ne_10m_coastline/ne_10m_coastline.shp")
-azores_coastline <- st_crop(coastline_shapefile, azores_bbox)
-north_atlantic_coastline <- st_crop(coastline_shapefile, north_atlantic_bbox)
-
-# --------------------------------------------
-# Panel A: Contextual map showing Azores within North Atlantic
-# --------------------------------------------
-panel_a <- ggplot() +
-  geom_sf(data = north_atlantic_coastline, fill = "lightgrey", color = "black") +
-  geom_sf(data = azores_bbox, fill = NA, color = "red", linetype = "dashed", size = 0.7) +
-  coord_sf(xlim = c(-80, 10), ylim = c(30, 50), datum = sf::st_crs(4326), expand = FALSE) +
-  theme_void() +
-  ggtitle("(a) North Atlantic context of the Azores Archipelago") +
-  theme(plot.title = element_text(size = 8, face = "bold")) +
-  annotation_scale(location = "bl", width_hint = 0.3)
-
-# --------------------------------------------
-# Define where to position the embedded scatterplots in Panel B
-# --------------------------------------------
-scatterplot_positions <- list(
-  c(xmax - 1.5, ymax - 1),                # Azul 
-  c(xmin + 1.5, ymax - 1),                # Caldeirão
-  c(xmin + 1.5, ymin + 1),                # Caveiro
-  c(xmax - 1.5, (ymax + ymin) / 2),       # Empadadas Norte
-  c(xmin + 1.5, (ymax + ymin) / 2),       # Funda
-  c(xmin + (xmax - xmin) / 2, ymin + 1),  # Ginjal
-  c(((xmin + 1.5)+(xmin + (xmax - xmin) / 2))/2, ymin + 1),     # Peixinho
-  c(((xmin + (xmax - xmin) / 2)+(xmax - 1.5))/2, ymin + 1),     # Prata
-  c(xmax - 1.5, ymin + 1)                 # Santiago
-)
-
-# --------------------------------------------
-# Create data frame of segment lines between scatterplots and lake points
-# --------------------------------------------
-segment_data <- data.frame(
-  x = sapply(scatterplot_positions, function(pos) pos[1]),
-  y = sapply(scatterplot_positions, function(pos) pos[2]),
-  xend = st_coordinates(island_points$geometry)[, 1],
-  yend = st_coordinates(island_points$geometry)[, 2]
-)
-
-# --------------------------------------------
-# Panel B: Zoomed-in map of Azores with embedded DCA plots
-# --------------------------------------------
-bg_colors <- viridis::viridis(9, option = "plasma", alpha = 0.7)
-
-panel_b <- ggplot() +
-  geom_sf(data = azores_coastline, fill = "lightblue", color = "black") +
-  geom_sf(data = island_points, aes(geometry = geometry), color = "white", 
-          fill = "grey", shape = 21, size = 4) +
-  coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), datum = sf::st_crs(4326), expand = FALSE,
-           label_graticule = "both") +
-  theme_void() +
-  theme(
-    panel.grid.major = element_line(color = "grey70", linetype = "dotted"),
-    plot.margin = unit(c(0, 0, 1, 0), "lines")
-  ) +
-  annotation_north_arrow(
-    location = "bl", which_north = "true", 
-    pad_x = unit(0.75, "in"), pad_y = unit(0.75, "in"),
-    style = north_arrow_minimal()
-  ) +
-  geom_segment(
-    data = segment_data, 
-    aes(x = x, y = y, xend = xend, yend = yend),
-    color = "grey", size = 0.5
-  ) +
-  ggtitle("(b) Detailed map of the Azores Archipelago") +
-  theme(plot.title = element_text(size = 8, face = "bold"))
-
-# --------------------------------------------
-# Overlay scatterplots at corresponding positions
-# --------------------------------------------
-scatterplot_scale_x <- 2 * 0.85
-scatterplot_scale_y <- 1.5 * 0.75
-
-for (i in seq_along(scatterplots)) {
-  panel_b <- panel_b + 
-    annotation_custom(
-      scatterplots[[i]], 
-      xmin = scatterplot_positions[[i]][1] - scatterplot_scale_x, 
-      xmax = scatterplot_positions[[i]][1] + scatterplot_scale_x, 
-      ymin = scatterplot_positions[[i]][2] - scatterplot_scale_y, 
-      ymax = scatterplot_positions[[i]][2] + scatterplot_scale_y
-    )
-}
-
-# --------------------------------------------
-# Adjust margins and borders for layout
-# --------------------------------------------
-panel_a <- panel_a +
-  theme(
-    plot.margin = unit(c(1, 0, 0, 0), "lines"),
-    panel.border = element_rect(color = "black", fill = NA, size = 1)
+# dominance per phase: B (veg) >= A (NAO)
+loo_phase_dom <- loo_phase_wide %>%
+  mutate(
+    dominant = ifelse(.data[[paste0("Pure ", B)]] >= .data[[paste0("Pure ", A)]], B, A)
+  ) %>%
+  group_by(leave_out) %>%
+  summarise(
+    n_phases = n(),
+    prop_phases_B_dominant = mean(dominant == B, na.rm = TRUE),
+    prop_phases_A_dominant = mean(dominant == A, na.rm = TRUE),
+    .groups = "drop"
   )
 
-panel_b <- panel_b +
-  theme(plot.margin = unit(c(0, 0, 1, 0), "lines"))
+# effect sizes averaged across phases
+loo_phase_effects <- loo_phase_wide %>%
+  group_by(leave_out) %>%
+  summarise(
+    mean_pure_A    = mean(.data[[paste0("Pure ", A)]], na.rm = TRUE),
+    mean_pure_B    = mean(.data[[paste0("Pure ", B)]], na.rm = TRUE),
+    mean_shared    = mean(.data[["Shared"]], na.rm = TRUE),
+    median_pure_A  = median(.data[[paste0("Pure ", A)]], na.rm = TRUE),
+    median_pure_B  = median(.data[[paste0("Pure ", B)]], na.rm = TRUE),
+    median_shared  = median(.data[["Shared"]], na.rm = TRUE),
+    mean_diff_BA   = mean(.data[[paste0("Pure ", B)]] - .data[[paste0("Pure ", A)]], na.rm = TRUE),
+    .groups = "drop"
+  )
 
-# --------------------------------------------
-# Combine both panels into a single composite figure
-# --------------------------------------------
-combined_plot_map <- panel_a / panel_b + 
-  patchwork::plot_layout(heights = c(0.4, 0.6))  # Adjust vertical split
+# deltas vs baseline (across phases)
+base_means <- r2_base_phase %>%
+  filter(component %in% c(paste0("Pure ", A), paste0("Pure ", B), "Shared")) %>%
+  group_by(component) %>%
+  summarise(base_mean = mean(value, na.rm = TRUE), .groups="drop") %>%
+  deframe()
 
-# Display the final figure
-print(combined_plot_map)
+loo_phase_vs_base <- loo_phase_effects %>%
+  mutate(
+    delta_mean_pure_A = mean_pure_A - base_means[[paste0("Pure ", A)]],
+    delta_mean_pure_B = mean_pure_B - base_means[[paste0("Pure ", B)]],
+    delta_mean_shared = mean_shared - base_means[["Shared"]]
+  )
 
-# --------------------------------------------
-# Export figure to file
-# --------------------------------------------
-ggsave(
-  "figures/FIGURE_1_azores_map_DCA_all_types_two_panels.pdf",
-  plot = combined_plot_map,
-  dpi = 300, width = 180, height = 190, units = "mm"
+# final appendix table
+loo_phase_summary <- loo_phase_vs_base %>%
+  left_join(loo_phase_dom, by = "leave_out") %>%
+  arrange(desc(abs(delta_mean_pure_B)))  # or any ordering you like
+
+loo_phase_summary
+
+# OPTIONAL: per-phase values in wide form for appendix too
+# (one row per leave-out, columns per phase x component)
+loo_phase_perphase <- r2_loo_phase %>%
+  mutate(phase_component = paste(phase, component, sep = " — ")) %>%
+  select(leave_out, phase_component, value) %>%
+  pivot_wider(names_from = phase_component, values_from = value)
+
+loo_phase_perphase
+```
+
+## Sensitivity analyses - Leave one out - moving window
+```{r}
+# ------------------------------------------------------------
+# Inputs that already exist from your pipeline above:
+#   bio_lake_30      (lake-level binned biology)
+#   joined_df_30yr   (regional biology + aligned env + scaled)
+# ------------------------------------------------------------
+
+guild_cols <- c("high_profile","low_profile","motile","euplanktonic",
+                "algivore","detritivore","plantivore","predator")
+
+# predictors (already scaled in joined_df_30yr)
+env_predictors <- c("NAO_Median_Value", "estimate")  # add "Rmean" if you want later
+
+# ------------------------------------------------------------
+# Window varpart working DIRECTLY on joined_df_30yr
+# calc_window_varpart_joined() in functions/source_custom_functions.R
+# ------------------------------------------------------------
+
+# run
+guild_cols <- c("high_profile","low_profile","motile","euplanktonic",
+                "algivore","detritivore","plantivore","predator")
+env_predictors <- c("NAO_Median_Value", "estimate")
+
+# Run
+r2_base <- calc_window_varpart_joined(
+  joined_df_30yr,
+  window_size = 300, step_size = 30, min_bins = 5,
+  guild_cols = c("high_profile","low_profile","motile","euplanktonic",
+                "algivore","detritivore","plantivore","predator"),
+  env_predictors = c("NAO_Median_Value", "estimate")
 )
 
+# Base result using the already-aligned joined_df_30yr
+r2_base <- calc_window_varpart_joined(joined_df_30yr,
+                                      window_size = 300, step_size = 30, min_bins = 5)
+
+# ------------------------------------------------------------
+# Leave-one-out: recompute bio_reg_30 (regional) from bio_lake_30,
+# then rebuild joined table on SAME age_ce grid, then scale, then varpart
+# build_joined_from_bio_reg() in functions/source_custom_functions.R
+# ------------------------------------------------------------
+
+lakes <- sort(unique(bio_lake_30$lake))
+
+r2_loo <- map_dfr(lakes, function(lk) {
+
+  bio_reg_loo <- bio_lake_30 %>%
+    filter(lake != lk) %>%
+    group_by(age_ce) %>%
+    summarise(
+      n_lakes = n_distinct(lake),
+      across(all_of(guild_cols), ~mean(.x, na.rm = TRUE)),
+      .groups = "drop"
+    )
+
+  joined_loo <- build_joined_from_bio_reg(
+    bio_reg_loo,
+    nao_30 = nao_30, nhst_30 = nhst_30, veg_30 = veg_30, prop_comm_30 = prop_comm_30
+  )
+
+  out <- calc_window_varpart_joined(joined_loo,
+                                    window_size = 300, step_size = 30, min_bins = 5)
+
+  out %>% mutate(leave_out = lk)
+})
+
+dominance_loo <- r2_loo %>%
+  select(leave_out, midpoint, component, value) %>%
+  tidyr::pivot_wider(names_from = component, values_from = value) %>%
+  mutate(dominant = ifelse(.data[[paste0("Pure ", env_predictors[2])]] >=
+                             .data[[paste0("Pure ", env_predictors[1])]],
+                           "SecondPredictor", "FirstPredictor")) %>%
+  group_by(leave_out) %>%
+  summarise(prop_windows_second_pred_dominant = mean(dominant == "SecondPredictor", na.rm = TRUE),
+            .groups = "drop")
+
+A <- env_predictors[1]  # "NAO_Median_Value"
+B <- env_predictors[2]  # "estimate"
+
+# ---- 1) Summarise effect sizes per lake (mean/median across windows) ----
+loo_effects <- r2_loo %>%
+  filter(component %in% c(paste0("Pure ", A), paste0("Pure ", B))) %>%
+  select(leave_out, midpoint, component, value) %>%
+  pivot_wider(names_from = component, values_from = value) %>%
+  group_by(leave_out) %>%
+  summarise(
+    mean_pure_A    = mean(.data[[paste0("Pure ", A)]], na.rm = TRUE),
+    mean_pure_B    = mean(.data[[paste0("Pure ", B)]], na.rm = TRUE),
+    median_pure_A  = median(.data[[paste0("Pure ", A)]], na.rm = TRUE),
+    median_pure_B  = median(.data[[paste0("Pure ", B)]], na.rm = TRUE),
+    mean_diff_BA   = mean(.data[[paste0("Pure ", B)]] - .data[[paste0("Pure ", A)]], na.rm = TRUE),
+    n_windows      = dplyr::n(),
+    .groups = "drop"
+  )
+
+# ---- 2) Your existing dominance metric (keep it) ----
+dominance_loo <- r2_loo %>%
+  select(leave_out, midpoint, component, value) %>%
+  tidyr::pivot_wider(names_from = component, values_from = value) %>%
+  mutate(
+    dominant = ifelse(
+      .data[[paste0("Pure ", B)]] >= .data[[paste0("Pure ", A)]],
+      B, A
+    )
+  ) %>%
+  group_by(leave_out) %>%
+  summarise(
+    prop_windows_B_dominant = mean(dominant == B, na.rm = TRUE),
+    prop_windows_A_dominant = mean(dominant == A, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# ---- 3) Combine into one tidy table ----
+loo_summary <- loo_effects %>%
+  left_join(dominance_loo, by = "leave_out")
+
+loo_summary
+
+# baseline (all lakes)
+base_effects <- r2_base %>%
+  filter(component %in% c(paste0("Pure ", A), paste0("Pure ", B))) %>%
+  select(midpoint, component, value) %>%
+  pivot_wider(names_from = component, values_from = value) %>%
+  summarise(
+    base_mean_pure_A = mean(.data[[paste0("Pure ", A)]], na.rm = TRUE),
+    base_mean_pure_B = mean(.data[[paste0("Pure ", B)]], na.rm = TRUE)
+  )
+
+loo_summary_vs_base <- loo_summary %>%
+  mutate(
+    delta_mean_pure_A = mean_pure_A - base_effects$base_mean_pure_A,
+    delta_mean_pure_B = mean_pure_B - base_effects$base_mean_pure_B
+  )
+
+loo_summary_vs_base
 
 ```
 
-### FIGURE 1b - Regional smooth for inset [combined with Figure 1 in Illustrator]
-```{r fig.asp=0.75, fig.width=12}
+## Sensitivity analyses - lake record position / length
+```{r fig.width=12}
+# ------------------------------------------------------------
+# Null model: circularly shift AGE BINS within each lake on bio_lake_30,
+# then rebuild regional + joined, then varpart
+# ------------------------------------------------------------
+set.seed(1)
 
+# circular_shift_by_lake() is implemented in `functions/source_custom_functions.R`
+
+n_null <- 500
+
+r2_null <- map_dfr(seq_len(n_null), function(i) {
+
+  bio_null <- circular_shift_by_lake(bio_lake_30)
+
+  bio_reg_null <- bio_null %>%
+    group_by(age_ce) %>%
+    summarise(
+      n_lakes = n_distinct(lake),
+      across(all_of(guild_cols), ~mean(.x, na.rm = TRUE)),
+      .groups = "drop"
+    )
+
+  joined_null <- build_joined_from_bio_reg(
+    bio_reg_null,
+    nao_30 = nao_30, nhst_30 = nhst_30, veg_30 = veg_30, prop_comm_30 = prop_comm_30
+  )
+
+  out <- calc_window_varpart_joined(joined_null,
+                                    window_size = 300, step_size = 30, min_bins = 5)
+
+  out %>% mutate(null_iter = i)
+})
+
+null_env <- r2_null %>%
+  group_by(midpoint, component) %>%
+  summarise(
+    q05 = quantile(value, 0.05, na.rm = TRUE),
+    q50 = quantile(value, 0.50, na.rm = TRUE),
+    q95 = quantile(value, 0.95, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Panel 1: Pure Vegetation = Pure estimate
+obs_veg <- r2_base %>% dplyr::filter(component == "Pure estimate")
+nul_veg <- null_env %>% dplyr::filter(component == "Pure estimate")
+
+p_veg <- ggplot() +
+ #geom_ribbon(
+ #  data = nul_veg,
+ #  aes(x = midpoint, ymin = q05, ymax = q95),
+ #  fill = "grey80", alpha = 0.5
+ #) +
+  geom_line(
+    data = nul_veg,
+    aes(x = midpoint, y = q50),
+    linewidth = 0.7, color = "grey30"
+  ) +
+  geom_line(
+    data = obs_veg,
+    aes(x = midpoint, y = value),
+    linewidth = 1.1, color = "black" 
+  ) +
+  labs(
+    x = "Year (CE)",
+    y = "Adjusted R² (Pure Vegetation)",
+    title = "Pure Vegetation: observed vs null envelope"
+  ) +
+  theme_minimal(base_size = 13)
+
+# Panel 2: Pure Climate = Pure NAO_Median_Value
+obs_clim <- r2_base %>% dplyr::filter(component == "Pure NAO_Median_Value")
+nul_clim <- null_env %>% dplyr::filter(component == "Pure NAO_Median_Value")
+
+p_clim <- ggplot() +
+  #geom_ribbon(
+  #  data = nul_clim,
+  #  aes(x = midpoint, ymin = q05, ymax = q95),
+  #  fill = "grey80", alpha = 0.5
+  #) +
+  geom_line(
+    data = nul_clim,
+    aes(x = midpoint, y = q50),
+    linewidth = 0.7, color = "grey30"
+  ) +
+  geom_line(
+    data = obs_clim,
+    aes(x = midpoint, y = value),
+    linewidth = 1.1, color = "black"
+  ) +
+  labs(
+    x = "Year (CE)",
+    y = "Adjusted R² (Pure Climate)",
+    title = "Pure Climate: observed vs null envelope"
+  ) +
+  theme_minimal(base_size = 13)
+
+# plot_obs_vs_null(), plot_obs_vs_null_points() in functions/source_custom_functions.R
+
+p1 <- plot_obs_vs_null("Pure estimate")
+p2 <- plot_obs_vs_null("Pure NAO_Median_Value")
+
+p_veg <- plot_obs_vs_null_points(
+  component_name = "Pure estimate",
+  ylab = "Adjusted R² (Pure Vegetation)",
+  title_text = "Pure Vegetation"
+)
+
+p_clim <- plot_obs_vs_null_points(
+  component_name = "Pure NAO_Median_Value",
+  ylab = "Adjusted R² (Pure Climate)",
+  title_text = "Pure Climate (NAO)"
+)
+
+p_veg  <- p_veg  + coord_cartesian(ylim = c(0, 0.6))
+p_clim <- p_clim + coord_cartesian(ylim = c(0, 0.6))
+
+combined_plot <- p_veg / p_clim +
+  plot_annotation(
+    title = "Observed vs null median for vegetation and climate effects",
+    theme = theme(plot.title = element_text(face = "bold"))
+  )
+
+#combined_plot
+
+```
+
+# FIGURES
+### FIGURE 2a: NAO panel on top + main panel (DCA + vegetation)
+```{r fig.asp=0.75, fig.width=12}
 # ----------------------------------------------------------
 # Combine smoothed GAM outputs and DCA scores across groups
 # ----------------------------------------------------------
@@ -2737,54 +3799,342 @@ df_all_in_one <-
     cbind(type = rep("chiro", nrow(b_ls_dca_chiro)), b_ls_dca_chiro)
   )
 
-# ----------------------------------------------------------
-# Plot smooth trends of DCA1 scores for all groups
-# ----------------------------------------------------------
+# ==========================================================
+# Fig 1b (FINAL): NAO panel on top + main panel (DCA + vegetation)
+# ==========================================================
 
-plot_time.all_in_one <- 
-  smooth_all_in_one %>%
+# -----------------------------
+# 1) Species smooth (diatoms + chiro)
+# -----------------------------
+smooth_main <- smooth_all_in_one %>%
   filter(.smooth == "s(age_ce)") %>%
-  ggplot(aes(colour = type), group = type) +
-  geom_ribbon(aes(ymin = .lower_ci, ymax = .upper_ci, x = age_ce, fill = type),
-              alpha = 0.2, linewidth = 0) +
-  geom_line(aes(x = age_ce, y = .estimate, colour = type), linewidth = 3, alpha = 1) +
-  labs(y = "DCA1", title = "Chiro s(age_ce) GI model", x = "Year (CE)") +  # Added x-axis label
-  scale_colour_viridis_d(name = "Groups", labels = c("Producers", "Consumers")) +
-  scale_fill_viridis_d(name = "Groups", labels = c("Producers", "Consumers")) +
-  theme_classic(base_size = 12) +
-  lims(x = c(0, 2020), y = c(-2, 2)) +
-  scale_x_continuous(n.breaks = 5, limits = c(0, 2020)) +
-  theme_bw() +
-  theme(
-    plot.background = element_blank(),
-    plot.title = element_blank(),
-    legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
-    legend.justification = c(0, 1),
-    legend.position = "right",
-    axis.title = element_text(size = 15),   # Increase axis titles
-    axis.text = element_text(size = 13),                   # Increase axis labels
-    axis.ticks = element_line(colour = "grey70", linewidth = 0.2),
-    panel.grid.major = element_line(colour = "grey70", linewidth = 0.2),
-    panel.grid.minor = element_blank(),
-    panel.border = element_rect(colour = "black", fill = NA, size = 0.5)
+  mutate(type = factor(type, levels = c("diatoms", "chiro")))
+
+smooth_lines <- smooth_main %>%
+  mutate(group_label = if_else(type == "diatoms", "Producers", "Consumers"))
+
+# -----------------------------
+# 2) Vegetation smooth (from sm_to)
+# -----------------------------
+veg_bg <- sm_to %>%
+  filter(.smooth == "s(age_ce)") %>%
+  transmute(
+    age_ce  = age_ce,
+    veg_est = .estimate,
+    veg_lo  = .lower_ci,
+    veg_hi  = .upper_ci
+  ) %>%
+  arrange(age_ce)
+
+# -----------------------------
+# 3) Map vegetation onto DCA axis (fixed veg range)
+# -----------------------------
+veg_limits <- c(-1.5, 1.5)
+dca_rng <- range(c(smooth_main$.lower_ci, smooth_main$.upper_ci), na.rm = TRUE)
+
+# veg_to_dca() and dca_to_veg() are implemented in `functions/source_custom_functions.R`
+
+# -----------------------------
+# 4) NAO series (median per age_ce, centered anomaly)
+# -----------------------------
+nao_series <- nao_hernandez %>%
+  group_by(age_ce) %>%
+  summarise(nao = median(NAO_Median_Value, na.rm = TRUE), .groups = "drop") %>%
+  arrange(age_ce) %>%
+  filter(is.finite(nao)) %>%
+  mutate(
+    nao_anom = nao - median(nao, na.rm = TRUE),
+    y0 = 0,
+    y_pos = pmax(nao_anom, 0),
+    y_neg = pmin(nao_anom, 0)
   )
 
+# -----------------------------
+# 5) Aesthetics
+# -----------------------------
+alpha_ci_species <- 0.10
+alpha_ci_veg     <- 0.10
+alpha_nao        <- 0.35
 
-# --------------------------------------------
-# Export figure to file
-# --------------------------------------------
-ggsave(
-  "figures/FIGURE_1b_regional_gam_DCA_all_groups.svg",
-  plot = plot_time.all_in_one,
-  dpi = 600, width = 12, height = 6
+lw_species <- 3.6
+lw_veg     <- 2.8
+
+# Producers yellow, Consumers purple, Vegetation mid-viridis green
+cols_line <- c(
+  "Consumers"  = viridisLite::viridis(9)[1],
+  "Vegetation" = viridisLite::viridis(9)[5],
+  "Producers"  = viridisLite::viridis(9)[9]
+)
+cols_fill_species <- c(
+  "Producers" = cols_line["Producers"],
+  "Consumers" = cols_line["Consumers"]
 )
 
+# -----------------------------
+# 6) TOP panel: NAO with normal axis (no x-axis shown)
+# -----------------------------
+p_nao <- ggplot(nao_series, aes(x = age_ce)) +
+  geom_ribbon(aes(ymin = y0, ymax = y_pos), fill = "red",  alpha = alpha_nao) +
+  geom_ribbon(aes(ymin = y_neg, ymax = y0), fill = "blue", alpha = alpha_nao) +
+  geom_hline(yintercept = 0, linewidth = 0.4, alpha = 0.7) +
+  scale_x_continuous(limits = c(0, 2020), n.breaks = 5) +
+  labs(x = NULL, y = "NAO (median anomaly)") +
+  theme_bw(base_size = 12) +
+  theme(
+    axis.title.x  = element_blank(),
+    axis.text.x   = element_blank(),
+    axis.ticks.x  = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = ggplot2::margin(5.5, 5.5, 0, 5.5)  # bottom margin = 0
+  )
 
+# -----------------------------
+# 7) BOTTOM panel: DCA smooths + vegetation (sec.axis)
+# -----------------------------
+p_main <- ggplot() +
+  # Vegetation (CI + line)
+  geom_ribbon(
+    data = veg_bg,
+    aes(x = age_ce, ymin = veg_to_dca(veg_lo), ymax = veg_to_dca(veg_hi)),
+    inherit.aes = FALSE,
+    fill = cols_line["Vegetation"],
+    alpha = alpha_ci_veg,
+    show.legend = FALSE
+  ) +
+  geom_line(
+    data = veg_bg,
+    aes(x = age_ce, y = veg_to_dca(veg_est), colour = "Vegetation"),
+    inherit.aes = FALSE,
+    linewidth = lw_veg
+  ) +
+  # Species CI + lines
+  geom_ribbon(
+    data = smooth_lines,
+    aes(x = age_ce, ymin = .lower_ci, ymax = .upper_ci, fill = group_label),
+    alpha = alpha_ci_species,
+    linewidth = 0,
+    show.legend = FALSE
+  ) +
+  geom_line(
+    data = smooth_lines,
+    aes(x = age_ce, y = .estimate, colour = group_label),
+    linewidth = lw_species
+  ) +
+  scale_colour_manual(
+    name = NULL,
+    values = cols_line,
+    breaks = c("Producers", "Consumers", "Vegetation")
+  ) +
+  scale_fill_manual(values = cols_fill_species, guide = "none") +
+  scale_y_continuous(
+    name = "DCA1 (regional smooth)",
+    limits = c(-1.75, 1),  # your final y-lims
+    sec.axis = sec_axis(~ dca_to_veg(.), name = "Regional vegetation change (HGAM smooth)")
+  ) +
+  scale_x_continuous(limits = c(0, 2020), n.breaks = 5) +
+  theme_bw(base_size = 12) +
+  theme(
+    legend.position = "right",
+    panel.grid.minor = element_blank(),
+    plot.margin = ggplot2::margin(0, 5.5, 5.5, 5.5)  # top margin = 0
+  )
+
+# -----------------------------
+# 8) Stack with ZERO gap
+# -----------------------------
+final_fig <- p_nao / p_main +
+  plot_layout(heights = c(0.55, 2)) &
+  theme(panel.spacing = unit(0, "pt"))
+
+final_fig
+
+# -----------------------------
+# Export
+# -----------------------------
+ggsave(
+  "figures/FIGURE_2b_all_regional_smooths_with_NAO_panel.pdf",
+  plot = final_fig,
+  dpi = 300, width = 300, height = 150, units = "mm"
+)
 ```
 
-### FIGURE 2 - Trophic structure classification
-```{r fig.width = 14, fig.asp = 1.2}
+### FIGURE 2b - Individual lake DCAs plus map
+```{r fig.asp=2, fig.width=12}
+# ==========================================================
+# FINAL FIGURE (NO PANEL A):
+# Map of Azores + embedded lake DCA smooths (diatoms vs chiro)
+# ==========================================================
 
+# -----------------------------
+# 1) Plot titles with island abbreviations
+# -----------------------------
+custom_titles <- c(
+  "Azul" = "Azul [SM]",
+  "Caldeirao" = "Caldeirão [CR]",
+  "Caveiro" = "Caveiro [PI]",
+  "Empadadas Norte" = "Empada. Norte [SM]",
+  "Funda" = "Funda [FL]",
+  "Ginjal" = "Ginjal [TE]",
+  "Peixinho" = "Peixinho [PI]",
+  "Prata" = "Prata [SM]",
+  "Santiago" = "Santiago [SM]"
+)
+
+# -----------------------------
+# 2) Build DCA mini-plots (diatoms vs chironomids) -> grobs
+# -----------------------------
+ls_plot_df_dca_multi_all <-
+  ls_dca_multi %>%
+  map(~ .x %>% filter(group %in% 1:2)) %>%
+  imap(~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
+         geom_smooth(aes(colour = factor(group)),
+                     linewidth = 1.4, alpha = 0.6, method = "gam", se = TRUE) +
+         scale_colour_viridis_d(
+           name = NULL,
+           labels = c("Producers", "Consumers")
+         ) +
+         labs(title = .y, x = NULL, y = NULL) +
+         theme_bw(base_size = 7) +
+         theme(
+           legend.position = "none",
+           plot.title = element_text(face = "bold", size = 7, hjust = 0.5),
+           axis.text = element_text(size = 6),
+           panel.grid.minor = element_blank(),
+           plot.margin = ggplot2::margin(1, 1, 1, 1)
+         )
+  )
+
+ls_plot_df_dca_multi_all_named <- imap(ls_plot_df_dca_multi_all, function(p, nm) {
+  if (nm %in% names(custom_titles)) p + ggtitle(custom_titles[[nm]]) else p
+})
+
+# remove lakes you don't want
+ls_plot_df_dca_multi_all_named <- ls_plot_df_dca_multi_all_named[!names(ls_plot_df_dca_multi_all_named) %in% c("Furnas","Fogo")]
+
+scatterplots <- map(ls_plot_df_dca_multi_all_named, ~ ggplotGrob(.x))
+
+# -----------------------------
+# 3) Lake points (sf)
+# -----------------------------
+lake_centers <- data.frame(
+  lake = lake_metadata$lake,
+  lat  = lake_metadata$lat,
+  lon  = lake_metadata$long
+)
+
+island_points <- st_as_sf(lake_centers, coords = c("lon", "lat"), crs = 4326)
+
+# -----------------------------
+# 4) Bounding box for Azores map (adjust if needed)
+# -----------------------------
+xmin <- -32.0 - 0.75 * abs(-32.0 + 24.5)
+xmax <- -24.5 + 0.75 * abs(-32.0 + 24.5)
+ymin <-  36.5 - 0.5  * abs(40.0 - 36.5)
+ymax <-  40.0 + 0.5  * abs(40.0 - 36.5)
+
+azores_bbox <- st_as_sfc(st_bbox(c(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), crs = 4326))
+
+# -----------------------------
+# 5) Coastline + crop
+# -----------------------------
+coastline_shapefile <- st_read("data/ne_10m_coastline/ne_10m_coastline.shp", quiet = TRUE)
+azores_coastline <- st_crop(coastline_shapefile, azores_bbox)
+
+# -----------------------------
+# 6) Where to place the embedded mini-plots
+#     (must match the order of scatterplots)
+# -----------------------------
+scatterplot_positions <- list(
+  c(xmax - 1.5, ymax - 1),                # Azul
+  c(xmin + 1.5, ymax - 1),                # Caldeirão
+  c(xmin + 1.5, ymin + 1),                # Caveiro
+  c(xmax - 1.5, (ymax + ymin) / 2),       # Empadadas Norte
+  c(xmin + 1.5, (ymax + ymin) / 2),       # Funda
+  c(xmin + (xmax - xmin) / 2, ymin + 1),  # Ginjal
+  c(((xmin + 1.5)+(xmin + (xmax - xmin) / 2))/2, ymin + 1),     # Peixinho
+  c(((xmin + (xmax - xmin) / 2)+(xmax - 1.5))/2, ymin + 1),     # Prata
+  c(xmax - 1.5, ymin + 1)                 # Santiago
+)
+
+# segments from inset positions to lake points
+segment_data <- data.frame(
+  x    = sapply(scatterplot_positions, `[[`, 1),
+  y    = sapply(scatterplot_positions, `[[`, 2),
+  xend = st_coordinates(island_points$geometry)[, 1],
+  yend = st_coordinates(island_points$geometry)[, 2]
+)
+
+# -----------------------------
+# 7) Build the final plot (single panel)
+# -----------------------------
+final_fig <- ggplot() +
+  geom_sf(data = azores_coastline, fill = "lightblue", colour = "black", linewidth = 0.3) +
+  geom_sf(data = island_points, shape = 21, size = 3.2, stroke = 0.3,
+          fill = "grey70", colour = "white") +
+  geom_segment(
+    data = segment_data,
+    aes(x = x, y = y, xend = xend, yend = yend),
+    colour = "grey60", linewidth = 0.3
+  ) +
+  coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), datum = sf::st_crs(4326), expand = FALSE) +
+  theme_void() +
+  theme(
+    plot.margin = ggplot2::margin(1, 1, 1, 1)  # IMPORTANT: no outer whitespace
+  ) +
+  ggtitle("(b) Detailed map of the Azores Archipelago") +
+  theme(plot.title = element_text(size = 9, face = "bold", hjust = -2)) +
+  coord_sf(xlim = c(xmin, xmax + 1.0), ylim = c(ymin, ymax), expand = FALSE, clip = "off") +
+  theme(plot.margin = ggplot2::margin(0, 20, 0, 20))   # add right margin (pt)
+
+final_fig <- final_fig +
+  labs(x = "Year (CE)") +
+  theme(
+    axis.title.x = element_text(size = 10, margin = ggplot2::margin(t = 6)),
+    axis.text.x  = element_text(size = 8),
+    axis.ticks.x = element_line(linewidth = 0.3),
+    #axis.line.x  = element_line(linewidth = 0.3)
+  )
+
+# Optional north arrow (remove if not needed)
+final_fig <- final_fig +
+  annotation_north_arrow(
+    location = "bl", which_north = "true",
+    pad_x = unit(0.25, "in"), pad_y = unit(0.25, "in"),
+    style = north_arrow_minimal()
+  )
+
+# -----------------------------
+# 8) Overlay the inset plots
+# -----------------------------
+scatterplot_scale_x <- 2 * 0.85
+scatterplot_scale_y <- 1.5 * 0.75
+
+for (i in seq_along(scatterplots)) {
+  final_fig <- final_fig +
+    annotation_custom(
+      scatterplots[[i]],
+      xmin = scatterplot_positions[[i]][1] - scatterplot_scale_x,
+      xmax = scatterplot_positions[[i]][1] + scatterplot_scale_x,
+      ymin = scatterplot_positions[[i]][2] - scatterplot_scale_y,
+      ymax = scatterplot_positions[[i]][2] + scatterplot_scale_y
+    )
+}
+
+final_fig
+
+# -----------------------------
+# 9) Export (force no clipping and use full width)
+# -----------------------------
+ggsave(
+  "figures/FIGURE_2b_azores_inset_DCA.pdf",
+  plot = final_fig,
+  dpi = 300, width = 180, height = 90, units = "mm",
+  limitsize = FALSE
+)
+```
+
+### FIGURE 3 - Trophic structure classification
+```{r fig.asp=2, fig.width=12}
 # --------------------------------------------
 # Global theme parameters (adjust once here)
 # --------------------------------------------
@@ -2878,6 +4228,79 @@ boxplots <-
     axis.ticks = element_line(colour = "grey70", linewidth = 0.2)
   )
 
+# optional: if you want labels under the two groups
+# library(ggtext)
+
+guild_levels <- c(
+  "euplanktonic", "high_profile", "low_profile", "motile",
+  "GAP",
+  "algivore", "detritivore", "plantivore", "predator"
+)
+
+guild_labels <- c(
+  "euplanktonic" = "EU", "high_profile" = "HP", "low_profile" = "LP", "motile" = "MOT",
+  "GAP" = "",
+  "algivore" = "AL", "detritivore" = "DET", "plantivore" = "PL", "predator" = "PR"
+)
+
+boxplots <-
+  bind_cols(global_matrix_merged_paleo,
+            select(norm_abund, c(
+              euplanktonic, high_profile, low_profile, motile,
+              algivore, detritivore, plantivore, predator
+            ))) %>%
+  pivot_longer(
+    cols = c(euplanktonic, high_profile, low_profile, motile,
+             algivore, detritivore, plantivore, predator),
+    names_to = "name",
+    values_to = "value"
+  ) %>%
+  mutate(
+    amd_clusts = as.factor(amd_clusts),
+    name = factor(name, levels = setdiff(guild_levels, "GAP"))
+  ) %>%
+  # --- add a dummy row per facet to create a visual gap level ---
+  bind_rows(
+    distinct(., amd_clusts) %>%
+      mutate(name = "GAP", value = NA_real_)
+  ) %>%
+  mutate(
+    name = factor(as.character(name), levels = guild_levels)
+  ) %>%
+  ggplot(aes(name, value)) +
+  # separator line between producers and consumers (after the 4th box)
+  geom_vline(xintercept = 5, linewidth = 0.6, colour = "grey40") +
+  geom_boxplot(na.rm = TRUE) +
+  scale_x_discrete(labels = guild_labels, drop = FALSE) +
+  theme_bw() +
+  labs(x = "Community Trophic Guilds", y = "Relative Abundance") +
+  guides(fill = "none") +
+  facet_wrap2(
+    ncol = 6,
+    ~ factor(amd_clusts, labels = c("CTS1", "CTS2", "CTS3", "CTS4", "CTS5")),
+    strip = strip_themed(
+      text_x = element_text(color = "black"),
+      background_x = list(
+        "CTS1" = element_rect(fill = scales::alpha(facet_colors["CTS1"], 0.8)),
+        "CTS2" = element_rect(fill = scales::alpha(facet_colors["CTS2"], 0.8)),
+        "CTS3" = element_rect(fill = scales::alpha(facet_colors["CTS3"], 0.8)),
+        "CTS4" = element_rect(fill = scales::alpha(facet_colors["CTS4"], 0.8)),
+        "CTS5" = element_rect(fill = scales::alpha(facet_colors["CTS5"], 0.8))
+      )
+    )
+  ) +
+  ggtitle("(c) Guild Composition by Structure") +
+  theme(
+    plot.margin = unit(c(1, 2, 1, 2), "pt"),
+    plot.title = element_text(size = plot_title_size, face = "bold"),
+    axis.text = element_text(size = axis_text_size),
+    axis.title = element_text(size = axis_title_size),
+    legend.background = element_rect(fill = "white", linewidth = 4, colour = "white"),
+    legend.position = "none",
+    panel.grid = element_blank(),
+    axis.ticks = element_line(colour = "grey70", linewidth = 0.2)
+  )
+
 # --------------------------------------
 # Prepare Panel D: Vegetation change with GAM smooth
 # --------------------------------------
@@ -2900,18 +4323,18 @@ df_p1_ribbon <- ggplot_build(vegetation_smooth_plot)$data[[2]] %>%
 
 orig_range <- range(df_p1_smooth$y, na.rm = TRUE)
 
-p_combined <- plot_stacked_fclusts_time_lines +
+p_combined <- plot_regional_lake_balanced +
   geom_line(data = df_p1_smooth, aes(x = x, y = y_rescaled),
             inherit.aes = FALSE, color = "white", size = 2) +
   scale_y_continuous(
-    name = "Proportion of Community Trophic Structures",
+    name = "Proportion of CTS",
     sec.axis = sec_axis(
       trans = ~ scales::rescale(., from = c(0, 1), to = orig_range),
       name = "Vegetation Change (GAM smooth - Pollen signal)"
     )
   ) +
   theme_minimal(base_size = 12) +
-  ggtitle("(d) Proportion of Community Trophic Structures Over Time") +
+  ggtitle("(d) Proportion of CTS Over Time") +
   theme(
     plot.title = element_text(size = plot_title_size, face = "bold"),
     axis.text = element_text(size = axis_text_size),
@@ -2923,7 +4346,7 @@ p_combined <- plot_stacked_fclusts_time_lines +
 # --------------------------------------
 box_plot_clusts_mod <- box_plot_clusts_mod +
   scale_x_discrete(labels = c("CTS5", "CTS4", "CTS3", "CTS2", "CTS1")) +
-  ggtitle("(e) Number of Species per Community Trophic Structure") +
+  ggtitle("(e) Number of Species per CTS") +
   theme(
     plot.title = element_text(size = plot_title_size, face = "bold"),
     axis.text = element_text(size = axis_text_size),
@@ -2969,252 +4392,268 @@ print(final_figure)
 # Save to file
 # --------------------------------------------
 ggsave(plot = final_figure, 
-       filename = "figures/FIGURE_2_composite_figure.png", 
+       filename = "figures/FIGURE_3_composite_figure.png", 
        dpi = 600,
-       width = 14)
+       width = 12,
+       height = 16)
 
+ggsave(plot = final_figure, 
+       filename = "figures/FIGURE_3_composite_figure.pdf", 
+       dpi = 600,
+       width = 12,
+       height = 16)
 
 ```
 
 
-### FIGURE 3 - Diversity Dynamics by Functional Group (Standardized Species Richness)
+
+### FIGURE 4 - Diversity Dynamics by Functional Group (Standardized Species Richness)
 ```{r fig.asp = 0.5, fig.width = 10}
-
 # --------------------------------------------
-# Set common visual parameters (edit these to update all plots)
+# Common theme helpers for legends (prevents clipping)
 # --------------------------------------------
-axis_title_size <- 13
-axis_text_size  <- 11
-legend_text_size <- 10
-plot_title_size <- 14
-
-# Define custom labels for functional groups
-prod_labels <- c(
-  "high_profile" = "High-profile",
-  "low_profile" = "Low-profile",
-  "motile" = "Motile",
-  "euplanktonic" = "Euplanktonic"
+legend_theme <- theme(
+  legend.position = "bottom",
+  legend.box = "vertical",                 # <-- stack the two legends
+  legend.direction = "horizontal",
+  legend.title = element_text(size = 11),
+  legend.text  = element_text(size = 11),
+  legend.key.width  = unit(1.3, "lines"),
+  legend.key.height = unit(0.9, "lines"),
+  legend.spacing.y  = unit(0.2, "lines"),
+  plot.margin = ggplot2::margin(5.5, 5.5, 20, 5.5)  # <-- extra bottom space for legends
 )
 
-# Define custom labels for functional groups
 cons_labels <- c(
-  "plantivore" = "Plantivore",
-  "algivore" = "Algivore",
-  "detritivore" = "Detritivore",
-  "predator" = "Predator"
+  "predator"      = "Predators",
+  "detritivore"   = "Detritivores",
+  "algivore"      = "Algivores",
+  "plantivore"    = "Plantivores"
 )
+
+prod_labels <- c(
+  "high_profile"  = "High-profile",
+  "low_profile"   = "Low-profile",
+  "motile"        = "Motile",
+  "euplanktonic"  = "Euplanktonic"
+)
+
 # --------------------------------------------
-# Regional consumer richness trend
+# Consumer plot
 # --------------------------------------------
 cons_glob_div_plt <- cons_glob_div_plt_data %>%
   ggplot(aes(age_ce, standardized_species_richness)) +
   geom_smooth(aes(color = fgroup), se = TRUE) +
   geom_smooth(color = "red", linetype = "dotted", alpha = 0.7, se = FALSE) +
-  scale_color_scico_d(name = "Consumer guilds", palette = "lajolla", direction = -1) +
-  #scale_color_viridis_d(name = "Consumer guilds", option = "B", direction = -1, alpha = 0.5, labels = cons_labels) +
-  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
+  scale_color_scico_d(
+    name = "Consumers",
+    palette = "lajolla",
+    direction = -1,
+    labels = cons_labels
+  ) +
   labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
   theme_minimal() +
   theme(
-    legend.position = "bottom",
     panel.grid.minor = element_blank(),
     axis.title = element_text(size = axis_title_size),
     axis.text  = element_text(size = axis_text_size),
     plot.title = element_text(size = plot_title_size, face = "bold")
   ) +
-  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
+  guides(color = guide_legend(nrow = 1, byrow = TRUE)) +  # adjust nrow as you like
   lims(x = c(0, 2010))
 
 # --------------------------------------------
-# Regional producer richness trend
+# Producer plot
 # --------------------------------------------
 prod_glob_div_plt <- prod_glob_div_plt_data %>%
   ggplot(aes(age_ce, standardized_species_richness)) +
   geom_smooth(aes(color = fgroup), se = TRUE) +
   geom_smooth(color = "red", linetype = "dotted", alpha = 0.7, se = FALSE) +
-  scale_color_viridis_d(name = "Producer guilds", option = "D", direction = 1, alpha = 0.5, labels = prod_labels) +
-  scale_linetype_manual(name = "Overall mean", values = c("Overall mean" = 3)) +
+  scale_color_viridis_d(
+    name = "Producers",
+    option = "D",
+    direction = 1,
+    alpha = 0.5,
+    labels = prod_labels
+  ) +
   labs(x = "Age (CE)", y = "Standardized Species Richness (0–1)") +
   theme_minimal() +
   theme(
-    legend.position = "bottom",
     panel.grid.minor = element_blank(),
     axis.title = element_text(size = axis_title_size),
     axis.text  = element_text(size = axis_text_size),
     plot.title = element_text(size = plot_title_size, face = "bold")
   ) +
-  guides(color = guide_legend(nrow = 2, byrow = TRUE)) +
+  guides(color = guide_legend(nrow = 1, byrow = TRUE)) +  # adjust nrow as you like
   lims(x = c(0, 2010))
 
 # --------------------------------------------
-# Remove y-axis for consumer global plot to align with producer
+# Combine (KEEP vertical), legends stacked at bottom
+# IMPORTANT: do NOT use guides="collect" because scales differ
 # --------------------------------------------
-cons_glob_div_plt <- cons_glob_div_plt +
-  theme(
-    axis.title.y = element_blank(),
-    axis.text.y  = element_blank()
-  )
+plot_div_per_fgroup_regional_scale <-
+  (prod_glob_div_plt / cons_glob_div_plt) +
+  plot_annotation(tag_levels = "a") &
+  legend_theme
+
+print(plot_div_per_fgroup_regional_scale)
 
 # --------------------------------------------
-# Combine producer and consumer global plots
-# --------------------------------------------
-plot_div_per_fgroup_regional_scale <- 
-  prod_glob_div_plt + cons_glob_div_plt +
-  patchwork::plot_layout(guides = "collect", widths = c(1, 1)) +
-  patchwork::plot_annotation(
-    tag_levels = 'a',
-    theme = theme(
-      legend.position = "bottom",
-      legend.text = element_text(size = legend_text_size)
-    )
-  )
-
-# --------------------------------------------
-# Save output
+# Save output (give enough width so legend text doesn’t clip)
 # --------------------------------------------
 ggsave(
   plot = plot_div_per_fgroup_regional_scale,
-  filename = "figures/FIGURE_3_plot_div_per_fgroup_regional_scale.png",
+  filename = "figures/FIGURE_4_plot_div_per_fgroup_regional_scale.png",
   dpi = 600,
-  width = 10, height = 6
+  width = 7.2, height = 11.5, units = "in"
+)
+
+ggsave(
+  plot = plot_div_per_fgroup_regional_scale,
+  filename = "figures/FIGURE_4_plot_div_per_fgroup_regional_scale.pdf",
+  dpi = 600,
+  width = 7.2, height = 11.5, units = "in"
 )
 
 ```
 
-## FIGURE 4 - Historical and Moving Window Variance Partitioning
+## FIGURE 5 - Historical and Moving Window Variance Partitioning
 ```{r fig.width = 10, fig.asp = 1}
+# Single-column layout: legends below each panel, consistent font scaling.
+# --------------------------------------------
+# Global figure controls (edit once)
+# --------------------------------------------
+base_size       <- 10   # overall text size (single-column friendly)
+title_size      <- 11
+axis_title_size <- 10
+axis_text_size  <- 9
+legend_title_sz <- 9
+legend_text_sz  <- 8
+
+# Single-column width (PNAS is typically ~3.3–3.5 in for 1-col figures)
+# Use 3.5 if you want strict 1-col; 4.5 is safer for readability.
+fig_width  <- 4.5
+fig_height <- 10
+
 # STEP 1: Define historical transition years
 phase_lines <- c(750, 1050, 1450, 1750)
 
-# STEP 2: Plot A – Moving window R² (unchanged from earlier setup)
-varpart_moving <- ggplot(r2_windowed, aes(x = midpoint, y = value, fill = veg_period)) +
-  geom_col(position = "stack", width = step_size) +
-  scale_fill_manual(values = component_colors_split, name = "Variance Component") +
-  scale_x_continuous(
-    breaks = seq(
-      from = floor(min(r2_windowed$midpoint) / 100) * 100,
-      to   = ceiling(max(r2_windowed$midpoint) / 100) * 100,
-      by = 200
-    )
-  ) +
-  geom_vline(xintercept = phase_lines, linetype = "dotted", color = "gray30") +
-  labs(
-    x = NULL,
-    y = "Adjusted R² (Variance explained)",
-    title = "(a) Variance partitioning over time"
-  ) +
-  theme_minimal(base_size = 13) +
+# --------------------------------------------
+# A shared theme applied to ALL three panels
+# --------------------------------------------
+panel_theme <- theme_minimal(base_size = base_size) +
   theme(
-    legend.position = "right",
-    axis.text.y = element_text(face = "bold"),
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    plot.margin = ggplot2::margin(0.2, 0.2, 0, 0.2, unit = "lines")
+    plot.title        = element_text(size = title_size, face = "bold", hjust = 0),
+    axis.title        = element_text(size = axis_title_size),
+    axis.text         = element_text(size = axis_text_size),
+    legend.position   = "bottom",
+    legend.title      = element_text(size = legend_title_sz),
+    legend.text       = element_text(size = legend_text_sz),
+    legend.key.height = unit(3.0, "mm"),
+    legend.key.width  = unit(6.0, "mm"),
+    plot.margin       = ggplot2::margin(3, 3, 3, 3)
   )
 
-# STEP 3: Compute effect size difference + color classification
-effect_diff <- r2_windowed %>%
-  filter(component %in% c("Pure Vegetation", "Pure Climate")) %>%
-  select(midpoint, component, value) %>%
-  pivot_wider(names_from = component, values_from = value) %>%
-  mutate(
-    effect_diff = `Pure Vegetation` - `Pure Climate`,
-    effect_group = case_when(
-      effect_diff > 0 & midpoint < 750 ~ "VegChange > Climate (pre-750)",
-      effect_diff > 0 & midpoint >= 750 ~ "VegChange > Climate (post-750)",
-      effect_diff < 0 ~ "Climate > VegChange",
-      TRUE ~ "Equal"
-    )
-  )
-
-# STEP 4: Define custom color palette
-effect_colors_split <- c(
-  "VegChange > Climate (pre-750)" = "#054A29",    # dark green
-  "VegChange > Climate (post-750)" = "#6DC6B6",   # lighter green
-  "Climate > VegChange" = "#F4B942"               # orang
+# --------------------------------------------
+# Panel-specific legend helper
+# (3 rows for a and b; and also for c)
+# --------------------------------------------
+legend_3rows <- guides(
+  fill  = guide_legend(nrow = 3, byrow = TRUE),
+  color = guide_legend(nrow = 3, byrow = TRUE),
+  alpha = "none"
 )
 
-# STEP 5: Plot B – Effect size plot with split greens
-effect_diff_plot <- ggplot(effect_diff, aes(x = midpoint, y = effect_diff, fill = effect_group)) +
-  geom_col(width = step_size) +
-  scale_fill_manual(values = effect_colors_split, name = "Dominant Driver") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
-  geom_vline(xintercept = phase_lines, linetype = "dotted", color = "gray30") +
-  scale_x_continuous(
-    breaks = seq(
-      from = floor(min(effect_diff$midpoint) / 100) * 100,
-      to   = ceiling(max(effect_diff$midpoint) / 100) * 100,
-      by = 200
-    )
-  ) +
-  labs(
-    x = "Year (CE)",
-    y = "Effect size (Vegetation − Climate)",
-    title = "(b) Relative dominance of VegChange vs. climate"
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(
-    legend.position = "right",
-    axis.text.y = element_text(face = "bold"),
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    plot.margin = ggplot2::margin(0.2, 0.2, 0.2, 0.2, unit = "lines")
-  )
-
-
-# Apply title formatting in each subplot
-original_varpart <- original_varpart + 
+# --------------------------------------------
+# Panel A
+# --------------------------------------------
+p_a <- historical_phase_varpart_sig +
   ggtitle("(a) Historical phases") +
-  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0))
+  scale_x_discrete(labels = c("Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5")) +
+  panel_theme +
+  legend_3rows
 
-varpart_moving <- varpart_moving +
+# --------------------------------------------
+# Panel B
+# --------------------------------------------
+p_b <- moving_window_varpart_sig +
   ggtitle("(b) Moving window") +
-  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0))
+  panel_theme +
+  legend_3rows
 
-effect_diff_plot <- effect_diff_plot +
+# --------------------------------------------
+# Panel C
+# --------------------------------------------
+p_c <- effect_diff_plot_sig +
   ggtitle("(c) Climate vs VegChange") +
-  theme(plot.title = element_text(size = 12, face = "bold", hjust = 0))
-
-# Build the combined plot
-combined_varplot <- (
-  (original_varpart + ggtitle("(a) Historical phases")) /
-  (varpart_moving + ggtitle("(b) Moving window")) /
-  (effect_diff_plot + ggtitle("(c) Climate vs VegChange"))
-) +
-  #plot_layout(guides = "collect") &
-  theme(
-    plot.title = element_text(size = 12, face = "bold", hjust = 0),
-    plot.margin = ggplot2::margin(6, 6, 6, 6)
+  panel_theme +
+  guides(
+    fill  = guide_legend(nrow = 3, byrow = TRUE),
+    alpha = "none"
   )
 
-# Print the plot
+# If any panel still shows an "NA" legend entry, uncomment:
+# p_c <- p_c + scale_fill_discrete(na.translate = FALSE)
+
+# --------------------------------------------
+# Combine (single column) — keep legends under each panel
+# --------------------------------------------
+combined_varplot <- p_a / p_b / p_c +
+  plot_layout(guides = "keep", heights = c(1, 1.2, 1))
+
 print(combined_varplot)
 
 # --------------------------------------------
-# Save output
+# Save output (single-column)
 # --------------------------------------------
 ggsave(
-  plot = combined_varplot,
-  filename = "figures/FIGURE_4_multivariate_analysis.png",
-  dpi = 600,
-  width = 14, height = 10
+  plot     = combined_varplot,
+  filename = "figures/FIGURE_5_varparts_singlecol.png",
+  dpi      = 600,
+  width    = fig_width,
+  height   = fig_height,
+  units    = "in",
+  bg       = "white"
+)
+
+ggsave(
+  plot     = combined_varplot,
+  filename = "figures/FIGURE_5_varparts_singlecol.pdf",
+  dpi      = 600,
+  width    = fig_width,
+  height   = fig_height,
+  units    = "in",
+  bg       = "white"
 )
 
 ```
 
-## SUPPLEMENTARY FIGURE 2 - Climatic reconstructions
+# SUPPLEMENTARY FIGURES
+## SUPPLEMENTARY FIGURE S2 - Climatic reconstructions
 ```{r fig.width=12, fig.asp=0.5}
+nhst_df <- nhst_buntgen %>%
+  arrange(age_ce) %>%
+  mutate(
+    sign = ifelse(Rmean >= 0, "positive", "negative")
+  )
+
+nao_df <- nao_hernandez %>%
+  arrange(age_ce) %>%
+  mutate(
+    sign = ifelse(NAO_Median_Value >= 0, "positive", "negative")
+  )
 
 # --------------------------------------
 # Plot 1: NH Summer Temperature (Büntgen tree-ring reconstruction)
 # --------------------------------------
-nhst_buntgen_plot <- ggplot(nhst_buntgen, aes(x = age_ce, y = Rmean)) +
+nhst_buntgen_plot <- ggplot(nhst_df, aes(x = age_ce, y = Rmean)) +
   geom_line(size = 1, color = "grey") +  # Main raw line
   geom_point(aes(color = sign), size = 1) +  # Positive (red) / negative (blue) deviations
   scale_color_manual(values = c("positive" = "red", "negative" = "blue")) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +  # zero reference
 
   # Add 50-year smoothed trend line
-  geom_line(data = nhst_buntgen_binned, aes(x = bin_50yr, y = avg_value),
+  geom_line(data = nhst_30, aes(x = age_ce, y = Rmean),
             color = "steelblue", linewidth = 2) +
 
   theme_minimal(base_size = 14) +
@@ -3229,15 +4668,15 @@ nhst_buntgen_plot <- ggplot(nhst_buntgen, aes(x = age_ce, y = Rmean)) +
 # --------------------------------------
 # Plot 2: North Atlantic Oscillation (NAO) median values
 # --------------------------------------
-nao_plot <- ggplot(nao_hernandez, aes(x = age_ce, y = NAO_Median_Value)) +
+nao_plot <- ggplot(nao_df, aes(x = age_ce, y = NAO_Median_Value)) +
   geom_line(size = 1, color = "grey") +  # Raw NAO data
   geom_point(aes(color = sign), size = 1) +  # Red/blue anomalies
   scale_color_manual(values = c("positive" = "red", "negative" = "blue")) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +
 
   # Add 50-year smoothed trend line
-  geom_line(data = nao_binned, aes(x = bin_50yr, y = avg_value),
-            color = "steelblue", linewidth = 2) +
+ #geom_line(data = nao_30, aes(x = age_ce, y = NAO_Median_Value),
+ #          color = "steelblue", linewidth = 2) +
 
   theme_minimal(base_size = 14) +
   labs(
@@ -3296,18 +4735,16 @@ final_plot_2 <-
 # --------------------------------------
 
 # Set PNG output for saving the tree plot
-png("supplementary/supplementary_figure_2.png", width = 8, height = 8, units = "in", res = 600)
+png("supplementary/supplementary_figure_S2.png", width = 8, height = 8, units = "in", res = 600)
 
 # Plot
 final_plot_2
 
 # Close the graphics device
 dev.off()
-
-
 ```
 
-## SUPPLEMENTARY FIGURE 3 - Pollen GAM
+## SUPPLEMENTARY FIGURE S3 - Pollen GAM
 ```{r fig.width = 8, fig.asp = 1.5}
 
 # --------------------------------------
@@ -3395,7 +4832,7 @@ final_combined_plot_pollen <-
 # --------------------------------------
 # Export to PNG
 # --------------------------------------
-png("supplementary/supplementary_figure_3_vegetation_change.png", 
+png("supplementary/supplementary_figure_S3_vegetation_change.png", 
     width = 7.29, height = 4.51, units = "in", res = 600)
 
 # Render the plot to file
@@ -3406,8 +4843,25 @@ dev.off()
 
 ```
 
+## SUPPLEMENTARY FIGURE S4 - Pollen GAM by island
+```{r fig.width = 8, fig.asp = 1.5}
 
-### SUPPLEMENTARY FIGURE 4 - Community Trophic Structures over time
+# --------------------------------------
+# Export to PNG
+# --------------------------------------
+png("supplementary/supplementary_figure_S4_pollen_by_island.png", 
+    width = 7.29, height = 4.51, units = "in", res = 600)
+
+# Render the plot to file
+p_presence_rows_lakes
+
+# Close the graphics device
+dev.off()
+
+```
+
+
+### SUPPLEMENTARY FIGURE S5 - Community Trophic Structures over time
 ```{r fig.asp = 1.5, fig.width = 12}
 # -----------------------------------------------
 # Convert PNG tree plot into a ggplot-compatible object
@@ -3463,7 +4917,7 @@ panel_lake_density <- lake_scale_density_plot +
     plot.title = element_text(size = 14, face = "bold")
   )
 # Combine panels using patchwork with layout control
-supplementary_figure_4 <- 
+supplementary_figure_5 <- 
   (panel_regional_stacked + panel_lake_density) +
   patchwork::plot_layout(
     design = patchwork_layout_design,
@@ -3479,14 +4933,14 @@ supplementary_figure_4 <-
 # -----------------------------------------------
 # Display the combined supplementary figure
 # -----------------------------------------------
-print(supplementary_figure_4)
+print(supplementary_figure_5)
 
 # -----------------------------------------------
 # Save to file
 # -----------------------------------------------
 ggsave(
-  plot = supplementary_figure_4,
-  filename = "supplementary/supplementary_figure_4.png",
+  plot = supplementary_figure_5,
+  filename = "supplementary/supplementary_figure_S5.png",
   dpi = 600,
   width = 12,
   height = 16
@@ -3494,11 +4948,11 @@ ggsave(
 
 ```
 
-### SUPPLEMENTARY FIGURE 5 - Variable Importance Plot
+### SUPPLEMENTARY FIGURE S6 - Variable Importance Plot
 ```{r}
 
 # Set PNG output for saving the tree plot
-png("supplementary/supplementary_figure_5_decision_tree.png", width = 7.29, height = 4.51, units = "in", res = 600)
+png("supplementary/supplementary_figure_S6_varimpplot.png", width = 7.29, height = 4.51, units = "in", res = 600)
 
 # Plot variable importance from random forest
 varImpPlot(RFfit_paleo, main = "")
@@ -3508,11 +4962,11 @@ dev.off()
 
 ```
 
-### SUPPLEMENTARY FIGURE 6 - Global RDA
+### SUPPLEMENTARY FIGURE S7 - Global RDA
 ```{r fig.width = 12, fig.asp = 1}
 
 # Set PNG output for saving the tree plot
-png("supplementary/supplementary_figure_6_global_rda.png", width = 8, height = 8, units = "in", res = 600)
+png("supplementary/supplementary_figure_S7_global_rda.png", width = 8, height = 8, units = "in", res = 600)
 
 # Plot Global Rda with selected variables
 global_rda
@@ -3521,4 +4975,20 @@ global_rda
 dev.off()
 
 ```
+
+### SUPPLEMENTARY FIGURE S9 - Null model
+```{r fig.width = 12, fig.asp = 1}
+
+# Set PNG output for saving the tree plot
+png("supplementary/supplementary_figure_S9_null_model.png", width = 8, height = 8, units = "in", res = 600)
+
+# Plot Global Rda with selected variables
+combined_plot
+
+# Close the graphics device
+dev.off()
+
+```
+
+
 
