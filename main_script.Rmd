@@ -99,12 +99,19 @@ conflict_prefer("summarize", "dplyr")
 conflict_prefer("filter", "dplyr")
 conflict_prefer("explain", "DALEX")
 conflict_prefer("annotate", "ggplot2")
+
+# -------------------------------
+# Output folders (create if missing)
+# -------------------------------
+dir.create("figures", showWarnings = FALSE, recursive = TRUE)
+dir.create("supplementary", showWarnings = FALSE, recursive = TRUE)
+dir.create("outputs", showWarnings = FALSE, recursive = TRUE)
 ```
 
 # Load data
 ```{r}
 
-load("data/clean_source_data_files.R")
+load("data/clean_source_data_files.RData")
 
 # Define functional groups (used throughout trophic structure analyses)
 alternative_functional_groups_guilds_globi_merged <- c(
@@ -3952,7 +3959,7 @@ final_fig
 # Export
 # -----------------------------
 ggsave(
-  "figures/FIGURE_2b_all_regional_smooths_with_NAO_panel.pdf",
+  "figures/FIGURE_2a_all_regional_smooths_with_NAO_panel.pdf",
   plot = final_fig,
   dpi = 300, width = 300, height = 150, units = "mm"
 )
@@ -4989,6 +4996,5 @@ combined_plot
 dev.off()
 
 ```
-
 
 

@@ -1,0 +1,22 @@
+.DS_Store
+.Rhistory
+.Rapp.history
+.RDataTmp
+.Rproj.user/
+.Renviron
+.Renviron.*
+.Rprofile
+
+# Common knitted artifacts
+*.html
+*.log
+*.aux
+*.out
+*.toc
+*.tex
+*.synctex.gz
+*_cache/
+*_files/
+
+# Optional: editor/OS files
+Thumbs.db

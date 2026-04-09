@@ -108,9 +108,8 @@ convert_DCA <- function(data) {
 #' @import dplyr
 #' @import ggplot2
 #' @export
-subsample_time_series <- function(data, x, y, binwidth, n_samples_per_bin) {
-  # Ensure reproducibility
-  set.seed(123)
+subsample_time_series <- function(data, x, y, binwidth, n_samples_per_bin, seed = 123) {
+  if (!is.null(seed)) set.seed(seed)
   
   # Create a bin column based on the binwidth
   data$bin <- cut(data[[x]], breaks = seq(min(data[[x]]), max(data[[x]]), by = binwidth), include.lowest = TRUE)
