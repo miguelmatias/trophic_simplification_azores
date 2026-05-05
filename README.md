@@ -30,7 +30,7 @@ required_packages <- c(
   "ggrepel", "ggpmisc", "viridis", "cowplot", "patchwork", "gridExtra", "ggnewscale", "ggridges",
   "ggh4x", "ggspatial", "ggordiplots", "vegan", "codyn", "broom", "mgcv", "scam", "gratia",
   "caret", "e1071", "evtree", "rpart", "randomForest", "rpart.plot", "earth",
-  "DALEX", "DALEXtra", "irr", "ape", "sf"
+  "DALEX", "DALEXtra", "irr", "ape", "sf", "abdiv"
 )
 install.packages(required_packages[!required_packages %in% rownames(installed.packages())])
 ```
@@ -52,7 +52,7 @@ Place the following in the `data/` folder before running the script:
 
 | File | Description |
 |------|-------------|
-| `clean_source_data_files.RData` | R binary workspace (`.RData`); contains processed DCA outputs, species lists, and other objects created in earlier data prep. |
+| `clean_source_data_files.RData` | Primary R workspace. For publication, this file should contain the **five raw input objects** needed to compute ordinations inside `main_script.Rmd` (`ls_df_diat_wide_codes`, `ls_df_codes_diat`, `ls_df_chiro_wide_codes`, `df_chiro_codes`, `df_fgroups`) plus any non-ordination helper objects needed downstream (e.g. `df_fgroups_glob_div`, `cons_glob_div_plt_data`, `prod_glob_div_plt_data`). Precomputed DCA/PCoA outputs are intentionally excluded. |
 | `table_lake_metadata.csv` | Lake names, coordinates, area. |
 | `table_abundance_guilds.csv` | Guild relative abundances per sample. |
 | `table_diversity_guilds.csv` | Diversity metrics per guild. |
@@ -65,8 +65,8 @@ Paths are relative to the project root.
 
 ## What the main script does
 
-1. **Setup** — Loads all packages, sources `functions/source_custom_functions.R`, resolves namespace conflicts, then loads the data above.
-2. **DCA** — Detrended Correspondence Analysis (diatoms, chironomids); trophic structure clustering (AMD).
+1. **Setup** — Loads all packages, sources `functions/source_custom_functions.R`, resolves namespace conflicts, then loads `clean_source_data_files.RData` and the CSV tables below.
+2. **DCA** — Computes ordination inside `main_script.Rmd` from the raw inputs stored in `clean_source_data_files.RData`, then trophic structure clustering (AMD).
 3. **Pollen & vegetation** — Pollen group trends, GAMs, and vegetation indicators over time.
 4. **Variance partitioning** — Phase-based and moving-window RDA to partition community variance into climate (NAO) vs vegetation effects and shared variance.
 5. **Sensitivity analyses** — Phase-boundary robustness, leave-one-out (lakes), and null model (circular shift) for the moving-window results.
