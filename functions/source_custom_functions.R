@@ -1050,3 +1050,1074 @@ safe_anova_p <- function(mod, permutations = 9999, by = NULL, which_row = 1, ret
   if (nrow(out) < which_row) return(NA_real_)
   as.numeric(out$`Pr(>F)`[which_row])
 }
+
+#' Prepare long-format data for a lake stratiplot (top-N taxa + Other)
+#'
+#' Aggregates duplicate \code{age_ce} levels by summing counts, drops all-zero
+#' taxa, keeps the \code{n_top} most abundant species, and returns relative
+#' abundances interpolated onto a fine age grid for continuous stacked bands.
+#'
+#' @param abund_wide Data frame of species counts with optional metadata columns.
+#' @param codes_df Sample metadata including \code{age_ce}, aligned row-wise with
+#'   \code{abund_wide}.
+#' @param meta_cols Optional extra column names to exclude from the species matrix.
+#'   Common metadata columns (\code{lake}, \code{core_depth_id}, \code{depth_top},
+#'   \code{dec_depth}, \code{age_ce}, etc.) are always dropped automatically.
+#' @param n_top Number of taxa to retain before pooling the remainder as \code{Other}.
+#' @param age_step Age increment (years CE) for the interpolated grid. When
+#'   \code{NULL}, uses one quarter of the median sample spacing (minimum 1 year).
+#' @return A list with \code{data} (long tibble), \code{top_taxa}, and
+#'   \code{age_range}.
+#' @export
+prepare_lake_stratiplot_data <- function(
+    abund_wide,
+    codes_df,
+    meta_cols = NULL,
+    n_top = 10L,
+    age_step = NULL) {
+  default_meta_cols <- c(
+    "lake", "core_depth_id", "core_id", "sec_cor", "samp_id", "samp_dep",
+    "dec_depth", "depth_top", "depth_bot", "age_bp", "age_ce"
+  )
+  drop_cols <- unique(c(default_meta_cols, meta_cols))
+
+  abund <- abund_wide %>%
+    dplyr::select(-dplyr::any_of(drop_cols)) %>%
+    dplyr::mutate(.row_id = dplyr::row_number())
+
+  meta <- codes_df %>%
+    dplyr::mutate(.row_id = dplyr::row_number()) %>%
+    dplyr::select(.row_id, age_ce) %>%
+    dplyr::filter(!is.na(age_ce))
+
+  combined <- abund %>%
+    dplyr::inner_join(meta, by = ".row_id") %>%
+    dplyr::select(-.row_id)
+
+  combined <- combined %>%
+    dplyr::group_by(age_ce) %>%
+    dplyr::summarise(
+      dplyr::across(dplyr::where(is.numeric), ~ sum(.x, na.rm = TRUE)),
+      .groups = "drop"
+    ) %>%
+    dplyr::arrange(age_ce)
+
+  species_cols <- setdiff(names(combined), "age_ce")
+  species_cols <- species_cols[colSums(combined[species_cols], na.rm = TRUE) > 0]
+
+  abund_mat <- as.matrix(combined[, species_cols, drop = FALSE])
+  totals <- colSums(abund_mat, na.rm = TRUE)
+  top_taxa <- names(sort(totals, decreasing = TRUE))[seq_len(min(n_top, length(totals)))]
+  other_cols <- setdiff(species_cols, top_taxa)
+
+  row_tot <- rowSums(abund_mat, na.rm = TRUE)
+  row_tot[row_tot == 0] <- NA_real_
+
+  pct_top <- sweep(abund_mat[, top_taxa, drop = FALSE], 1, row_tot, "/") * 100
+  pct_other <- if (length(other_cols) > 0) {
+    rowSums(abund_mat[, other_cols, drop = FALSE], na.rm = TRUE) / row_tot * 100
+  } else {
+    rep(0, length(row_tot))
+  }
+
+  plot_wide <- dplyr::bind_cols(
+    combined[, "age_ce", drop = FALSE],
+    as.data.frame(pct_top),
+    Other = pct_other
+  )
+
+  taxon_levels <- c(top_taxa, "Other")
+  ages <- plot_wide$age_ce
+
+  if (is.null(age_step)) {
+    age_step <- if (length(ages) > 1L) {
+      max(1, stats::median(diff(ages), na.rm = TRUE) / 4)
+    } else {
+      1
+    }
+  }
+
+  fine_ages <- seq(min(ages), max(ages), by = age_step)
+  interp_mat <- vapply(
+    taxon_levels,
+    function(tax) {
+      stats::approx(
+        x = ages,
+        y = plot_wide[[tax]],
+        xout = fine_ages,
+        rule = 2
+      )$y
+    },
+    FUN.VALUE = numeric(length(fine_ages))
+  )
+  interp_mat <- pmax(interp_mat, 0)
+  row_sums <- rowSums(interp_mat)
+  row_sums[row_sums == 0] <- 1
+  interp_mat <- sweep(interp_mat, 1, row_sums, "/") * 100
+
+  plot_long <- dplyr::as_tibble(interp_mat) %>%
+    dplyr::mutate(age_ce = fine_ages) %>%
+    tidyr::pivot_longer(-age_ce, names_to = "taxon", values_to = "percent") %>%
+    dplyr::filter(!is.na(percent))
+
+  plot_long$taxon <- factor(plot_long$taxon, levels = taxon_levels)
+
+  list(
+    data = plot_long,
+    top_taxa = top_taxa,
+    age_range = range(fine_ages, na.rm = TRUE)
+  )
+}
+
+#' Continuous stacked stratiplot for one lake (age CE on y-axis; present at top)
+#'
+#' @param prep Output of \code{\link{prepare_lake_stratiplot_data}}.
+#' @param lake_name Lake title.
+#' @param taxon_group Subtitle (e.g. \code{"Diatoms"} or \code{"Chironomids"}).
+#' @param base_size Base ggplot theme size.
+#' @param show_y_axis If \code{FALSE}, hide the y-axis title/labels (for multi-panel layouts).
+#' @param age_limits Optional numeric length-2 vector of shared y-axis limits.
+#' @param panel_tag Optional panel tag (e.g. \code{"(a)"}).
+#' @return A \code{ggplot} object.
+#' @export
+plot_lake_stratiplot <- function(
+    prep,
+    lake_name,
+    taxon_group,
+    base_size = 10,
+    show_y_axis = TRUE,
+    age_limits = NULL,
+    panel_tag = NULL) {
+  fill_vals <- c(
+    stats::setNames(
+      grDevices::hcl.colors(length(prep$top_taxa), palette = "Spectral"),
+      prep$top_taxa
+    ),
+    Other = "grey85"
+  )
+
+  plot_data <- prep$data %>%
+    dplyr::arrange(age_ce, taxon)
+
+  y_lims <- if (is.null(age_limits)) prep$age_range else age_limits
+
+  p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = percent, y = age_ce, fill = taxon)) +
+    ggplot2::geom_area(
+      position = "stack",
+      orientation = "y",
+      linewidth = 0
+    ) +
+    ggplot2::scale_fill_manual(values = fill_vals, name = NULL) +
+    ggplot2::coord_cartesian(xlim = c(0, 100), ylim = y_lims, clip = "off") +
+    ggplot2::scale_x_continuous(expand = c(0, 0)) +
+    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0))) +
+    ggplot2::labs(
+      tag = panel_tag,
+      title = taxon_group,
+      subtitle = "Top taxa (%)",
+      x = "Relative abundance (%)",
+      y = if (show_y_axis) "Age (CE)" else NULL
+    ) +
+    ggplot2::theme_bw(base_size = base_size) +
+    ggplot2::theme(
+      plot.tag = ggplot2::element_text(face = "bold"),
+      plot.title = ggplot2::element_text(face = "bold", size = base_size + 1),
+      plot.subtitle = ggplot2::element_text(size = base_size - 1),
+      panel.grid.minor = ggplot2::element_blank(),
+      legend.text = ggplot2::element_text(size = 6),
+      legend.key.size = grid::unit(0.28, "cm"),
+      legend.position = "bottom"
+    )
+
+  if (!show_y_axis) {
+    p <- p + ggplot2::theme(
+      axis.title.y = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_blank(),
+      axis.ticks.y = ggplot2::element_blank()
+    )
+  }
+
+  p
+}
+
+#' Lake-level DCA1 GAM panel aligned with stratiplots (age on y; present at top)
+#'
+#' @param dca_df Data frame with \code{age_ce} and \code{DCA1}.
+#' @param taxon_group Panel title (e.g. \code{"Diatoms"}).
+#' @param line_colour Colour for points and smooth.
+#' @param base_size Base ggplot theme size.
+#' @param show_y_axis If \code{FALSE}, hide the y-axis title/labels.
+#' @param age_limits Optional shared y-axis limits.
+#' @param panel_tag Optional panel tag.
+#' @return A \code{ggplot} object.
+#' @export
+plot_lake_dca_panel <- function(
+    dca_df,
+    taxon_group,
+    line_colour = "#440154",
+    base_size = 10,
+    show_y_axis = TRUE,
+    age_limits = NULL,
+    panel_tag = NULL) {
+  dca_df <- dca_df %>%
+    dplyr::filter(!is.na(age_ce), !is.na(DCA1)) %>%
+    dplyr::arrange(age_ce)
+
+  y_lims <- if (is.null(age_limits)) {
+    range(dca_df$age_ce, na.rm = TRUE)
+  } else {
+    age_limits
+  }
+
+  p <- ggplot2::ggplot(dca_df, ggplot2::aes(x = DCA1, y = age_ce)) +
+    ggplot2::geom_point(alpha = 0.45, size = 1.4, colour = line_colour) +
+    ggplot2::geom_smooth(
+      method = "gam",
+      formula = y ~ s(x, k = 8),
+      se = TRUE,
+      colour = line_colour,
+      fill = line_colour,
+      alpha = 0.2,
+      linewidth = 1.1,
+      orientation = "y"
+    ) +
+    ggplot2::coord_cartesian(ylim = y_lims) +
+    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.02, 0.02))) +
+    ggplot2::labs(
+      tag = panel_tag,
+      title = taxon_group,
+      subtitle = "DCA1 (GAM)",
+      x = "DCA1",
+      y = if (show_y_axis) "Age (CE)" else NULL
+    ) +
+    ggplot2::theme_bw(base_size = base_size) +
+    ggplot2::theme(
+      plot.tag = ggplot2::element_text(face = "bold"),
+      plot.title = ggplot2::element_text(face = "bold", size = base_size + 1),
+      plot.subtitle = ggplot2::element_text(size = base_size - 1),
+      panel.grid.minor = ggplot2::element_blank()
+    )
+
+  if (!show_y_axis) {
+    p <- p + ggplot2::theme(
+      axis.title.y = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_blank(),
+      axis.ticks.y = ggplot2::element_blank()
+    )
+  }
+
+  p
+}
+
+#' Four-panel lake figure: diatom/chironomid stratiplots + DCA GAMs
+#'
+#' Layout: diatom stratiplot | diatom DCA | chironomid stratiplot | chironomid DCA.
+#'
+#' @param lake Lake name (used internally).
+#' @param diat_prep Prepared diatom stratiplot data.
+#' @param chiro_prep Prepared chironomid stratiplot data.
+#' @param diat_dca Diatom DCA data for the lake.
+#' @param chiro_dca Chironomid DCA data for the lake.
+#' @param lake_title Optional display title (e.g. \code{"Caldeirão [CR]"}).
+#' @param base_size Base ggplot theme size.
+#' @return A patchwork object.
+#' @export
+plot_lake_strati_dca_composite <- function(
+    lake,
+    diat_prep,
+    chiro_prep,
+    diat_dca,
+    chiro_dca,
+    lake_title = NULL,
+    base_size = 9) {
+  display_title <- if (is.null(lake_title) || !nzchar(lake_title)) lake else lake_title
+
+  age_limits <- range(
+    c(diat_prep$age_range, chiro_prep$age_range,
+      diat_dca$age_ce, chiro_dca$age_ce),
+    na.rm = TRUE
+  )
+
+  diat_col <- viridisLite::viridis(9)[9]
+  chiro_col <- viridisLite::viridis(9)[1]
+
+  p_diat_st <- plot_lake_stratiplot(
+    diat_prep,
+    lake_name = lake,
+    taxon_group = "Diatoms",
+    base_size = base_size,
+    show_y_axis = TRUE,
+    age_limits = age_limits,
+    panel_tag = "(a)"
+  )
+  p_diat_dca <- plot_lake_dca_panel(
+    diat_dca,
+    taxon_group = "Diatoms",
+    line_colour = diat_col,
+    base_size = base_size,
+    show_y_axis = FALSE,
+    age_limits = age_limits,
+    panel_tag = "(b)"
+  )
+  p_chiro_st <- plot_lake_stratiplot(
+    chiro_prep,
+    lake_name = lake,
+    taxon_group = "Chironomids",
+    base_size = base_size,
+    show_y_axis = FALSE,
+    age_limits = age_limits,
+    panel_tag = "(c)"
+  )
+  p_chiro_dca <- plot_lake_dca_panel(
+    chiro_dca,
+    taxon_group = "Chironomids",
+    line_colour = chiro_col,
+    base_size = base_size,
+    show_y_axis = FALSE,
+    age_limits = age_limits,
+    panel_tag = "(d)"
+  )
+
+  (p_diat_st | p_diat_dca | p_chiro_st | p_chiro_dca) +
+    patchwork::plot_annotation(
+      title = display_title,
+      theme = ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", size = 14))
+    ) +
+    patchwork::plot_layout(widths = c(1.35, 0.85, 1.35, 0.85))
+}
+
+#' Export Appendix S2 Word document of lake stratiplot + DCA figures
+#'
+#' One landscape page per lake, preceded by a short explanatory cover page.
+#'
+#' @param plots Named list of ggplot/patchwork objects (names = lake keys).
+#' @param lake_titles Named character vector mapping lake keys to display titles.
+#' @param outfile Output \code{.docx} path.
+#' @param n_top Number of top taxa shown in stratiplots (for the caption text).
+#' @param fig_width Figure width in inches when rasterising.
+#' @param fig_height Figure height in inches when rasterising.
+#' @param dpi Raster resolution.
+#' @return Invisibly, the path to \code{outfile}.
+#' @export
+export_appendix_s2_strati_dca <- function(
+    plots,
+    lake_titles = NULL,
+    outfile = "supplementary/Appendix_S2.docx",
+    n_top = 10L,
+    fig_width = 14,
+    fig_height = 7,
+    dpi = 300) {
+  if (!requireNamespace("officer", quietly = TRUE)) {
+    stop("Package 'officer' is required to write Appendix S2.", call. = FALSE)
+  }
+
+  lake_keys <- names(plots)
+  if (is.null(lake_keys) || any(!nzchar(lake_keys))) {
+    stop("`plots` must be a named list of lake figures.", call. = FALSE)
+  }
+
+  title_of <- function(lake) {
+    if (!is.null(lake_titles) && lake %in% names(lake_titles)) {
+      unname(lake_titles[[lake]])
+    } else {
+      lake
+    }
+  }
+
+  dir.create(dirname(outfile), showWarnings = FALSE, recursive = TRUE)
+  tmp_dir <- tempfile("appendix_s2_")
+  dir.create(tmp_dir)
+  on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
+
+  png_paths <- character(length(lake_keys))
+  names(png_paths) <- lake_keys
+  for (lake in lake_keys) {
+    png_paths[[lake]] <- file.path(tmp_dir, paste0(gsub(" ", "_", lake), ".png"))
+    ggplot2::ggsave(
+      png_paths[[lake]],
+      plot = plots[[lake]],
+      width = fig_width,
+      height = fig_height,
+      dpi = dpi,
+      bg = "white"
+    )
+  }
+
+  intro <- paste0(
+    "Appendix S2. Lake-level stratigraphic diagrams and community turnover ",
+    "(diatoms and chironomids).\n\n",
+    "Each subsequent page shows one study lake. Panels are: (a) diatom relative ",
+    "abundances for the top ", n_top, " taxa (remaining taxa pooled as Other); ",
+    "(b) diatom DCA1 generalised additive model (GAM) smooth with 95% confidence ",
+    "band; (c) chironomid relative abundances for the top ", n_top, " taxa ",
+    "(plus Other); (d) chironomid DCA1 GAM smooth with 95% confidence band. ",
+    "Age (Common Era) is shared on the vertical axis, with the present at the top. ",
+    "Lake titles use the same island abbreviations as Fig. 2b ",
+    "(CR = Corvo, FL = Flores, PI = Pico, SM = São Miguel, TE = Terceira)."
+  )
+
+  doc <- officer::read_docx()
+  doc <- officer::body_add_par(doc, "Appendix S2", style = "heading 1")
+  for (para in strsplit(intro, "\n\n", fixed = TRUE)[[1]]) {
+    doc <- officer::body_add_par(doc, para, style = "Normal")
+  }
+
+  # Landscape pages for the lake figures
+  landscape_section <- officer::prop_section(
+    page_size = officer::page_size(orient = "landscape", width = 11.69, height = 8.27),
+    page_margins = officer::page_mar(
+      bottom = 0.5, top = 0.5, right = 0.5, left = 0.5,
+      header = 0.3, footer = 0.3, gutter = 0
+    )
+  )
+
+  for (i in seq_along(lake_keys)) {
+    lake <- lake_keys[[i]]
+    doc <- officer::body_add_break(doc)
+    doc <- officer::body_add_par(doc, title_of(lake), style = "heading 2")
+    doc <- officer::body_add_img(
+      doc,
+      src = png_paths[[lake]],
+      width = 10.6,
+      height = 5.3
+    )
+  }
+
+  # Apply landscape to the whole document after the first page break content
+  doc <- officer::body_set_default_section(doc, landscape_section)
+
+  print(doc, target = outfile)
+  invisible(outfile)
+}
+
+#' Compute simultaneous CI derivatives for the regional age smooth
+#'
+#' @param mod Fitted HGAM containing \code{s(age_ce)}.
+#' @param series_label Label for the series (e.g. \code{"Producers"}).
+#' @param level Confidence level for simultaneous intervals. Default 0.9.
+#' @param eps Finite-difference step for \code{gratia::derivatives}. Default 1 year.
+#' @param seed RNG seed for simultaneous intervals.
+#' @return Tibble with derivative estimates, CIs, and significance flags.
+#' @export
+compute_regional_gam_derivatives <- function(
+    mod,
+    series_label,
+    level = 0.9,
+    eps = 1,
+    seed = 22) {
+  dr <- gratia::derivatives(
+    mod,
+    select = "s(age_ce)",
+    eps = eps,
+    level = level,
+    interval = "simultaneous",
+    seed = seed
+  )
+
+  age_col <- if ("age_ce" %in% names(dr)) "age_ce" else {
+    setdiff(names(dr), c(
+      ".smooth", ".by", ".fs", ".derivative", ".se", ".crit",
+      ".lower_ci", ".upper_ci"
+    ))[1]
+  }
+
+  tibble::tibble(
+    series = series_label,
+    age_ce = as.numeric(dr[[age_col]]),
+    derivative = as.numeric(dr$.derivative),
+    lower_ci = as.numeric(dr$.lower_ci),
+    upper_ci = as.numeric(dr$.upper_ci),
+    significant = (dr$.lower_ci > 0) | (dr$.upper_ci < 0)
+  ) %>%
+    dplyr::arrange(age_ce)
+}
+
+#' Summarise significant-change periods from GAM derivatives
+#'
+#' Identifies contiguous intervals where the simultaneous CI for the derivative
+#' excludes zero, then reports the first onset and the age of maximum absolute
+#' derivative within significant periods.
+#'
+#' @param deriv_df Output of \code{\link{compute_regional_gam_derivatives}}.
+#' @param min_run Minimum consecutive evaluation points to retain a period.
+#' @return List with \code{periods}, \code{summary}, and \code{deriv}.
+#' @export
+summarise_gam_change_periods <- function(deriv_df, min_run = 3L) {
+  d <- deriv_df %>%
+    dplyr::arrange(age_ce) %>%
+    dplyr::mutate(
+      run_id = cumsum(significant != dplyr::lag(significant, default = FALSE))
+    )
+
+  periods <- d %>%
+    dplyr::filter(significant, is.finite(age_ce)) %>%
+    dplyr::group_by(series, run_id) %>%
+    dplyr::reframe(
+      start_ce = min(age_ce, na.rm = TRUE),
+      end_ce = max(age_ce, na.rm = TRUE),
+      n_points = dplyr::n(),
+      mean_abs_deriv = mean(abs(derivative), na.rm = TRUE),
+      peak_abs_deriv = max(abs(derivative), na.rm = TRUE),
+      peak_ce = age_ce[which.max(abs(derivative))][1],
+      direction = dplyr::if_else(
+        mean(derivative, na.rm = TRUE) >= 0,
+        "increase",
+        "decrease"
+      )
+    ) %>%
+    dplyr::filter(is.finite(start_ce), is.finite(end_ce), n_points >= min_run) %>%
+    dplyr::arrange(start_ce) %>%
+    dplyr::mutate(period_id = dplyr::row_number())
+
+  summary_tbl <- if (nrow(periods) == 0) {
+    tibble::tibble(
+      series = unique(deriv_df$series),
+      first_onset_ce = NA_real_,
+      first_onset_after_800_ce = NA_real_,
+      first_end_after_800_ce = NA_real_,
+      first_direction = NA_character_,
+      first_direction_after_800 = NA_character_,
+      first_peak_ce = NA_real_,
+      n_significant_periods = 0L,
+      earliest_significant_ce = NA_real_,
+      latest_significant_ce = NA_real_
+    )
+  } else {
+    periods %>%
+      dplyr::group_by(series) %>%
+      dplyr::summarise(
+        first_onset_ce = min(start_ce),
+        first_onset_after_800_ce = {
+          post_idx <- which(start_ce >= 800)
+          if (length(post_idx) == 0) NA_real_ else min(start_ce[post_idx])
+        },
+        first_end_after_800_ce = {
+          post_idx <- which(start_ce >= 800)
+          if (length(post_idx) == 0) NA_real_ else end_ce[post_idx][which.min(start_ce[post_idx])]
+        },
+        first_direction = direction[which.min(start_ce)],
+        first_direction_after_800 = {
+          post_idx <- which(start_ce >= 800)
+          if (length(post_idx) == 0) {
+            NA_character_
+          } else {
+            direction[post_idx][which.min(start_ce[post_idx])]
+          }
+        },
+        first_peak_ce = peak_ce[which.min(start_ce)],
+        n_significant_periods = dplyr::n(),
+        earliest_significant_ce = min(start_ce),
+        latest_significant_ce = max(end_ce),
+        .groups = "drop"
+      )
+  }
+
+  list(periods = periods, summary = summary_tbl, deriv = d)
+}
+
+#' Fit a lake-level DCA1 ~ s(age_ce) GAM
+#'
+#' @param dca_df Data frame with \code{age_ce} and \code{DCA1}.
+#' @param min_n Minimum number of finite observations required.
+#' @param k Basis dimension for the age smooth (capped by sample size).
+#' @return Fitted \code{gam} object, or \code{NULL} if fitting fails.
+#' @export
+fit_lake_dca_gam <- function(dca_df, min_n = 8L, k = 8L) {
+  df <- dca_df %>%
+    dplyr::transmute(
+      age_ce = as.numeric(age_ce),
+      DCA1 = as.numeric(DCA1)
+    ) %>%
+    dplyr::filter(is.finite(age_ce), is.finite(DCA1)) %>%
+    dplyr::arrange(age_ce)
+
+  if (nrow(df) < min_n) {
+    return(NULL)
+  }
+
+  k_use <- min(as.integer(k), max(3L, floor(nrow(df) / 2L) - 1L))
+
+  tryCatch(
+    mgcv::gam(
+      DCA1 ~ s(age_ce, bs = "tp", k = k_use),
+      data = df,
+      method = "REML"
+    ),
+    error = function(e) NULL
+  )
+}
+
+#' Derivative timing for one lake x trophic group
+#'
+#' @param dca_df Lake-level DCA data.
+#' @param lake_name Lake name.
+#' @param group_label \code{"Producers"} or \code{"Consumers"}.
+#' @param min_n Minimum observations to fit the GAM.
+#' @param onset_min_ce Ignore significant onsets before this age.
+#' @return List with \code{summary}, \code{periods}, \code{smooth}, and \code{deriv}.
+#' @export
+analyse_lake_gam_timing <- function(
+    dca_df,
+    lake_name,
+    group_label,
+    min_n = 8L,
+    onset_min_ce = 800) {
+  lake_df <- dca_df %>%
+    dplyr::filter(.data$lake == .env$lake_name)
+
+  n_obs <- nrow(lake_df %>% dplyr::filter(is.finite(age_ce), is.finite(DCA1)))
+  mod <- fit_lake_dca_gam(lake_df, min_n = min_n)
+  if (is.null(mod)) {
+    empty <- tibble::tibble(
+      lake = lake_name,
+      group = group_label,
+      n = n_obs,
+      first_onset_ce = NA_real_,
+      first_onset_after_min_ce = NA_real_,
+      first_end_after_min_ce = NA_real_,
+      first_direction = NA_character_,
+      first_direction_after_min = NA_character_,
+      first_peak_ce = NA_real_,
+      total_dca_change = NA_real_,
+      n_significant_periods = 0L
+    )
+    return(list(
+      summary = empty,
+      periods = tibble::tibble(),
+      smooth = tibble::tibble(),
+      deriv = tibble::tibble()
+    ))
+  }
+
+  smooth <- gratia::smooth_estimates(mod) %>%
+    dplyr::filter(.smooth == "s(age_ce)") %>%
+    gratia::add_confint() %>%
+    dplyr::transmute(
+      lake = lake_name,
+      group = group_label,
+      age_ce = as.numeric(age_ce),
+      estimate = as.numeric(.estimate),
+      lower_ci = as.numeric(.lower_ci),
+      upper_ci = as.numeric(.upper_ci)
+    )
+
+  deriv <- compute_regional_gam_derivatives(mod, group_label) %>%
+    dplyr::mutate(lake = lake_name, group = group_label)
+
+  change <- summarise_gam_change_periods(deriv)
+  total_change <- diff(range(smooth$estimate, na.rm = TRUE))
+
+  post <- change$periods %>%
+    dplyr::filter(start_ce >= onset_min_ce)
+
+  summary_tbl <- change$summary %>%
+    dplyr::transmute(
+      lake = lake_name,
+      group = group_label,
+      n = n_obs,
+      first_onset_ce = first_onset_ce,
+      first_onset_after_min_ce = if (nrow(post) == 0) NA_real_ else min(post$start_ce),
+      first_end_after_min_ce = if (nrow(post) == 0) {
+        NA_real_
+      } else {
+        post$end_ce[which.min(post$start_ce)]
+      },
+      first_direction = first_direction,
+      first_direction_after_min = if (nrow(post) == 0) {
+        NA_character_
+      } else {
+        post$direction[which.min(post$start_ce)]
+      },
+      first_peak_ce = first_peak_ce,
+      total_dca_change = total_change,
+      n_significant_periods = n_significant_periods
+    )
+
+  periods <- change$periods %>%
+    dplyr::mutate(lake = lake_name, group = group_label)
+
+  list(
+    summary = summary_tbl,
+    periods = periods,
+    smooth = smooth,
+    deriv = deriv
+  )
+}
+
+#' Lake-level producer vs consumer GAM change timing
+#'
+#' @param diat_df Diatom DCA data with \code{lake}, \code{age_ce}, \code{DCA1}.
+#' @param chiro_df Chironomid DCA data with \code{lake}, \code{age_ce}, \code{DCA1}.
+#' @param lakes Optional vector of lakes to include.
+#' @param exclude_lakes Lakes to drop.
+#' @param min_n Minimum observations per lake/group.
+#' @param onset_min_ce Minimum age for onset comparison.
+#' @return List with \code{summary}, \code{comparison}, \code{periods}, \code{smooths}, \code{derivs}.
+#' @export
+compute_lake_level_gam_timing <- function(
+    diat_df,
+    chiro_df,
+    lakes = NULL,
+    exclude_lakes = c("Fogo", "Furnas"),
+    min_n = 8L,
+    onset_min_ce = 800) {
+  lake_pool <- intersect(
+    unique(diat_df$lake),
+    unique(chiro_df$lake)
+  )
+  lake_pool <- setdiff(lake_pool, exclude_lakes)
+  if (!is.null(lakes)) {
+    lake_pool <- intersect(lake_pool, lakes)
+  }
+  lake_pool <- sort(lake_pool)
+
+  results <- purrr::map(lake_pool, function(lk) {
+    purrr::imap(
+      list(
+        Producers = diat_df,
+        Consumers = chiro_df
+      ),
+      function(dca_df, group_label) {
+        analyse_lake_gam_timing(
+          dca_df = dca_df,
+          lake_name = lk,
+          group_label = group_label,
+          min_n = min_n,
+          onset_min_ce = onset_min_ce
+        )
+      }
+    )
+  })
+  names(results) <- lake_pool
+
+  summary_tbl <- purrr::map_dfr(results, function(x) {
+    dplyr::bind_rows(purrr::map(x, "summary"))
+  }) %>%
+    dplyr::mutate(
+      group = factor(group, levels = c("Producers", "Consumers"))
+    )
+
+  periods <- purrr::map_dfr(results, function(x) {
+    dplyr::bind_rows(purrr::map(x, "periods"))
+  }) %>%
+    dplyr::mutate(group = factor(group, levels = c("Producers", "Consumers")))
+
+  smooths <- purrr::map_dfr(results, function(x) {
+    dplyr::bind_rows(purrr::map(x, "smooth"))
+  }) %>%
+    dplyr::mutate(group = factor(group, levels = c("Producers", "Consumers")))
+
+  derivs <- purrr::map_dfr(results, function(x) {
+    dplyr::bind_rows(purrr::map(x, "deriv"))
+  }) %>%
+    dplyr::mutate(group = factor(group, levels = c("Producers", "Consumers")))
+
+  comparison <- compare_producer_consumer_timing(summary_tbl, onset_min_ce = onset_min_ce)
+
+  list(
+    summary = summary_tbl,
+    comparison = comparison,
+    periods = periods,
+    smooths = smooths,
+    derivs = derivs
+  )
+}
+
+#' Compare producer vs consumer timing within each lake
+#'
+#' @param timing_summary Output \code{summary} from \code{compute_lake_level_gam_timing}.
+#' @param onset_min_ce Age threshold used for onset comparison.
+#' @return Tibble with per-lake timing differences and leader labels.
+#' @export
+compare_producer_consumer_timing <- function(
+    timing_summary,
+    onset_min_ce = 800) {
+  wide <- timing_summary %>%
+    dplyr::select(
+      lake, group, first_onset_after_min_ce, total_dca_change
+    ) %>%
+    tidyr::pivot_wider(
+      names_from = group,
+      values_from = c(first_onset_after_min_ce, total_dca_change),
+      names_glue = "{.value}_{group}"
+    )
+
+  classify_leader <- function(prod_val, cons_val, tol = 25) {
+    if (is.na(prod_val) && is.na(cons_val)) {
+      return("Neither detected")
+    }
+    if (is.na(prod_val)) {
+      return("Consumers only")
+    }
+    if (is.na(cons_val)) {
+      return("Producers only")
+    }
+    diff_val <- prod_val - cons_val
+    if (abs(diff_val) <= tol) {
+      return("Similar timing")
+    }
+    if (diff_val < 0) {
+      return("Producers earlier")
+    }
+    "Consumers earlier"
+  }
+
+  wide %>%
+    dplyr::mutate(
+      onset_min_ce = onset_min_ce,
+      onset_diff_ce = first_onset_after_min_ce_Producers - first_onset_after_min_ce_Consumers,
+      magnitude_diff = total_dca_change_Producers - total_dca_change_Consumers,
+      onset_leader = mapply(
+        classify_leader,
+        first_onset_after_min_ce_Producers,
+        first_onset_after_min_ce_Consumers
+      )
+    ) %>%
+    dplyr::arrange(lake)
+}
+
+#' Fit a regional HGAM for standardized guild richness
+#'
+#' @param guild_df Data for one functional guild across lakes.
+#' @param min_n Minimum observations required.
+#' @param k_global Basis dimension for the global age smooth.
+#' @param k_by Basis dimension for lake-specific age smooths.
+#' @return Fitted \code{gam} object, or \code{NULL} if fitting fails.
+#' @export
+fit_regional_guild_richness_gam <- function(
+    guild_df,
+    min_n = 30L,
+    k_global = 30L,
+    k_by = 8L) {
+  df <- guild_df %>%
+    dplyr::ungroup() %>%
+    dplyr::transmute(
+      lake = as.factor(lake),
+      age_ce = as.numeric(age_ce),
+      standardized_species_richness = as.numeric(standardized_species_richness)
+    ) %>%
+    dplyr::filter(
+      is.finite(age_ce),
+      is.finite(standardized_species_richness)
+    )
+
+  if (nrow(df) < min_n) {
+    return(NULL)
+  }
+
+  tryCatch(
+    mgcv::gam(
+      standardized_species_richness ~
+        s(age_ce, bs = "tp", k = k_global) +
+        s(age_ce, by = lake, k = k_by, m = 1, bs = "tp") +
+        s(lake, bs = "re", k = 8),
+      data = df,
+      method = "REML"
+    ),
+    error = function(e) NULL
+  )
+}
+
+#' Derivative timing for one regional guild-richness HGAM
+#'
+#' @param guild_df Data for one functional guild across lakes.
+#' @param guild_id Guild identifier (e.g. \code{"high_profile"}).
+#' @param guild_label Display label for plots/tables.
+#' @param trophic_group \code{"Producers"} or \code{"Consumers"}.
+#' @param onset_min_ce Ignore significant onsets before this age.
+#' @param min_n Minimum observations required to fit the GAM.
+#' @return List with \code{summary}, \code{periods}, \code{smooth}, and \code{deriv}.
+#' @export
+analyse_regional_guild_richness_timing <- function(
+    guild_df,
+    guild_id,
+    guild_label,
+    trophic_group,
+    onset_min_ce = 800,
+    min_n = 30L) {
+  n_obs <- guild_df %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(is.finite(age_ce), is.finite(standardized_species_richness)) %>%
+    nrow()
+
+  mod <- fit_regional_guild_richness_gam(guild_df, min_n = min_n)
+  if (is.null(mod)) {
+    empty <- tibble::tibble(
+      guild = guild_id,
+      guild_label = guild_label,
+      trophic_group = trophic_group,
+      n = n_obs,
+      first_onset_ce = NA_real_,
+      first_onset_after_min_ce = NA_real_,
+      first_end_after_min_ce = NA_real_,
+      first_direction = NA_character_,
+      first_direction_after_min = NA_character_,
+      first_peak_ce = NA_real_,
+      total_richness_change = NA_real_,
+      n_significant_periods = 0L
+    )
+    return(list(
+      summary = empty,
+      periods = tibble::tibble(),
+      smooth = tibble::tibble(),
+      deriv = tibble::tibble()
+    ))
+  }
+
+  smooth <- gratia::smooth_estimates(mod) %>%
+    dplyr::filter(.smooth == "s(age_ce)") %>%
+    gratia::add_confint() %>%
+    dplyr::transmute(
+      guild = guild_id,
+      guild_label = guild_label,
+      trophic_group = trophic_group,
+      age_ce = as.numeric(age_ce),
+      estimate = as.numeric(.estimate),
+      lower_ci = as.numeric(.lower_ci),
+      upper_ci = as.numeric(.upper_ci)
+    )
+
+  deriv <- compute_regional_gam_derivatives(mod, guild_label) %>%
+    dplyr::mutate(
+      guild = guild_id,
+      guild_label = guild_label,
+      trophic_group = trophic_group
+    )
+
+  change <- summarise_gam_change_periods(deriv)
+  total_change <- diff(range(smooth$estimate, na.rm = TRUE))
+
+  post <- change$periods %>%
+    dplyr::filter(start_ce >= onset_min_ce)
+
+  summary_tbl <- change$summary %>%
+    dplyr::transmute(
+      guild = guild_id,
+      guild_label = guild_label,
+      trophic_group = trophic_group,
+      n = n_obs,
+      first_onset_ce = first_onset_ce,
+      first_onset_after_min_ce = if (nrow(post) == 0) NA_real_ else min(post$start_ce),
+      first_end_after_min_ce = if (nrow(post) == 0) {
+        NA_real_
+      } else {
+        post$end_ce[which.min(post$start_ce)]
+      },
+      first_direction = first_direction,
+      first_direction_after_min = if (nrow(post) == 0) {
+        NA_character_
+      } else {
+        post$direction[which.min(post$start_ce)]
+      },
+      first_peak_ce = first_peak_ce,
+      total_richness_change = total_change,
+      n_significant_periods = n_significant_periods
+    )
+
+  periods <- change$periods %>%
+    dplyr::mutate(
+      guild = guild_id,
+      guild_label = guild_label,
+      trophic_group = trophic_group
+    )
+
+  list(
+    summary = summary_tbl,
+    periods = periods,
+    smooth = smooth,
+    deriv = deriv
+  )
+}
+
+#' Regional guild-richness change timing for all producer/consumer guilds
+#'
+#' @param prod_df Producer guild richness data.
+#' @param cons_df Consumer guild richness data.
+#' @param prod_guilds Producer guild ids to include.
+#' @param cons_guilds Consumer guild ids to include.
+#' @param guild_labels Named vector of display labels.
+#' @param exclude_lakes Lakes to exclude.
+#' @param onset_min_ce Minimum age for onset reporting.
+#' @param min_n Minimum observations per guild GAM.
+#' @return List with \code{summary}, \code{periods}, \code{smooths}, and \code{derivs}.
+#' @export
+compute_regional_guild_richness_timing <- function(
+    prod_df,
+    cons_df,
+    prod_guilds = NULL,
+    cons_guilds = NULL,
+    guild_labels = NULL,
+    exclude_lakes = c("Fogo", "Furnas"),
+    onset_min_ce = 800,
+    min_n = 30L) {
+  prep_df <- function(df) {
+    df %>%
+      dplyr::ungroup() %>%
+      dplyr::filter(
+        !.data$lake %in% exclude_lakes,
+        is.finite(age_ce),
+        is.finite(standardized_species_richness)
+      )
+  }
+
+  prod_df <- prep_df(prod_df)
+  cons_df <- prep_df(cons_df)
+
+  if (is.null(prod_guilds)) {
+    prod_guilds <- sort(unique(as.character(prod_df$fgroup)))
+  }
+  if (is.null(cons_guilds)) {
+    cons_guilds <- sort(unique(as.character(cons_df$fgroup)))
+  }
+
+  analyse_one <- function(df, guild_id, trophic_group) {
+    glab <- if (
+      !is.null(guild_labels) && guild_id %in% names(guild_labels)
+    ) {
+      guild_labels[[guild_id]]
+    } else {
+      guild_id
+    }
+    guild_df <- df %>% dplyr::filter(.data$fgroup == guild_id)
+    analyse_regional_guild_richness_timing(
+      guild_df = guild_df,
+      guild_id = guild_id,
+      guild_label = glab,
+      trophic_group = trophic_group,
+      onset_min_ce = onset_min_ce,
+      min_n = min_n
+    )
+  }
+
+  results <- c(
+    purrr::map(prod_guilds, ~ analyse_one(prod_df, .x, "Producers")),
+    purrr::map(cons_guilds, ~ analyse_one(cons_df, .x, "Consumers"))
+  )
+
+  summary_tbl <- purrr::map_dfr(results, "summary") %>%
+    dplyr::mutate(
+      trophic_group = factor(trophic_group, levels = c("Producers", "Consumers"))
+    )
+
+  periods <- purrr::map_dfr(results, "periods") %>%
+    dplyr::mutate(
+      trophic_group = factor(trophic_group, levels = c("Producers", "Consumers"))
+    )
+
+  smooths <- purrr::map_dfr(results, "smooth") %>%
+    dplyr::mutate(
+      trophic_group = factor(trophic_group, levels = c("Producers", "Consumers"))
+    )
+
+  derivs <- purrr::map_dfr(results, "deriv") %>%
+    dplyr::mutate(
+      trophic_group = factor(trophic_group, levels = c("Producers", "Consumers"))
+    )
+
+  list(
+    summary = summary_tbl,
+    periods = periods,
+    smooths = smooths,
+    derivs = derivs
+  )
+}

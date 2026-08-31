@@ -1,0 +1,4 @@
+series,run_id,start_ce,end_ce,n_points,mean_abs_deriv,peak_abs_deriv,peak_ce,direction,period_id,guild,guild_label,trophic_group
+High-profile,1,1368.157575757576,1596.7866666666669,7,9.666057224589549e-4,0.0010762233872891173,1406.2624242424245,increase,1,high_profile,High-profile,Producers
+Euplanktonic,1,1596.7866666666669,1863.5206060606065,8,0.0015424954595324118,0.0018227919728560581,1749.2060606060609,increase,1,euplanktonic,Euplanktonic,Producers
+Predators,1,1784.2930303030303,1898.551515151515,4,0.0014632875223966608,0.0016549071873020933,1898.551515151515,decrease,1,predator,Predators,Consumers

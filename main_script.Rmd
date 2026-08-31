@@ -84,6 +84,7 @@ library(DALEXtra)       # Extra methods for xgboost, caret, etc.
 library(irr)            # Inter-rater agreement (Cohen's Kappa, etc.)
 library(ape)            # Phylogenetic tools (tree manipulation, distances)
 library(abdiv)          # Simpson etc. (DCA richness/abundance chunks)
+library(officer)        # Word export for Appendix S2 stratiplots
 
 # -------------------------------
 # 📂 Custom Functions
@@ -537,9 +538,13 @@ ls_plot_df_dca_multi_all <-
      ) +
      # Optional: Add raw points if desired
      # geom_point(aes(color = group), size = 3) +
-     scale_colour_viridis_d(
+     scale_colour_manual(
        name = "Groups",
-       labels = c("Producers", "Consumers")
+       values = c(
+         "1" = viridisLite::viridis(9)[9],  # Producers (diatoms) = yellow
+         "2" = viridisLite::viridis(9)[1]   # Consumers (chironomids) = purple
+       ),
+       labels = c("1" = "Producers", "2" = "Consumers")
      ) +
      theme(plot.background = NULL) +
      labs(title = .y) +  # Lake name as plot title
@@ -555,6 +560,91 @@ ls_plot_df_dca_multi_all <-
      )
  )
 
+
+```
+
+# Appendix S2 — lake stratiplots + DCA (one page per lake)
+```{r fig.width = 14, fig.height = 7}
+# For each lake with both diatom and chironomid data:
+# (a) diatom stratiplot | (b) diatom DCA1 GAM |
+# (c) chironomid stratiplot | (d) chironomid DCA1 GAM
+# Age CE is shared on the y-axis (present at top).
+# Export: single Word appendix (supplementary/Appendix_S2.docx).
+
+stratiplot_n_top <- 10L
+
+stratiplot_lake_titles <- c(
+  "Azul" = "Azul [SM]",
+  "Caldeirao" = "Caldeirão [CR]",
+  "Caveiro" = "Caveiro [PI]",
+  "Empadadas Norte" = "Empada. Norte [SM]",
+  "Funda" = "Funda [FL]",
+  "Ginjal" = "Ginjal [TE]",
+  "Peixinho" = "Peixinho [PI]",
+  "Prata" = "Prata [SM]",
+  "Santiago" = "Santiago [SM]"
+)
+
+lakes_both <- intersect(
+  names(ls_df_diat_wide_codes),
+  names(ls_df_chiro_wide_codes)
+)
+# Keep Fig. 2b lake order when available
+lakes_both <- intersect(names(stratiplot_lake_titles), lakes_both)
+
+lake_strati_dca_plots <- purrr::map(lakes_both, function(lake) {
+  diat_prep <- prepare_lake_stratiplot_data(
+    abund_wide = ls_df_diat_wide_codes[[lake]],
+    codes_df = ls_df_codes_diat[[lake]],
+    n_top = stratiplot_n_top
+  )
+  chiro_prep <- prepare_lake_stratiplot_data(
+    abund_wide = ls_df_chiro_wide_codes[[lake]],
+    codes_df = df_chiro_codes[[lake]],
+    n_top = stratiplot_n_top
+  )
+
+  diat_dca <- b_ls_dca_diatoms %>%
+    dplyr::filter(lake == !!lake) %>%
+    dplyr::select(age_ce, DCA1)
+
+  chiro_dca <- b_ls_dca_chiro %>%
+    dplyr::filter(lake == !!lake) %>%
+    dplyr::select(age_ce, DCA1)
+
+  plot_lake_strati_dca_composite(
+    lake = lake,
+    diat_prep = diat_prep,
+    chiro_prep = chiro_prep,
+    diat_dca = diat_dca,
+    chiro_dca = chiro_dca,
+    lake_title = unname(stratiplot_lake_titles[[lake]])
+  )
+})
+
+names(lake_strati_dca_plots) <- lakes_both
+
+appendix_s2_path <- export_appendix_s2_strati_dca(
+  plots = lake_strati_dca_plots,
+  lake_titles = stratiplot_lake_titles,
+  outfile = "supplementary/Appendix_S2.docx",
+  n_top = stratiplot_n_top
+)
+
+message("Wrote ", appendix_s2_path)
+
+# Remove legacy per-lake PDF exports if present
+legacy_strati_pdfs <- list.files(
+  "outputs",
+  pattern = "_stratiplot_DCA\\.pdf$",
+  full.names = TRUE
+)
+if (length(legacy_strati_pdfs) > 0) {
+  unlink(legacy_strati_pdfs)
+}
+
+# Example inline preview:
+# lake_strati_dca_plots[["Azul"]]
 
 ```
 
@@ -3788,7 +3878,7 @@ combined_plot <- p_veg / p_clim +
 smooth_all_in_one <- 
   bind_rows(
     cbind(type = rep("diatoms", nrow(smooth_diatoms)), smooth_diatoms),
-    cbind(type = rep("chiro", nrow(smooth_diatoms)), smooth_chiro)
+    cbind(type = rep("chiro", nrow(smooth_chiro)), smooth_chiro)
   )
 
 df_all_in_one <- 
@@ -3868,6 +3958,40 @@ cols_fill_species <- c(
   "Consumers" = cols_line["Consumers"]
 )
 
+# Stacked rug bands (one row per GAM), placed below the DCA panel
+rug_tick_h  <- 0.025
+rug_gap     <- 0.006
+rug_strip_h <- 3 * rug_tick_h + 2 * rug_gap
+y_dca_min   <- -1.75
+y_panel_min <- y_dca_min - rug_strip_h - 0.015
+
+rug_y_base <- c(
+  Vegetation = y_panel_min,
+  Consumers  = y_panel_min + rug_tick_h + rug_gap,
+  Producers  = y_panel_min + 2 * (rug_tick_h + rug_gap)
+)
+
+df_rug_diat <- dplyr::filter(df_all_in_one, type == "diatoms") %>%
+  transmute(
+    x = age_ce, xend = age_ce,
+    y = rug_y_base["Producers"],
+    yend = rug_y_base["Producers"] + rug_tick_h
+  )
+
+df_rug_chiro <- dplyr::filter(df_all_in_one, type == "chiro") %>%
+  transmute(
+    x = age_ce, xend = age_ce,
+    y = rug_y_base["Consumers"],
+    yend = rug_y_base["Consumers"] + rug_tick_h
+  )
+
+df_rug_pollen <- DF_to %>%
+  transmute(
+    x = age_ce, xend = age_ce,
+    y = rug_y_base["Vegetation"],
+    yend = rug_y_base["Vegetation"] + rug_tick_h
+  )
+
 # -----------------------------
 # 6) TOP panel: NAO with normal axis (no x-axis shown)
 # -----------------------------
@@ -3918,6 +4042,30 @@ p_main <- ggplot() +
     aes(x = age_ce, y = .estimate, colour = group_label),
     linewidth = lw_species
   ) +
+  geom_segment(
+    data = df_rug_diat,
+    aes(x = x, xend = xend, y = y, yend = yend),
+    inherit.aes = FALSE,
+    colour = cols_line["Producers"],
+    linewidth = 0.35,
+    show.legend = FALSE
+  ) +
+  geom_segment(
+    data = df_rug_chiro,
+    aes(x = x, xend = xend, y = y, yend = yend),
+    inherit.aes = FALSE,
+    colour = cols_line["Consumers"],
+    linewidth = 0.35,
+    show.legend = FALSE
+  ) +
+  geom_segment(
+    data = df_rug_pollen,
+    aes(x = x, xend = xend, y = y, yend = yend),
+    inherit.aes = FALSE,
+    colour = cols_line["Vegetation"],
+    linewidth = 0.35,
+    show.legend = FALSE
+  ) +
   scale_colour_manual(
     name = NULL,
     values = cols_line,
@@ -3926,7 +4074,7 @@ p_main <- ggplot() +
   scale_fill_manual(values = cols_fill_species, guide = "none") +
   scale_y_continuous(
     name = "DCA1 (regional smooth)",
-    limits = c(-1.75, 1),  # your final y-lims
+    limits = c(y_panel_min, 1),
     sec.axis = sec_axis(~ dca_to_veg(.), name = "Regional vegetation change (HGAM smooth)")
   ) +
   scale_x_continuous(limits = c(0, 2020), n.breaks = 5) +
@@ -3987,9 +4135,13 @@ ls_plot_df_dca_multi_all <-
   imap(~ ggplot(.x, aes(x = age_ce, y = DCA1)) +
          geom_smooth(aes(colour = factor(group)),
                      linewidth = 1.4, alpha = 0.6, method = "gam", se = TRUE) +
-         scale_colour_viridis_d(
+         scale_colour_manual(
            name = NULL,
-           labels = c("Producers", "Consumers")
+           values = c(
+             "1" = viridisLite::viridis(9)[9],  # Producers (diatoms) = yellow
+             "2" = viridisLite::viridis(9)[1]   # Consumers (chironomids) = purple
+           ),
+           labels = c("1" = "Producers", "2" = "Consumers")
          ) +
          labs(title = .y, x = NULL, y = NULL) +
          theme_bw(base_size = 7) +
@@ -4778,6 +4930,10 @@ group_trend_plot <- ggplot(combined_df_pollen, aes(x = age_ce, y = percent, colo
 # --------------------------------------
 regional_smooth_plot <- interpolated_df %>%
   ggplot() +
+  geom_rug(aes(x = age_ce),
+    data = DF_to,
+    sides = "b", length = grid::unit(0.02, "npc")
+  ) +
   geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci, x = age_ce),
               alpha = 0.2) +  # Confidence interval
   geom_line(aes(x = age_ce, y = estimate), lwd = 1) +  # Smooth estimate line
@@ -4858,8 +5014,211 @@ dev.off()
 
 ```
 
+### SUPPLEMENTARY FIGURE S5 - Age–depth models
+```{r}
+# ------------------------------------------------------------------------------
+# Fig. S5 (age–depth models) is produced outside this R Markdown workflow and
+# added to `supplementary/` afterwards as:
+#   supplementary/supplementary_figure_S5_age_depth_models.pdf
+#   supplementary/supplementary_figure_S5_age_depth_models.png
+# No R code regenerates this figure here.
+# ------------------------------------------------------------------------------
+message(
+  "Supplementary Figure S5 (age–depth models) is produced outside R ",
+  "and will be added to supplementary/ afterwards."
+)
+```
 
-### SUPPLEMENTARY FIGURE S5 - Community Trophic Structures over time
+### SUPPLEMENTARY FIGURE S6 - Global RDA
+```{r fig.width = 12, fig.asp = 1}
+
+# Set PNG output for saving the tree plot
+png("supplementary/supplementary_figure_S6_global_rda.png", width = 8, height = 8, units = "in", res = 600)
+
+# Plot Global Rda with selected variables
+global_rda
+
+# Close the graphics device
+dev.off()
+
+```
+
+### SUPPLEMENTARY FIGURE S7 - Lake-level producer vs consumer GAM derivative timing
+```{r fig.width = 9, fig.asp = 1.05}
+# ------------------------------------------------------------------------------
+# Lake-level producer vs consumer DCA1 timing (supports Fig. 2b).
+# Smooths themselves are already shown in Fig. 2b; this figure reports only the
+# derivative-based late-Holocene onsets (>= 800 CE), contemporaneous with
+# regional vegetation restructuring. Earlier significant intervals in long
+# records are excluded by design.
+# ------------------------------------------------------------------------------
+
+lake_series_cols <- c(
+  "Producers"  = viridisLite::viridis(9)[9],
+  "Consumers"  = viridisLite::viridis(9)[1]
+)
+
+lake_order <- c(
+  "Azul", "Caldeirao", "Caveiro", "Empadadas Norte", "Funda",
+  "Ginjal", "Peixinho", "Prata", "Santiago"
+)
+
+onset_min_ce <- 800
+
+lake_timing <- compute_lake_level_gam_timing(
+  diat_df = b_ls_dca_diatoms,
+  chiro_df = b_ls_dca_chiro,
+  lakes = lake_order,
+  exclude_lakes = c("Fogo", "Furnas"),
+  min_n = 8,
+  onset_min_ce = onset_min_ce
+)
+
+lake_timing_summary <- lake_timing$summary %>%
+  dplyr::mutate(
+    lake = factor(lake, levels = lake_order),
+    group = factor(group, levels = c("Producers", "Consumers"))
+  )
+
+lake_timing_comparison <- lake_timing$comparison %>%
+  dplyr::mutate(lake = factor(lake, levels = lake_order))
+
+lake_timing_periods_late <- lake_timing$periods %>%
+  dplyr::filter(start_ce >= onset_min_ce) %>%
+  dplyr::mutate(
+    lake = factor(lake, levels = lake_order),
+    group = factor(group, levels = c("Producers", "Consumers"))
+  )
+
+lake_age_ranges <- dplyr::bind_rows(
+  b_ls_dca_diatoms %>%
+    dplyr::filter(lake %in% lake_order) %>%
+    dplyr::transmute(lake, age_ce),
+  b_ls_dca_chiro %>%
+    dplyr::filter(lake %in% lake_order) %>%
+    dplyr::transmute(lake, age_ce)
+) %>%
+  dplyr::group_by(lake) %>%
+  dplyr::summarise(
+    age_min = min(age_ce, na.rm = TRUE),
+    age_max = max(age_ce, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  dplyr::mutate(lake = factor(lake, levels = lake_order))
+
+print(lake_timing_summary)
+print(lake_timing_comparison)
+print(lake_age_ranges)
+
+# Panel A: late-Holocene onsets (metric used in the Results)
+p_lake_timing <- ggplot(
+  lake_timing_summary,
+  aes(x = first_onset_after_min_ce, y = lake, colour = group)
+) +
+  geom_point(size = 3, na.rm = TRUE) +
+  scale_colour_manual(values = lake_series_cols, name = NULL) +
+  scale_x_continuous(
+    limits = c(onset_min_ce, 2020),
+    breaks = seq(800, 2000, 200)
+  ) +
+  labs(
+    tag = "(a)",
+    title = paste0("First significant derivative onset (>= ", onset_min_ce, " CE)"),
+    subtitle = "From per-lake DCA1 GAMs (same records as Fig. 2b); earlier change intervals excluded by design",
+    x = "Age (CE)",
+    y = NULL
+  ) +
+  theme_bw(base_size = 11) +
+  theme(
+    plot.tag = element_text(face = "bold"),
+    plot.title = element_text(face = "bold"),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+
+# Panel B: onset difference (producer - consumer)
+lake_diff_plot <- lake_timing_comparison %>%
+  dplyr::mutate(
+    earlier_group = factor(
+      onset_leader,
+      levels = c("Producers earlier", "Consumers earlier", "Similar timing")
+    )
+  )
+
+p_lake_diff <- ggplot(
+  lake_diff_plot,
+  aes(x = onset_diff_ce, y = lake, fill = earlier_group)
+) +
+  geom_col(width = 0.65, colour = "grey30", linewidth = 0.2, na.rm = TRUE) +
+  geom_vline(xintercept = 0, linewidth = 0.5) +
+  scale_fill_manual(
+    name = NULL,
+    values = c(
+      "Producers earlier" = unname(lake_series_cols[["Producers"]]),
+      "Consumers earlier" = unname(lake_series_cols[["Consumers"]]),
+      "Similar timing" = "grey70"
+    ),
+    drop = FALSE
+  ) +
+  labs(
+    tag = "(b)",
+    title = paste0(
+      "Onset difference (producer - consumer, >= ", onset_min_ce, " CE)"
+    ),
+    subtitle = "Bar colour = earlier group; grey = similar timing (|diff| <= 25 yr)",
+    x = "Age difference (years CE)",
+    y = NULL
+  ) +
+  theme_bw(base_size = 11) +
+  theme(
+    plot.tag = element_text(face = "bold"),
+    plot.title = element_text(face = "bold"),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+
+fig_s7_lake_change <- p_lake_timing / p_lake_diff +
+  patchwork::plot_layout(heights = c(1, 1))
+
+fig_s7_lake_change
+
+readr::write_csv(
+  lake_timing_summary,
+  "outputs/lake_gam_change_timing_summary.csv"
+)
+readr::write_csv(
+  lake_timing_comparison,
+  "outputs/lake_gam_change_timing_comparison.csv"
+)
+readr::write_csv(
+  lake_timing_periods_late,
+  "outputs/lake_gam_change_periods.csv"
+)
+readr::write_csv(
+  lake_age_ranges,
+  "outputs/lake_gam_age_ranges.csv"
+)
+
+ggsave(
+  "supplementary/supplementary_figure_S7_lake_gam_change_timing.pdf",
+  plot = fig_s7_lake_change,
+  width = 8.5,
+  height = 8,
+  dpi = 300
+)
+
+ggsave(
+  "supplementary/supplementary_figure_S7_lake_gam_change_timing.png",
+  plot = fig_s7_lake_change,
+  width = 8.5,
+  height = 8,
+  units = "in",
+  dpi = 600
+)
+
+```
+
+### SUPPLEMENTARY FIGURE S8 - Community Trophic Structures over time
 ```{r fig.asp = 1.5, fig.width = 12}
 # -----------------------------------------------
 # Convert PNG tree plot into a ggplot-compatible object
@@ -4938,7 +5297,7 @@ print(supplementary_figure_5)
 # -----------------------------------------------
 ggsave(
   plot = supplementary_figure_5,
-  filename = "supplementary/supplementary_figure_S5.png",
+  filename = "supplementary/supplementary_figure_S8_lake_cts.png",
   dpi = 600,
   width = 12,
   height = 16
@@ -4946,11 +5305,11 @@ ggsave(
 
 ```
 
-### SUPPLEMENTARY FIGURE S6 - Variable Importance Plot
+### SUPPLEMENTARY FIGURE S9 - Variable Importance Plot
 ```{r}
 
 # Set PNG output for saving the tree plot
-png("supplementary/supplementary_figure_S6_varimpplot.png", width = 7.29, height = 4.51, units = "in", res = 600)
+png("supplementary/supplementary_figure_S9_varimpplot.png", width = 7.29, height = 4.51, units = "in", res = 600)
 
 # Plot variable importance from random forest
 varImpPlot(RFfit_paleo, main = "")
@@ -4960,25 +5319,254 @@ dev.off()
 
 ```
 
-### SUPPLEMENTARY FIGURE S7 - Global RDA
-```{r fig.width = 12, fig.asp = 1}
+### SUPPLEMENTARY FIGURE S10 - Regional guild richness GAM derivative timing (Fig. 4 sensitivity)
+```{r fig.width = 10, fig.asp = 1.15}
+# ------------------------------------------------------------------------------
+# Regional sensitivity for standardized guild richness GAMs (Fig. 4).
+# Smooths are already shown in Fig. 4; this figure reports derivatives only
+# (significant change = simultaneous 90% CI excludes 0) plus onset summary.
+# ------------------------------------------------------------------------------
 
-# Set PNG output for saving the tree plot
-png("supplementary/supplementary_figure_S7_global_rda.png", width = 8, height = 8, units = "in", res = 600)
+richness_guild_labels <- c(
+  high_profile = "High-profile",
+  low_profile = "Low-profile",
+  motile = "Motile",
+  euplanktonic = "Euplanktonic",
+  predator = "Predators",
+  detritivore = "Detritivores",
+  algivore = "Algivores",
+  plantivore = "Plantivores"
+)
 
-# Plot Global Rda with selected variables
-global_rda
+prod_guild_order <- c("high_profile", "low_profile", "motile", "euplanktonic")
+cons_guild_order <- c("predator", "detritivore", "algivore", "plantivore")
 
-# Close the graphics device
-dev.off()
+guild_label_order <- c(
+  richness_guild_labels[prod_guild_order],
+  richness_guild_labels[cons_guild_order]
+)
+
+guild_richness_cols <- c(
+  stats::setNames(
+    viridis::viridis(4, option = "D"),
+    richness_guild_labels[prod_guild_order]
+  ),
+  stats::setNames(
+    scico::scico(4, palette = "lajolla", begin = 0.05, end = 0.95),
+    richness_guild_labels[cons_guild_order]
+  )
+)
+
+guild_richness_timing <- compute_regional_guild_richness_timing(
+  prod_df = prod_glob_div_plt_data,
+  cons_df = cons_glob_div_plt_data,
+  prod_guilds = prod_guild_order,
+  cons_guilds = cons_guild_order,
+  guild_labels = richness_guild_labels,
+  exclude_lakes = c("Fogo", "Furnas"),
+  onset_min_ce = 800,
+  min_n = 30
+)
+
+guild_richness_summary <- guild_richness_timing$summary %>%
+  dplyr::mutate(
+    guild_label = factor(guild_label, levels = guild_label_order),
+    trophic_group = factor(trophic_group, levels = c("Producers", "Consumers"))
+  )
+
+guild_richness_periods <- guild_richness_timing$periods %>%
+  dplyr::mutate(
+    guild_label = factor(guild_label, levels = guild_label_order),
+    trophic_group = factor(trophic_group, levels = c("Producers", "Consumers"))
+  )
+
+guild_richness_derivs <- guild_richness_timing$derivs %>%
+  dplyr::mutate(
+    guild_label = factor(guild_label, levels = guild_label_order),
+    trophic_group = factor(trophic_group, levels = c("Producers", "Consumers"))
+  )
+
+print(guild_richness_summary)
+
+plot_guild_derivs <- function(df_deriv, df_summary, title_text, panel_tag) {
+  ggplot(df_deriv, aes(x = age_ce, colour = guild_label, fill = guild_label)) +
+    geom_hline(yintercept = 0, linewidth = 0.4, alpha = 0.7) +
+    geom_ribbon(
+      aes(ymin = lower_ci, ymax = upper_ci),
+      alpha = 0.18,
+      linewidth = 0,
+      colour = NA
+    ) +
+    geom_line(aes(y = derivative), linewidth = 0.95) +
+    geom_vline(
+      data = df_summary,
+      aes(xintercept = first_onset_after_min_ce, colour = guild_label),
+      linetype = "dashed",
+      linewidth = 0.7,
+      na.rm = TRUE
+    ) +
+    scale_colour_manual(values = guild_richness_cols, guide = "none") +
+    scale_fill_manual(values = guild_richness_cols, guide = "none") +
+    coord_cartesian(xlim = c(0, 2020)) +
+    facet_wrap(~ guild_label, ncol = 2, scales = "free_y") +
+    labs(
+      tag = panel_tag,
+      title = title_text,
+      subtitle = "Dashed = first significant onset (>= 800 CE); change where CI excludes 0",
+      x = "Age (CE)",
+      y = "d(richness)/d(age)"
+    ) +
+    theme_bw(base_size = 10) +
+    theme(
+      plot.tag = element_text(face = "bold"),
+      plot.title = element_text(face = "bold"),
+      panel.grid.minor = element_blank(),
+      strip.background = element_rect(fill = "grey95", colour = NA),
+      strip.text = element_text(face = "bold", size = 8)
+    )
+}
+
+p_rich_prod_deriv <- plot_guild_derivs(
+  dplyr::filter(guild_richness_derivs, trophic_group == "Producers"),
+  dplyr::filter(guild_richness_summary, trophic_group == "Producers"),
+  "Producer guild richness derivatives (simultaneous 90% CI)",
+  "(a)"
+)
+
+p_rich_cons_deriv <- plot_guild_derivs(
+  dplyr::filter(guild_richness_derivs, trophic_group == "Consumers"),
+  dplyr::filter(guild_richness_summary, trophic_group == "Consumers"),
+  "Consumer guild richness derivatives (simultaneous 90% CI)",
+  "(b)"
+)
+
+p_rich_timing <- ggplot(
+  guild_richness_summary,
+  aes(x = first_onset_after_min_ce, y = guild_label, colour = guild_label)
+) +
+  geom_point(size = 3, na.rm = TRUE) +
+  scale_colour_manual(values = guild_richness_cols, guide = "none") +
+  scale_x_continuous(limits = c(0, 2020), breaks = seq(0, 2000, 400)) +
+  facet_grid(trophic_group ~ ., scales = "free_y", space = "free_y") +
+  labs(
+    tag = "(c)",
+    title = "First significant richness-derivative onset by guild (>= 800 CE)",
+    x = "Age (CE)",
+    y = NULL
+  ) +
+  theme_bw(base_size = 11) +
+  theme(
+    plot.tag = element_text(face = "bold"),
+    plot.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    strip.background = element_rect(fill = "grey95", colour = NA),
+    strip.text = element_text(face = "bold")
+  )
+
+fig_s10_guild_richness_change <-
+  p_rich_prod_deriv /
+  p_rich_cons_deriv /
+  p_rich_timing +
+  patchwork::plot_layout(heights = c(1, 1, 0.7))
+
+fig_s10_guild_richness_change
+
+readr::write_csv(
+  guild_richness_summary,
+  "outputs/regional_guild_richness_change_timing_summary.csv"
+)
+readr::write_csv(
+  guild_richness_periods,
+  "outputs/regional_guild_richness_change_periods.csv"
+)
+
+ggsave(
+  "supplementary/supplementary_figure_S10_regional_guild_richness_change_timing.pdf",
+  plot = fig_s10_guild_richness_change,
+  width = 10,
+  height = 11,
+  dpi = 300
+)
+
+ggsave(
+  "supplementary/supplementary_figure_S10_regional_guild_richness_change_timing.png",
+  plot = fig_s10_guild_richness_change,
+  width = 10,
+  height = 11,
+  units = "in",
+  dpi = 600
+)
 
 ```
 
-### SUPPLEMENTARY FIGURE S9 - Null model
+### Regional GAM change timing (Fig. 2a sensitivity; analysis only — no SI figure)
+```{r}
+# ------------------------------------------------------------------------------
+# When do regional DCA1 GAMs start changing? Derivatives of s(age_ce) for
+# producers, consumers, and vegetation (same models as Fig. 2a). Significant
+# change = simultaneous CI excludes zero. Results are written to CSV for use in
+# the text; no supplementary figure is exported.
+# ------------------------------------------------------------------------------
+
+series_levels <- c("Producers", "Consumers", "Vegetation")
+
+deriv_diatoms <- compute_regional_gam_derivatives(mod_diatoms, "Producers")
+deriv_chiro   <- compute_regional_gam_derivatives(mod_chiro, "Consumers")
+deriv_veg <- if (exists("mod_to_dev")) {
+  age_col <- if ("age_ce" %in% names(mod_to_dev)) "age_ce" else {
+    setdiff(names(mod_to_dev), c(
+      ".smooth", ".by", ".fs", ".derivative", ".se", ".crit",
+      ".lower_ci", ".upper_ci"
+    ))[1]
+  }
+  tibble::tibble(
+    series = "Vegetation",
+    age_ce = as.numeric(mod_to_dev[[age_col]]),
+    derivative = as.numeric(mod_to_dev$.derivative),
+    lower_ci = as.numeric(mod_to_dev$.lower_ci),
+    upper_ci = as.numeric(mod_to_dev$.upper_ci),
+    significant = (mod_to_dev$.lower_ci > 0) | (mod_to_dev$.upper_ci < 0)
+  ) %>% dplyr::arrange(age_ce)
+} else {
+  compute_regional_gam_derivatives(mod_to, "Vegetation")
+}
+
+deriv_all <- dplyr::bind_rows(deriv_diatoms, deriv_chiro, deriv_veg) %>%
+  dplyr::mutate(series = factor(series, levels = series_levels))
+
+change_periods <- dplyr::bind_rows(
+  summarise_gam_change_periods(deriv_diatoms)$periods,
+  summarise_gam_change_periods(deriv_chiro)$periods,
+  summarise_gam_change_periods(deriv_veg)$periods
+) %>%
+  dplyr::mutate(series = factor(series, levels = series_levels))
+
+timing_summary <- dplyr::bind_rows(
+  summarise_gam_change_periods(deriv_diatoms)$summary,
+  summarise_gam_change_periods(deriv_chiro)$summary,
+  summarise_gam_change_periods(deriv_veg)$summary
+) %>%
+  dplyr::mutate(series = factor(series, levels = series_levels)) %>%
+  dplyr::arrange(series)
+
+print(timing_summary)
+
+readr::write_csv(
+  timing_summary,
+  "outputs/regional_gam_change_timing_summary.csv"
+)
+readr::write_csv(
+  change_periods,
+  "outputs/regional_gam_change_periods.csv"
+)
+
+```
+
+### SUPPLEMENTARY FIGURE S11 - Null model
 ```{r fig.width = 12, fig.asp = 1}
 
 # Set PNG output for saving the tree plot
-png("supplementary/supplementary_figure_S9_null_model.png", width = 8, height = 8, units = "in", res = 600)
+png("supplementary/supplementary_figure_S11_null_model.png", width = 8, height = 8, units = "in", res = 600)
 
 # Plot Global Rda with selected variables
 combined_plot
@@ -4987,5 +5575,4 @@ combined_plot
 dev.off()
 
 ```
-
 
