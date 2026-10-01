@@ -1,0 +1,4 @@
+resolution,n_lakes,mean_mag_diff,median_mag_diff,n_producers_stronger,n_consumers_stronger,n_producers_earlier,n_consumers_earlier
+genus_diatoms,9,0.012445962946606782,-0.0012158898428251685,4,5,6,1
+guild,9,0.0729143273171472,0.01606870344817357,5,4,5,1
+species,9,0.5136435484885937,0.2715168788990747,5,4,6,2

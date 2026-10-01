@@ -1,0 +1,5 @@
+group,period,n,mean_richness,median_richness
+Consumers,post_1600,83,6.9156626506024095,6.7
+Consumers,pre_1600,128,6.8390625,6.8
+Producers,post_1600,107,29.321495327102802,29.2
+Producers,pre_1600,158,31.684810126582278,30.55

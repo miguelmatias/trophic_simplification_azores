@@ -1,0 +1,19 @@
+group,lake,n_samples,min_count,median_count,mean_count,max_count
+Consumers,Azul,101,2,28,38.6039603960396,254
+Consumers,Caldeirao,64,9,111.5,111.40625,233
+Consumers,Caveiro,62,4,101,136.80645161290326,483
+Consumers,Empadadas Norte,123,1,36,144.92682926829272,650
+Consumers,Funda,42,1,11.5,17.03571428571429,62
+Consumers,Ginjal,89,4,18,24.37078651685393,106
+Consumers,Peixinho,41,22,206,168.4878048780488,610
+Consumers,Prata,64,25,96.5,96.078125,189
+Consumers,Santiago,143,2,38,60.55944055944051,280
+Producers,Azul,107,295,420,431.4392523364486,545
+Producers,Caldeirao,70,320,385,393.7,749
+Producers,Caveiro,97,52,518,515.2989690721649,645
+Producers,Empadadas Norte,69,500,514,588.5652173913043,1278
+Producers,Funda,75,209,676,700.5733333333334,1335
+Producers,Ginjal,34,68,410.5,349.2647058823529,575
+Producers,Peixinho,45,503,530,789.4666666666666,7429
+Producers,Prata,60,82,516,497.7,673
+Producers,Santiago,100,400.5,411.75,425.57,862.5

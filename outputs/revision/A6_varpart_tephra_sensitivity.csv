@@ -1,0 +1,31 @@
+phase,component,value,n_bins,scenario
+Phase 1,Pure NAO_Median_Value,0,23,including_tephra_bins
+Phase 1,Pure estimate,0,23,including_tephra_bins
+Phase 1,Shared,0,23,including_tephra_bins
+Phase 2,Pure NAO_Median_Value,0,10,including_tephra_bins
+Phase 2,Pure estimate,0,10,including_tephra_bins
+Phase 2,Shared,0,10,including_tephra_bins
+Phase 3,Pure NAO_Median_Value,0.08763191653365532,14,including_tephra_bins
+Phase 3,Pure estimate,0.5590523933206534,14,including_tephra_bins
+Phase 3,Shared,0,14,including_tephra_bins
+Phase 4,Pure NAO_Median_Value,0,10,including_tephra_bins
+Phase 4,Pure estimate,0.253715361892923,10,including_tephra_bins
+Phase 4,Shared,0.0024048939750200837,10,including_tephra_bins
+Phase 5,Pure NAO_Median_Value,0.11437535018047906,8,including_tephra_bins
+Phase 5,Pure estimate,0.13993548856310078,8,including_tephra_bins
+Phase 5,Shared,0.04310233644338146,8,including_tephra_bins
+Phase 1,Pure NAO_Median_Value,0,23,excluding_tephra_pm1bin
+Phase 1,Pure estimate,0,23,excluding_tephra_pm1bin
+Phase 1,Shared,0,23,excluding_tephra_pm1bin
+Phase 2,Pure NAO_Median_Value,0,7,excluding_tephra_pm1bin
+Phase 2,Pure estimate,0,7,excluding_tephra_pm1bin
+Phase 2,Shared,0,7,excluding_tephra_pm1bin
+Phase 3,Pure NAO_Median_Value,0.08763191653365532,14,excluding_tephra_pm1bin
+Phase 3,Pure estimate,0.5590523933206534,14,excluding_tephra_pm1bin
+Phase 3,Shared,0,14,excluding_tephra_pm1bin
+Phase 4,Pure NAO_Median_Value,0,7,excluding_tephra_pm1bin
+Phase 4,Pure estimate,0.26650100671461163,7,excluding_tephra_pm1bin
+Phase 4,Shared,0,7,excluding_tephra_pm1bin
+Phase 5,Pure NAO_Median_Value,0.11437535018047906,8,excluding_tephra_pm1bin
+Phase 5,Pure estimate,0.13993548856310078,8,excluding_tephra_pm1bin
+Phase 5,Shared,0.04310233644338146,8,excluding_tephra_pm1bin

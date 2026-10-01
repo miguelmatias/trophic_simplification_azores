@@ -1,0 +1,1387 @@
+lake,core_depth_id,age_ce,total_count,group
+Azul,AZ06_1_25,2005.6,493,Producers
+Azul,AZ06_2_25,2005,514,Producers
+Azul,AZ06_4_25,2004,480,Producers
+Azul,AZ06_6_25,2003,545,Producers
+Azul,AZ06_8_25,2002,478,Producers
+Azul,AZ06_10_25,2001,479,Producers
+Azul,AZ06_12_25,1999.5,484,Producers
+Azul,AZ06_0_25,2006,496,Producers
+Azul,AZ06_0_75,2005.8,471,Producers
+Azul,AZ06_1_75,2005.3,499,Producers
+Azul,AZ11_02_100_8,1538.8899999999999,426,Producers
+Azul,AZ11_02_101_8,1524.58,409,Producers
+Azul,AZ11_02_102_8,1510.72,411,Producers
+Azul,AZ11_02_103_8,1497.27,430,Producers
+Azul,AZ11_02_104_8,1484.22,436,Producers
+Azul,AZ11_02_106_8,1459.22,427,Producers
+Azul,AZ11_02_108_8,1435.54,409,Producers
+Azul,AZ11_02_109_8,1424.1399999999999,435,Producers
+Azul,AZ11_02_110_8,1413,409,Producers
+Azul,AZ11_02_112_8,1391.4299999999998,409,Producers
+Azul,AZ11_02_114_8,1380.95,412,Producers
+Azul,AZ11_02_115_8,1370.65,412,Producers
+Azul,AZ11_02_116_8,1360.5,426,Producers
+Azul,AZ11_02_118_8,1340.5700000000002,433,Producers
+Azul,AZ11_02_119_8,1330.75,414,Producers
+Azul,AZ11_02_120_8,1320.99,420,Producers
+Azul,AZ11_02_121_8,1311.27,418,Producers
+Azul,AZ11_02_122_8,1301.5700000000002,414,Producers
+Azul,AZ11_02_124_8,1299.7,421,Producers
+Azul,AZ11_02_126_8,1297.9,439,Producers
+Azul,AZ11_02_128_8,1296.1,422,Producers
+Azul,AZ11_02_130_8,1294.3,410,Producers
+Azul,AZ11_02_132_8,1292.5,407,Producers
+Azul,AZ11_02_134_8,1290.6,413,Producers
+Azul,AZ11_02_136_8,1288.8,414,Producers
+Azul,AZ11_02_138_8,1287,405,Producers
+Azul,AZ06_14_25,1998,496,Producers
+Azul,AZ11_02_140_8,1285.2,404,Producers
+Azul,AZ11_02_142_8,1283.4,411,Producers
+Azul,AZ11_02_144_8,1281.5,420,Producers
+Azul,AZ06_16_25,1994,515,Producers
+Azul,AZ06_18_25,1989,500,Producers
+Azul,AZ06_20_25,1983,522,Producers
+Azul,AZ06_22_25,1978,505,Producers
+Azul,AZ06_24_25,1973,465,Producers
+Azul,AZ06_26_25,1969,473,Producers
+Azul,AZ06_28_25,1964.5,295,Producers
+Azul,AZ11_02_36_8,1960.16,412,Producers
+Azul,AZ11_02_37_8,1955.85,434,Producers
+Azul,AZ11_02_38_8,1951.07,408,Producers
+Azul,AZ11_02_39_8,1945.96,436,Producers
+Azul,AZ11_02_40_8,1940.68,412,Producers
+Azul,AZ11_02_41_8,1935.32,411,Producers
+Azul,AZ11_02_42_8,1929.96,431,Producers
+Azul,AZ11_02_43_8,1924.62,415,Producers
+Azul,AZ11_02_44_8,1919.32,440,Producers
+Azul,AZ11_02_45_8,1914.09,441,Producers
+Azul,AZ11_02_46_8,1908.93,422,Producers
+Azul,AZ11_02_47_8,1903.86,416,Producers
+Azul,AZ11_02_48_8,1898.91,406,Producers
+Azul,AZ11_02_49_8,1894.09,428,Producers
+Azul,AZ11_02_50_8,1889.41,429,Producers
+Azul,AZ11_02_51_8,1884.9,433,Producers
+Azul,AZ11_02_52_8,1880.6,409,Producers
+Azul,AZ11_02_53_8,1876.56,433,Producers
+Azul,AZ11_02_54_8,1872.85,424,Producers
+Azul,AZ11_02_55_8,1869.51,417,Producers
+Azul,AZ11_02_56_8,1866.59,443,Producers
+Azul,AZ11_02_57_8,1864.1,426,Producers
+Azul,AZ11_02_58_8,1862.02,404,Producers
+Azul,AZ11_02_59_8,1860.31,404,Producers
+Azul,AZ11_02_60_8,1858.85,414,Producers
+Azul,AZ11_02_61_8,1857.53,422,Producers
+Azul,AZ11_02_62_8,1856.23,469,Producers
+Azul,AZ11_02_63_8,1854.82,409,Producers
+Azul,AZ11_02_64_8,1853.2,408,Producers
+Azul,AZ11_02_65_8,1851.24,415,Producers
+Azul,AZ11_02_66_8,1848.83,444,Producers
+Azul,AZ11_02_67_8,1845.84,476,Producers
+Azul,AZ11_02_68_8,1842.17,420,Producers
+Azul,AZ11_02_69_8,1837.68,482,Producers
+Azul,AZ11_02_70_8,1832.27,455,Producers
+Azul,AZ11_02_71_8,1825.81,405,Producers
+Azul,AZ11_02_72_8,1818.19,412,Producers
+Azul,AZ11_02_73_8,1809.29,433,Producers
+Azul,AZ11_02_74_8,1799.04,410,Producers
+Azul,AZ11_02_75_8,1787.51,423,Producers
+Azul,AZ11_02_76_8,1774.84,408,Producers
+Azul,AZ11_02_78_8,1774.48,410,Producers
+Azul,AZ11_02_79_8,1774.3,415,Producers
+Azul,AZ11_02_80_8,1774.12,421,Producers
+Azul,AZ11_02_81_8,1773.94,404,Producers
+Azul,AZ11_02_82_8,1773.76,408,Producers
+Azul,AZ11_02_84_8,1763.98,406,Producers
+Azul,AZ11_02_86_8,1734.43,420,Producers
+Azul,AZ11_02_88_8,1703.82,432,Producers
+Azul,AZ11_02_89_8,1702.31,404,Producers
+Azul,AZ11_02_90_8,1685.6100000000001,404,Producers
+Azul,AZ11_02_91_8,1668.66,423,Producers
+Azul,AZ11_02_92_8,1653.1399999999999,406,Producers
+Azul,AZ11_02_93_8,1651.59,410,Producers
+Azul,AZ11_02_94_8,1634.52,411,Producers
+Azul,AZ11_02_95_8,1617.59,455,Producers
+Azul,AZ11_02_96_8,1600.93,407,Producers
+Azul,AZ11_02_97_8,1584.67,410,Producers
+Azul,AZ11_02_98_8,1568.91,409,Producers
+Azul,AZ11_02_99_8,1553.66,444,Producers
+Caldeirao,CL17-03_1026,1406.5,386,Producers
+Caldeirao,CL17-03_1080,1362.81,478,Producers
+Caldeirao,CL17-03_1135,1338.8899999999999,372,Producers
+Caldeirao,CL17-03_1212,1321.8600000000001,385,Producers
+Caldeirao,CL17-03_1256,1312.13,380,Producers
+Caldeirao,CL17-03_1300,1302.4,328,Producers
+Caldeirao,CL17-03_1344,1292.67,483,Producers
+Caldeirao,CL17-03_1355,1290.24,351,Producers
+Caldeirao,CL17-03_1388,1282.94,392,Producers
+Caldeirao,CL17-03_1432,1273.21,414,Producers
+Caldeirao,CL17-03_146,1937.04,452,Producers
+Caldeirao,CL17-03_1476,1263.48,383,Producers
+Caldeirao,CL17-03_1520,1238.03,338,Producers
+Caldeirao,CL17-03_1553,1213.45,386,Producers
+Caldeirao,CL17-03_1822,1013.06,384,Producers
+Caldeirao,CL17-03_1868,991.74,393,Producers
+Caldeirao,CL17-03_201,1906.72,379,Producers
+Caldeirao,CL17-03_2022,941.31,411,Producers
+Caldeirao,CL17-03_2176,890.8800000000001,364,Producers
+Caldeirao,CL17-03_2330,840.46,416,Producers
+Caldeirao,CL17-03_2484,785.5799999999999,385,Producers
+Caldeirao,CL17-03_256,1876.39,458,Producers
+Caldeirao,CL17-03_2637,686.9000000000001,410,Producers
+Caldeirao,CL17-03_2791,587.5699999999999,417,Producers
+Caldeirao,CL17-03_2945,488.24,375,Producers
+Caldeirao,CL17-03_3099,388.9100000000001,388,Producers
+Caldeirao,CL17-03_311,1846.07,333,Producers
+Caldeirao,CL17-03_3253,289.5799999999999,386,Producers
+Caldeirao,CL17-03_3345,230.24,395,Producers
+Caldeirao,CL17-03_3366,216.70000000000005,389,Producers
+Caldeirao,CL17-03_3386,203.79999999999995,366,Producers
+Caldeirao,CL17-03_3407,190.26,389,Producers
+Caldeirao,CL17-03_3608,60.6099999999999,428,Producers
+Caldeirao,CL17-03_3618,54.16000000000008,340,Producers
+Caldeirao,CL17-03_3642,38.680000000000064,386,Producers
+Caldeirao,CL17-03_366,1815.74,461,Producers
+Caldeirao,CL17-03_3664,24.49000000000001,371,Producers
+Caldeirao,CL17-03_3675,17.40000000000009,384,Producers
+Caldeirao,CL17-03_3697,3.2100000000000364,333,Producers
+Caldeirao,CL17-03_3731,-18.720000000000027,380,Producers
+Caldeirao,CL17-03_3742,-25.819999999999936,417,Producers
+Caldeirao,CL17-03_3764,-40.00999999999999,372,Producers
+Caldeirao,CL17-03_3832,-83.86999999999989,399,Producers
+Caldeirao,CL17-03_3999,-191.57999999999993,381,Producers
+Caldeirao,CL17-03_4167,-299.94000000000005,420,Producers
+Caldeirao,CL17-03_421,1785.41,378,Producers
+Caldeirao,CL17-03_4217,-332.19000000000005,369,Producers
+Caldeirao,CL17-03_4385,-457.84000000000015,401,Producers
+Caldeirao,CL17-03_4552,-594.1500000000001,350,Producers
+Caldeirao,CL17-03_4720,-731.27,398,Producers
+Caldeirao,CL17-03_476,1755.09,478,Producers
+Caldeirao,CL17-03_4887,-867.5700000000002,346,Producers
+Caldeirao,CL17-03_5055,-1004.69,355,Producers
+Caldeirao,CL17-03_5167,-1101.6599999999999,464,Producers
+Caldeirao,CL17-03_531,1724.76,380,Producers
+Caldeirao,CL17-03_5400,-1399.6399999999999,393,Producers
+Caldeirao,CL17-03_542,1718.7,320,Producers
+Caldeirao,CL17-03_5540,-1578.6799999999998,347,Producers
+Caldeirao,CL17-03_5679,-1756.44,344,Producers
+Caldeirao,CL17-03_586,1694.44,370,Producers
+Caldeirao,CL17-03_630,1670.18,385,Producers
+Caldeirao,CL17-03_674,1645.92,385,Producers
+Caldeirao,CL17-03_718,1621.65,382,Producers
+Caldeirao,CL17-03_762,1597.3899999999999,371,Producers
+Caldeirao,CL17-03_806,1573.13,749,Producers
+Caldeirao,CL17-03_850,1548.87,379,Producers
+Caldeirao,CL17-03_894,1513.28,380,Producers
+Caldeirao,CL17-03_91,1967.37,329,Producers
+Caldeirao,CL17-03_938,1477.69,388,Producers
+Caldeirao,CL17-03_971,1450.99,480,Producers
+Caveiro,CVL_1B_0,2016,521,Producers
+Caveiro,CVL_1B_100,1935,532,Producers
+Caveiro,CVL_1B_1000,1378,587,Producers
+Caveiro,CVL_1B_1050,1378,527,Producers
+Caveiro,CVL_1B_1100,1349,507,Producers
+Caveiro,CVL_1B_1150,1308,522,Producers
+Caveiro,CVL_1B_1200,1266,514,Producers
+Caveiro,CVL_1B_1250,1224,521,Producers
+Caveiro,CVL_1B_1300,1183,546,Producers
+Caveiro,CVL_1B_1350,1140,516,Producers
+Caveiro,CVL_1B_1400,1097,522,Producers
+Caveiro,CVL_1B_1450,1054,527,Producers
+Caveiro,CVL_1B_150,1935,531,Producers
+Caveiro,CVL_1B_1500,1010,519,Producers
+Caveiro,CVL_1B_1550,967,540,Producers
+Caveiro,CVL_1B_1600,924,548,Producers
+Caveiro,CVL_1B_1650,881,521,Producers
+Caveiro,CVL_1B_1800,751,514,Producers
+Caveiro,CVL_1B_1850,707,550,Producers
+Caveiro,CVL_1B_1910,659,645,Producers
+Caveiro,CVL_1B_1960,616,522,Producers
+Caveiro,CVL_1B_200,1935,514,Producers
+Caveiro,CVL_1B_2020,564,537,Producers
+Caveiro,CVL_1B_2070,520,514,Producers
+Caveiro,CVL_1B_2130,489,628,Producers
+Caveiro,CVL_1B_2180,446,539,Producers
+Caveiro,CVL_1B_2240,394,534,Producers
+Caveiro,CVL_1B_2290,354,517,Producers
+Caveiro,CVL_1B_2350,319,536,Producers
+Caveiro,CVL_1B_2400,303,506,Producers
+Caveiro,CVL_1B_2450,303,514,Producers
+Caveiro,CVL_1B_250,1935,506,Producers
+Caveiro,CVL_1B_2510,285,518,Producers
+Caveiro,CVL_1B_2560,262,567,Producers
+Caveiro,CVL_1B_2620,208,525,Producers
+Caveiro,CVL_1B_2670,163,535,Producers
+Caveiro,CVL_1B_2730,110,505,Producers
+Caveiro,CVL_1B_2780,79,523,Producers
+Caveiro,CVL_1B_2840,54,504,Producers
+Caveiro,CVL_1B_2890,52,511,Producers
+Caveiro,CVL_1B_2950,41,508,Producers
+Caveiro,CVL_1B_300,1935,541,Producers
+Caveiro,CVL_1B_3000,-3,569,Producers
+Caveiro,CVL_1B_3050,-48,607,Producers
+Caveiro,CVL_1B_3110,-102,510,Producers
+Caveiro,CVL_1B_3160,-146,512,Producers
+Caveiro,CVL_1B_3220,-200,515,Producers
+Caveiro,CVL_1B_3270,-228,512,Producers
+Caveiro,CVL_1B_3330,-228,581,Producers
+Caveiro,CVL_1B_3380,-228,527,Producers
+Caveiro,CVL_1B_3440,-228,514,Producers
+Caveiro,CVL_1B_3490,-228,526,Producers
+Caveiro,CVL_1B_350,1935,533,Producers
+Caveiro,CVL_1B_3600,-228,517,Producers
+Caveiro,CVL_1B_3650,-228,507,Producers
+Caveiro,CVL_1B_3700,-228,513,Producers
+Caveiro,CVL_1B_3750,-228,508,Producers
+Caveiro,CVL_1B_3800,-228,514,Producers
+Caveiro,CVL_1B_3850,-228,508,Producers
+Caveiro,CVL_1B_3900,-228,503,Producers
+Caveiro,CVL_1B_3950,-228,513,Producers
+Caveiro,CVL_1B_3990,-228,52,Producers
+Caveiro,CVL_1B_400,1914,538,Producers
+Caveiro,CVL_1B_4040,-228,102,Producers
+Caveiro,CVL_1B_4090,-228,184,Producers
+Caveiro,CVL_1B_4140,-228,506,Producers
+Caveiro,CVL_1B_4190,-268,511,Producers
+Caveiro,CVL_1B_4240,-321,523,Producers
+Caveiro,CVL_1B_4290,-374,537,Producers
+Caveiro,CVL_1B_4340,-427,515,Producers
+Caveiro,CVL_1B_4390,-481,559,Producers
+Caveiro,CVL_1B_4440,-534,526,Producers
+Caveiro,CVL_1B_4490,-583,525,Producers
+Caveiro,CVL_1B_450,1863,579,Producers
+Caveiro,CVL_1B_4540,-624,567,Producers
+Caveiro,CVL_1B_4590,-679,502,Producers
+Caveiro,CVL_1B_4640,-735,511,Producers
+Caveiro,CVL_1B_4690,-784,511,Producers
+Caveiro,CVL_1B_4740,-784,502,Producers
+Caveiro,CVL_1B_4780,-793,509,Producers
+Caveiro,CVL_1B_4830,-848,514,Producers
+Caveiro,CVL_1B_4880,-904,506,Producers
+Caveiro,CVL_1B_4930,-959,510,Producers
+Caveiro,CVL_1B_4980,-1015,517,Producers
+Caveiro,CVL_1B_50,1970,515,Producers
+Caveiro,CVL_1B_500,1813,562,Producers
+Caveiro,CVL_1B_5030,-1071,518,Producers
+Caveiro,CVL_1B_5080,-1127,562,Producers
+Caveiro,CVL_1B_550,1764,511,Producers
+Caveiro,CVL_1B_600,1715,526,Producers
+Caveiro,CVL_1B_650,1666,568,Producers
+Caveiro,CVL_1B_700,1621,523,Producers
+Caveiro,CVL_1B_750,1578,508,Producers
+Caveiro,CVL_1B_800,1536,512,Producers
+Caveiro,CVL_1B_850,1495,513,Producers
+Caveiro,CVL_1B_900,1453,517,Producers
+Caveiro,CVL_1B_950,1411,540,Producers
+Empadadas Norte,EN_04_1,2010.701012,587,Producers
+Empadadas Norte,EN_04_2,2010.593845,509,Producers
+Empadadas Norte,EN_04_3,2010.461394,585,Producers
+Empadadas Norte,EN_04_4,2010.286803,619,Producers
+Empadadas Norte,EN_04_5,2010.053216,562,Producers
+Empadadas Norte,EN_04_6,2009.743776,609,Producers
+Empadadas Norte,EN_04_7,2009.341628,750,Producers
+Empadadas Norte,EN_04_8,2008.829916,680,Producers
+Empadadas Norte,EN_04_9,2008.191782,635,Producers
+Empadadas Norte,EN_04_10,2007.410372,699,Producers
+Empadadas Norte,EN_04_11,2006.468829,666,Producers
+Empadadas Norte,EN_04_12,2005.350298,713,Producers
+Empadadas Norte,EN_04_13,2004.037921,675,Producers
+Empadadas Norte,EN_04_14,2002.515645,853,Producers
+Empadadas Norte,EN_04_15,2000.785849,1012,Producers
+Empadadas Norte,EN_04_16,1998.869346,841,Producers
+Empadadas Norte,EN_04_17,1996.787752,763,Producers
+Empadadas Norte,EN_04_18,1994.562682,1278,Producers
+Empadadas Norte,EN_04_19,1992.215751,1045,Producers
+Empadadas Norte,EN_04_20,1989.768574,1032,Producers
+Empadadas Norte,EN_04_22,1984.659943,834,Producers
+Empadadas Norte,EN_04_24,1979.409711,526,Producers
+Empadadas Norte,EN_04_26,1974.190798,504,Producers
+Empadadas Norte,EN_04_28,1969.176126,503,Producers
+Empadadas Norte,EN_04_30,1964.538615,501,Producers
+Empadadas Norte,EN_04_115,1956.8271406,503,Producers
+Empadadas Norte,EN_04_117,1953.6108064,503,Producers
+Empadadas Norte,EN_04_119,1950.6640125,511,Producers
+Empadadas Norte,EN_04_121,1947.86902349,525,Producers
+Empadadas Norte,EN_04_123,1945.10810373,505,Producers
+Empadadas Norte,EN_04_125,1942.26351772,506,Producers
+Empadadas Norte,EN_04_127,1939.2175299,503,Producers
+Empadadas Norte,EN_04_129,1935.8524048,500,Producers
+Empadadas Norte,EN_04_131,1932.0504068,506,Producers
+Empadadas Norte,EN_04_133,1927.6938005,513,Producers
+Empadadas Norte,EN_04_135,1922.6648502,516,Producers
+Empadadas Norte,EN_04_137,1916.8458204,511,Producers
+Empadadas Norte,EN_04_139,1910.1189757,509,Producers
+Empadadas Norte,EN_04_141,1902.3665804,505,Producers
+Empadadas Norte,EN_04_143,1893.470899,525,Producers
+Empadadas Norte,EN_04_145,1883.3481609,511,Producers
+Empadadas Norte,EN_04_147,1872.0504547,504,Producers
+Empadadas Norte,EN_04_149,1859.663834,504,Producers
+Empadadas Norte,EN_04_168,1839.23043,509,Producers
+Empadadas Norte,EN_04_170,1824.498007,504,Producers
+Empadadas Norte,EN_04_172,1808.977857,520,Producers
+Empadadas Norte,EN_04_174,1792.7560330000001,524,Producers
+Empadadas Norte,EN_04_177,1767.295901,504,Producers
+Empadadas Norte,EN_04_180,1740.741059,510,Producers
+Empadadas Norte,EN_04_182,1722.573113,506,Producers
+Empadadas Norte,EN_04_184,1704.133825,517,Producers
+Empadadas Norte,EN_04_186,1685.50928,508,Producers
+Empadadas Norte,EN_04_188,1666.785566,505,Producers
+Empadadas Norte,EN_04_190,1648.048766,513,Producers
+Empadadas Norte,EN_04_192,1629.384968,514,Producers
+Empadadas Norte,EN_04_194,1610.880255,512,Producers
+Empadadas Norte,EN_04_197,1583.6097869999999,514,Producers
+Empadadas Norte,EN_04_199,1565.879416,508,Producers
+Empadadas Norte,EN_04_201,1548.609432,535,Producers
+Empadadas Norte,EN_04_203,1531.885919,549,Producers
+Empadadas Norte,EN_04_205,1515.794965,505,Producers
+Empadadas Norte,EN_04_207,1500.422654,508,Producers
+Empadadas Norte,EN_04_209,1485.845094,506,Producers
+Empadadas Norte,EN_04_211,1472.0515500000001,516,Producers
+Empadadas Norte,EN_04_213,1458.9865730000001,511,Producers
+Empadadas Norte,EN_04_214,1452.709853,517,Producers
+Empadadas Norte,EN_04_216,1440.633063,629,Producers
+Empadadas Norte,EN_04_218,1429.14529,519,Producers
+Empadadas Norte,EN_04_220,1418.1907139999998,507,Producers
+Funda,FN02_108_7,1793.96,887,Producers
+Funda,FN02_118_7,1760.96,741,Producers
+Funda,FN02_128_7,1727.96,718,Producers
+Funda,FN02_13_7,2005.83,715,Producers
+Funda,FN02_138_7,1694.96,781,Producers
+Funda,FN02_148_7,1661.96,907,Producers
+Funda,FN02_153_7,1645.46,699,Producers
+Funda,FN02_158_7,1628.96,1137,Producers
+Funda,FN02_163_7,1612.46,760,Producers
+Funda,FN02_168_7,1595.96,749,Producers
+Funda,FN02_18_7,2001.56,209,Producers
+Funda,FN02_187_9,1532.6100000000001,720,Producers
+Funda,FN02_193_7,1513.635,984,Producers
+Funda,FN02_199_4,1494.66,590,Producers
+Funda,FN02_205_2,1475.685,644,Producers
+Funda,FN02_211,1456.512,709,Producers
+Funda,FN02_222_5,1421.938,851,Producers
+Funda,FN02_23_7,1995.92,611,Producers
+Funda,FN02_245_5,1407.588,795,Producers
+Funda,FN02_257_1,1400.392,764,Producers
+Funda,FN02_262_8,1396.812,690,Producers
+Funda,FN02_268_6,1393.234,945,Producers
+Funda,FN02_274_3,1389.659,605,Producers
+Funda,FN02_28_7,1990.91,871,Producers
+Funda,FN02_280_1,1386.042,832,Producers
+Funda,FN02_285_9,1382.466,722,Producers
+Funda,FN02_291_6,1378.886,615,Producers
+Funda,FN02_297_4,1374.63,647,Producers
+Funda,FN02_303_2,1369.23,641,Producers
+Funda,FN02_309,1363.885,664,Producers
+Funda,FN02_314_7,1358.54,740,Producers
+Funda,FN02_320_4,1353.1950000000002,720,Producers
+Funda,FN02_326_3,1347.796,647,Producers
+Funda,FN02_33_7,1987.02,675,Producers
+Funda,FN02_337_8,1337.106,637,Producers
+Funda,FN02_343_5,1331.761,650,Producers
+Funda,FN02_349_3,1326.362,695,Producers
+Funda,FN02_371_7,1305.56,645,Producers
+Funda,FN02_38_7,1983.16,683,Producers
+Funda,FN02_380_4,1297.47,712,Producers
+Funda,FN02_394_3,1284.577,700,Producers
+Funda,FN02_409,1270.935,655,Producers
+Funda,FN02_423_4,1257.455,644,Producers
+Funda,FN02_43_7,1978.15,695,Producers
+Funda,FN02_432_3,1249.2,669,Producers
+Funda,FN02_442_9,1236.0720000000001,652,Producers
+Funda,FN02_450_1,1226.2469999999998,647,Producers
+Funda,FN02_457_4,1216.432,667,Producers
+Funda,FN02_463_2,1208.7893158000002,679,Producers
+Funda,FN02_48_7,1970.26,877,Producers
+Funda,FN02_494_7,1206.9,645,Producers
+Funda,FN02_502_1,1196.8310000000001,450,Producers
+Funda,FN02_509_4,1187.008,595,Producers
+Funda,FN02_516_6,1177.191,655,Producers
+Funda,FN02_523_9,1167.368,636,Producers
+Funda,FN02_549_8,1157.2359999999999,675,Producers
+Funda,FN02_561_8,1140.9859999999999,695,Producers
+Funda,FN02_573_8,1124.624,673,Producers
+Funda,FN02_58_7,1952.08,614,Producers
+Funda,FN02_585_8,1108.368,646,Producers
+Funda,FN02_597_9,1092.004,643,Producers
+Funda,FN02_609_9,1075.752,676,Producers
+Funda,FN02_622,1059.3899999999999,643,Producers
+Funda,FN02_634,1043.13,720,Producers
+Funda,FN02_646_1,1026.7759999999998,239,Producers
+Funda,FN02_657_3,1017.234,370,Producers
+Funda,FN02_668_7,1001.848,647,Producers
+Funda,FN02_68_7,1925.95,1335,Producers
+Funda,FN02_680_8,985.486,712,Producers
+Funda,FN02_692_6,969.45,641,Producers
+Funda,FN02_704_6,953.2,623,Producers
+Funda,FN02_78_7,1892.95,789,Producers
+Funda,FN02_8_7,2009.14,656,Producers
+Funda,FN02_88_7,1859.95,683,Producers
+Funda,FN02_98_7,1826.95,990,Producers
+Ginjal,GN_10,1995,465,Producers
+Ginjal,GN_102_5,1747,415,Producers
+Ginjal,GN_112_5,1716,420,Producers
+Ginjal,GN_12_5,1988,400,Producers
+Ginjal,GN_122_5,1684,443,Producers
+Ginjal,GN_132_5,1652,437,Producers
+Ginjal,GN_142_5,1632,433,Producers
+Ginjal,GN_15,1982,447,Producers
+Ginjal,GN_152_5,1607,413,Producers
+Ginjal,GN_162_5,1586,403,Producers
+Ginjal,GN_172_5,1574,449,Producers
+Ginjal,GN_182_5,1561,429,Producers
+Ginjal,GN_192_5,1545,97,Producers
+Ginjal,GN_2_5,2013,428,Producers
+Ginjal,GN_202_5,1528,401,Producers
+Ginjal,GN_212_5,1515,221,Producers
+Ginjal,GN_22_5,1964,575,Producers
+Ginjal,GN_222_5,1504,221,Producers
+Ginjal,GN_232_5,1493,101,Producers
+Ginjal,GN_242_5,1482,68,Producers
+Ginjal,GN_252_5,1470,115,Producers
+Ginjal,GN_262_5,1456,273,Producers
+Ginjal,GN_272_5,1444,501,Producers
+Ginjal,GN_282_5,1433,467,Producers
+Ginjal,GN_292_5,1426,208,Producers
+Ginjal,GN_32_5,1939,480,Producers
+Ginjal,GN_42_5,1914,122,Producers
+Ginjal,GN_5,2007,431,Producers
+Ginjal,GN_52_5,1889,252,Producers
+Ginjal,GN_62_5,1863,243,Producers
+Ginjal,GN_7_5,2001,424,Producers
+Ginjal,GN_72_5,1836,405,Producers
+Ginjal,GN_82_5,1809,408,Producers
+Ginjal,GN_92_5,1780,280,Producers
+Peixinho,PEX1_0,2016.94,518,Producers
+Peixinho,PEX1_100,2007.44,546,Producers
+Peixinho,PEX1_1020,1277.9,504,Producers
+Peixinho,PEX1_1060,1254.54,512,Producers
+Peixinho,PEX1_1100,1230.55,564,Producers
+Peixinho,PEX1_1140,1207,521,Producers
+Peixinho,PEX1_1180,1184.98,521,Producers
+Peixinho,PEX1_120,2005.35,909,Producers
+Peixinho,PEX1_1220,1165.58,508,Producers
+Peixinho,PEX1_1260,1149.87,617,Producers
+Peixinho,PEX1_1300,1138.94,542,Producers
+Peixinho,PEX1_1340,1133.88,513,Producers
+Peixinho,PEX1_1380,1127.8600000000001,621,Producers
+Peixinho,PEX1_1410,1111.5700000000002,796,Producers
+Peixinho,PEX1_1414,1108.69,894,Producers
+Peixinho,PEX1_1454,1072.17,869,Producers
+Peixinho,PEX1_1494,1024.25,1319,Producers
+Peixinho,PEX1_1534,968.88,7429,Producers
+Peixinho,PEX1_1574,910,525,Producers
+Peixinho,PEX1_160,2001.21,534,Producers
+Peixinho,PEX1_1614,851.5,557,Producers
+Peixinho,PEX1_1654,797.3,2447,Producers
+Peixinho,PEX1_1694,751.3,1094,Producers
+Peixinho,PEX1_2111,646.5,517,Producers
+Peixinho,PEX1_2151,544.4000000000001,517,Producers
+Peixinho,PEX1_2191,401.79999999999995,507,Producers
+Peixinho,PEX1_2231,230.9000000000001,572,Producers
+Peixinho,PEX1_2271,44.200000000000045,515,Producers
+Peixinho,PEX1_2311,-145.9000000000001,658,Producers
+Peixinho,PEX1_2351,-327,516,Producers
+Peixinho,PEX1_40,2013.81,515,Producers
+Peixinho,PEX1_500,1981.97,505,Producers
+Peixinho,PEX1_540,1923.77,516,Producers
+Peixinho,PEX1_580,1836.55,543,Producers
+Peixinho,PEX1_620,1731.79,548,Producers
+Peixinho,PEX1_660,1621,520,Producers
+Peixinho,PEX1_700,1515.67,548,Producers
+Peixinho,PEX1_740,1427.3,530,Producers
+Peixinho,PEX1_780,1367.38,531,Producers
+Peixinho,PEX1_80,2009.64,507,Producers
+Peixinho,PEX1_820,1347.23,519,Producers
+Peixinho,PEX1_860,1343.31,503,Producers
+Peixinho,PEX1_900,1333.33,545,Producers
+Peixinho,PEX1_940,1318.38,513,Producers
+Peixinho,PEX1_980,1299.54,521,Producers
+Prata,PR_2020_151,1990,316,Producers
+Prata,PR_2020_155,1976,148,Producers
+Prata,PR_2020_159,1962,522,Producers
+Prata,PR_2020_163,1948,321,Producers
+Prata,PR_2020_167,1935,82,Producers
+Prata,PR_2020_175,1908,281,Producers
+Prata,PR_2020_187,1868,588,Producers
+Prata,PR_2020_191,1855,514,Producers
+Prata,PR_2020_195,1842,546,Producers
+Prata,PR_2020_199,1829,544,Producers
+Prata,PR_2020_201,1822,510,Producers
+Prata,PR_2020_205,1809,531,Producers
+Prata,PR_2020_209,1796,569,Producers
+Prata,PR_2020_213,1783,527,Producers
+Prata,PR_2020_217,1771,505,Producers
+Prata,PR_2020_221,1760,507,Producers
+Prata,PR_2020_225,1749,597,Producers
+Prata,PR_2020_229,1738,518,Producers
+Prata,PR_2020_233,1727,555,Producers
+Prata,PR_2020_237,1716,575,Producers
+Prata,PR_2020_241,1705,575,Producers
+Prata,PR_2020_245,1694,510,Producers
+Prata,PR_2020_249,1683,503,Producers
+Prata,PR_2020_251,1678,533,Producers
+Prata,PR_2020_255,1667,673,Producers
+Prata,PR_2020_259,1656,511,Producers
+Prata,PR_2020_263,1645,515,Producers
+Prata,PR_2020_267,1634,520,Producers
+Prata,PR_2020_271,1623,518,Producers
+Prata,PR_2020_275,1612,510,Producers
+Prata,PR_2020_279,1600,513,Producers
+Prata,PR_2020_283,1589,524,Producers
+Prata,PR_2020_287,1578,635,Producers
+Prata,PR_2020_291,1568,510,Producers
+Prata,PR_2020_301,1541,538,Producers
+Prata,PR_2020_305,1531,568,Producers
+Prata,PR_2020_313,1509,534,Producers
+Prata,PR_2020_316,1501,512,Producers
+Prata,PR_2020_317,1498,487,Producers
+Prata,PR_2020_321,1487,509,Producers
+Prata,PR_2020_325,1477,528,Producers
+Prata,PR_2020_329,1460,529,Producers
+Prata,PR_2020_333,1436,512,Producers
+Prata,PR_2020_337,1410,538,Producers
+Prata,PR_2020_341,1383,499,Producers
+Prata,PR_2020_345,1356,535,Producers
+Prata,PR_2020_349,1329,540,Producers
+Prata,PR_2020_351,1315,527,Producers
+Prata,PR_2020_355,1290,508,Producers
+Prata,PR_2020_359,1262,515,Producers
+Prata,PR_2020_361,1247,516,Producers
+Prata,PR_2020_375,1218,506,Producers
+Prata,PR_2020_379,1188,405,Producers
+Prata,PR_2020_383,1156,410,Producers
+Prata,PR_2020_387,1126,464,Producers
+Prata,PR_2020_391,1092,408,Producers
+Prata,PR_2020_395,1046,414,Producers
+Prata,PR_2020_399,929,517,Producers
+Prata,PR_2020_415,810,516,Producers
+Prata,PR_2020_419,733,521,Producers
+Santiago,SA11_02_0,2011,451,Producers
+Santiago,SA11_02_1,2009,415,Producers
+Santiago,SA11_02_10,1987,448,Producers
+Santiago,SA11_02_100,1869.5,408,Producers
+Santiago,SA11_02_102,1864,402,Producers
+Santiago,SA11_02_104,1851,411,Producers
+Santiago,SA11_02_106,1839,410,Producers
+Santiago,SA11_02_109,1820,403,Producers
+Santiago,SA11_02_11,1985,428,Producers
+Santiago,SA11_02_111,1808,414,Producers
+Santiago,SA11_02_113,1795,407.5,Producers
+Santiago,SA11_02_115,1783,409.5,Producers
+Santiago,SA11_02_117,1771,403,Producers
+Santiago,SA11_02_119,1758,412,Producers
+Santiago,SA11_02_12,1982,415.5,Producers
+Santiago,SA11_02_121,1746,404,Producers
+Santiago,SA11_02_123,1733,445,Producers
+Santiago,SA11_02_125,1721,415.5,Producers
+Santiago,SA11_02_127,1708,430,Producers
+Santiago,SA11_02_129,1696,407,Producers
+Santiago,SA11_02_13,1980,862.5,Producers
+Santiago,SA11_02_131,1684,418.5,Producers
+Santiago,SA11_02_133,1671,400.5,Producers
+Santiago,SA11_02_135,1659,421,Producers
+Santiago,SA11_02_137,1646,427.5,Producers
+Santiago,SA11_02_139,1634,423.5,Producers
+Santiago,SA11_02_14,1978,417,Producers
+Santiago,SA11_02_141,1621,457.5,Producers
+Santiago,SA11_02_143,1609,421.5,Producers
+Santiago,SA11_02_145,1597,404,Producers
+Santiago,SA11_02_15,1975,484.5,Producers
+Santiago,SA11_02_16,1973,411.5,Producers
+Santiago,SA11_02_17,1971,436,Producers
+Santiago,SA11_02_18,1968,418.5,Producers
+Santiago,SA11_02_19,1966,454.5,Producers
+Santiago,SA11_02_2,2006,409.5,Producers
+Santiago,SA11_02_20,1963,406,Producers
+Santiago,SA11_02_21,1961,411,Producers
+Santiago,SA11_02_22,1959,441,Producers
+Santiago,SA11_02_23,1956,411,Producers
+Santiago,SA11_02_24,1954,408.5,Producers
+Santiago,SA11_02_25,1951,415,Producers
+Santiago,SA11_02_26,1950,445.5,Producers
+Santiago,SA11_02_27,1949,405,Producers
+Santiago,SA11_02_28,1948,517.5,Producers
+Santiago,SA11_02_29,1947,409,Producers
+Santiago,SA11_02_3,2004,409.5,Producers
+Santiago,SA11_02_30,1945,462,Producers
+Santiago,SA11_02_31,1944,458,Producers
+Santiago,SA11_02_32,1943,409.5,Producers
+Santiago,SA11_02_33,1942,461.5,Producers
+Santiago,SA11_02_34,1940,403.5,Producers
+Santiago,SA11_02_35,1939,434,Producers
+Santiago,SA11_02_36,1938,405.5,Producers
+Santiago,SA11_02_37,1937,402,Producers
+Santiago,SA11_02_38,1935,407,Producers
+Santiago,SA11_02_39,1934,405,Producers
+Santiago,SA11_02_4,2001,407.5,Producers
+Santiago,SA11_02_40,1933,426.5,Producers
+Santiago,SA11_02_41,1932,439,Producers
+Santiago,SA11_02_42,1930,439.5,Producers
+Santiago,SA11_02_43,1929,424,Producers
+Santiago,SA11_02_44,1928,445.5,Producers
+Santiago,SA11_02_45,1927,404.5,Producers
+Santiago,SA11_02_46,1926,408,Producers
+Santiago,SA11_02_47,1924,403,Producers
+Santiago,SA11_02_48,1923,413,Producers
+Santiago,SA11_02_49,1922,411.5,Producers
+Santiago,SA11_02_5,1999,410.5,Producers
+Santiago,SA11_02_50,1921,419,Producers
+Santiago,SA11_02_51,1919,408,Producers
+Santiago,SA11_02_52,1918,428,Producers
+Santiago,SA11_02_53,1917,411.5,Producers
+Santiago,SA11_02_54,1916,422.5,Producers
+Santiago,SA11_02_56,1913,409,Producers
+Santiago,SA11_02_58,1911,407.5,Producers
+Santiago,SA11_02_6,1997,430.5,Producers
+Santiago,SA11_02_60,1908,408.5,Producers
+Santiago,SA11_02_62,1906,404.5,Producers
+Santiago,SA11_02_64,1903,422,Producers
+Santiago,SA11_02_66,1901,401.5,Producers
+Santiago,SA11_02_68,1898,416,Producers
+Santiago,SA11_02_7,1994,458.5,Producers
+Santiago,SA11_02_70,1896,424,Producers
+Santiago,SA11_02_72,1893,420.5,Producers
+Santiago,SA11_02_74,1891,449,Producers
+Santiago,SA11_02_76,1889,404,Producers
+Santiago,SA11_02_78,1886,425.5,Producers
+Santiago,SA11_02_8,1992,497.5,Producers
+Santiago,SA11_02_80,1884,404.5,Producers
+Santiago,SA11_02_82,1881,454.5,Producers
+Santiago,SA11_02_84,1879,407.5,Producers
+Santiago,SA11_02_86,1876,412.5,Producers
+Santiago,SA11_02_88,1874,403,Producers
+Santiago,SA11_02_9,1990,409,Producers
+Santiago,SA11_02_90,1871,408,Producers
+Santiago,SA11_02_92,1869.9,408,Producers
+Santiago,SA11_02_94,1869.8,402,Producers
+Santiago,SA11_02_96,1869.7,411,Producers
+Santiago,SA11_02_98,1869.6,403,Producers
+Azul,AZ11_02_36_8,1960.16,36,Consumers
+Azul,AZ11_02_37_8,1955.85,24,Consumers
+Azul,AZ11_02_38_8,1951.07,6,Consumers
+Azul,AZ11_02_39_8,1945.96,6,Consumers
+Azul,AZ11_02_40_8,1940.68,2,Consumers
+Azul,AZ11_02_41_8,1935.32,4,Consumers
+Azul,AZ11_02_42_8,1929.96,4,Consumers
+Azul,AZ11_02_44_8,1919.32,10,Consumers
+Azul,AZ11_02_46_8,1908.93,4,Consumers
+Azul,AZ11_02_47_8,1903.86,8,Consumers
+Azul,AZ11_02_48_8,1898.91,26,Consumers
+Azul,AZ11_02_51_8,1884.9,2,Consumers
+Azul,AZ11_02_52_8,1880.6,26,Consumers
+Azul,AZ11_02_53_8,1876.56,4,Consumers
+Azul,AZ11_02_54_8,1872.85,8,Consumers
+Azul,AZ11_02_55_8,1869.51,6,Consumers
+Azul,AZ11_02_56_8,1866.59,16,Consumers
+Azul,AZ11_02_57_8,1864.1,4,Consumers
+Azul,AZ11_02_58_8,1862.02,20,Consumers
+Azul,AZ11_02_59_8,1860.31,16,Consumers
+Azul,AZ11_02_60_8,1858.85,44,Consumers
+Azul,AZ11_02_61_8,1857.53,20,Consumers
+Azul,AZ11_02_62_8,1856.23,26,Consumers
+Azul,AZ11_02_63_8,1854.82,30,Consumers
+Azul,AZ11_02_64_8,1853.2,28,Consumers
+Azul,AZ11_02_65_8,1851.24,22,Consumers
+Azul,AZ11_02_66_8,1848.83,12,Consumers
+Azul,AZ11_02_67_8,1845.84,40,Consumers
+Azul,AZ11_02_68_8,1842.17,42,Consumers
+Azul,AZ11_02_69_8,1837.68,38,Consumers
+Azul,AZ11_02_70_8,1832.27,42,Consumers
+Azul,AZ11_02_71_8,1825.81,58,Consumers
+Azul,AZ11_02_72_8,1818.19,120,Consumers
+Azul,AZ11_02_73_8,1809.29,112,Consumers
+Azul,AZ11_02_74_8,1799.04,254,Consumers
+Azul,AZ11_02_75_8,1787.51,38,Consumers
+Azul,AZ11_02_76_8,1774.84,2,Consumers
+Azul,AZ11_02_78_8,1774.48,6,Consumers
+Azul,AZ11_02_79_8,1774.3,2,Consumers
+Azul,AZ11_02_80_8,1774.12,6,Consumers
+Azul,AZ11_02_82_8,1773.76,10,Consumers
+Azul,AZ11_02_83_8,1773.57,56,Consumers
+Azul,AZ11_02_84_8,1763.98,60,Consumers
+Azul,AZ11_02_85_8,1749.59,26,Consumers
+Azul,AZ11_02_86_8,1734.43,38,Consumers
+Azul,AZ11_02_87_8,1718.63,96,Consumers
+Azul,AZ11_02_88_8,1703.82,118,Consumers
+Azul,AZ11_02_89_8,1702.31,50,Consumers
+Azul,AZ11_02_90_8,1685.6100000000001,104,Consumers
+Azul,AZ11_02_91_8,1668.66,60,Consumers
+Azul,AZ11_02_92_8,1653.1399999999999,70,Consumers
+Azul,AZ11_02_93_8,1651.59,18,Consumers
+Azul,AZ11_02_94_8,1634.52,8,Consumers
+Azul,AZ11_02_95_8,1617.59,16,Consumers
+Azul,AZ11_02_97_8,1584.67,20,Consumers
+Azul,AZ11_02_98_8,1568.91,28,Consumers
+Azul,AZ11_02_99_8,1553.66,8,Consumers
+Azul,AZ11_02_100_8,1538.8899999999999,68,Consumers
+Azul,AZ11_02_101_8,1524.58,134,Consumers
+Azul,AZ11_02_102_8,1510.72,70,Consumers
+Azul,AZ11_02_103_8,1497.27,92,Consumers
+Azul,AZ11_02_104_8,1484.22,92,Consumers
+Azul,AZ11_02_105_8,1471.55,110,Consumers
+Azul,AZ11_02_106_8,1459.22,80,Consumers
+Azul,AZ11_02_107_8,1447.23,36,Consumers
+Azul,AZ11_02_108_8,1435.54,32,Consumers
+Azul,AZ11_02_109_8,1424.1399999999999,48,Consumers
+Azul,AZ11_02_110_8,1413,24,Consumers
+Azul,AZ11_02_111_8,1402.1100000000001,12,Consumers
+Azul,AZ11_02_112_8,1391.4299999999998,2,Consumers
+Azul,AZ11_02_113_8,1384.74,4,Consumers
+Azul,AZ11_02_114_8,1380.95,2,Consumers
+Azul,AZ11_02_115_8,1370.65,44,Consumers
+Azul,AZ11_02_116_8,1360.5,58,Consumers
+Azul,AZ11_02_117_8,1350.48,70,Consumers
+Azul,AZ11_02_118_8,1340.5700000000002,88,Consumers
+Azul,AZ11_02_119_8,1330.75,78,Consumers
+Azul,AZ11_02_120_8,1320.99,56,Consumers
+Azul,AZ11_02_121_8,1311.27,50,Consumers
+Azul,AZ11_02_122_8,1301.5700000000002,40,Consumers
+Azul,AZ11_02_123_8,1300.7,56,Consumers
+Azul,AZ11_02_124_8,1299.7,54,Consumers
+Azul,AZ11_02_125_8,1298.8,50,Consumers
+Azul,AZ11_02_126_8,1297.9,62,Consumers
+Azul,AZ11_02_127_8,1297,6,Consumers
+Azul,AZ11_02_128_8,1296.1,62,Consumers
+Azul,AZ11_02_129_8,1295.2,28,Consumers
+Azul,AZ11_02_130_8,1294.3,80,Consumers
+Azul,AZ11_02_131_8,1293.4,39,Consumers
+Azul,AZ11_02_132_8,1292.5,34,Consumers
+Azul,AZ11_02_133_8,1291.6,8,Consumers
+Azul,AZ11_02_134_8,1290.6,10,Consumers
+Azul,AZ11_02_135_8,1289.7,2,Consumers
+Azul,AZ11_02_136_8,1288.8,16,Consumers
+Azul,AZ11_02_138_8,1287,36,Consumers
+Azul,AZ11_02_139_8,1286.1,6,Consumers
+Azul,AZ11_02_140_8,1285.2,32,Consumers
+Azul,AZ11_02_141_8,1284.3,24,Consumers
+Azul,AZ11_02_142_8,1283.4,6,Consumers
+Azul,AZ11_02_143_8,1282.5,4,Consumers
+Azul,AZ11_02_144_8,1281.5,34,Consumers
+Caldeirao,CL17-03_60,1984.46,26,Consumers
+Caldeirao,CL17-03_110,1956.89,32,Consumers
+Caldeirao,CL17-03_220,1896.24,30,Consumers
+Caldeirao,CL17-03_280,1863.16,30,Consumers
+Caldeirao,CL17-03_330,1835.59,28,Consumers
+Caldeirao,CL17-03_380,1808.02,35,Consumers
+Caldeirao,CL17-03_480,1752.88,42,Consumers
+Caldeirao,CL17-03_505,1739.1,63,Consumers
+Caldeirao,CL17-03_549,1714.84,43,Consumers
+Caldeirao,CL17-03_593,1690.58,47,Consumers
+Caldeirao,CL17-03_680,1642.6100000000001,114,Consumers
+Caldeirao,CL17-03_720,1620.55,162,Consumers
+Caldeirao,CL17-03_810,1570.93,9,Consumers
+Caldeirao,CL17-03_850,1548.87,28,Consumers
+Caldeirao,CL17-03_860,1540.78,56,Consumers
+Caldeirao,CL17-03_1020,1411.35,176,Consumers
+Caldeirao,CL17-03_1120,1342.21,44,Consumers
+Caldeirao,CL17-03_1210,1322.31,160,Consumers
+Caldeirao,CL17-03_1260,1311.25,167,Consumers
+Caldeirao,CL17-03_1300,1302.4,141,Consumers
+Caldeirao,CL17-03_1350,1291.3400000000001,108,Consumers
+Caldeirao,CL17-03_1390,1282.5,123,Consumers
+Caldeirao,CL17-03_1430,1273.65,145,Consumers
+Caldeirao,CL17-03_1510,1245.48,233,Consumers
+Caldeirao,CL17-03_1690,1111.3899999999999,133,Consumers
+Caldeirao,CL17-03_1870,991.08,96,Consumers
+Caldeirao,CL17-03_1920,974.71,99,Consumers
+Caldeirao,CL17-03_2020,941.97,113,Consumers
+Caldeirao,CL17-03_2120,909.22,44,Consumers
+Caldeirao,CL17-03_2230,873.2,144,Consumers
+Caldeirao,CL17-03_2330,840.46,81,Consumers
+Caldeirao,CL17-03_2430,807.71,122,Consumers
+Caldeirao,CL17-03_2530,755.9100000000001,185,Consumers
+Caldeirao,CL17-03_2640,684.97,127,Consumers
+Caldeirao,CL17-03_2740,620.47,108,Consumers
+Caldeirao,CL17-03_2840,555.97,63,Consumers
+Caldeirao,CL17-03_2940,491.47,212,Consumers
+Caldeirao,CL17-03_3050,420.52,198,Consumers
+Caldeirao,CL17-03_3150,356.02,147,Consumers
+Caldeirao,CL17-03_3250,291.52,150,Consumers
+Caldeirao,CL17-03_3340,233.47000000000003,106,Consumers
+Caldeirao,CL17-03_3360,220.56999999999994,132,Consumers
+Caldeirao,CL17-03_3390,201.22000000000003,98,Consumers
+Caldeirao,CL17-03_3560,91.56999999999994,44,Consumers
+Caldeirao,CL17-03_3600,65.76999999999998,69,Consumers
+Caldeirao,CL17-03_3610,59.319999999999936,155,Consumers
+Caldeirao,CL17-03_3690,7.720000000000027,41,Consumers
+Caldeirao,CL17-03_3730,-18.079999999999927,222,Consumers
+Caldeirao,CL17-03_3840,-89.02999999999997,176,Consumers
+Caldeirao,CL17-03_3950,-159.98000000000002,199,Consumers
+Caldeirao,CL17-03_4280,-372.82000000000016,163.5,Consumers
+Caldeirao,CL17-03_4400,-470.0799999999999,106,Consumers
+Caldeirao,CL17-03_4510,-559.8699999999999,147,Consumers
+Caldeirao,CL17-03_4620,-649.6500000000001,143.5,Consumers
+Caldeirao,CL17-03_4730,-739.4299999999998,228,Consumers
+Caldeirao,CL17-03_4840,-829.21,121,Consumers
+Caldeirao,CL17-03_4950,-918.9899999999998,127,Consumers
+Caldeirao,CL17-03_5070,-1016.94,131,Consumers
+Caldeirao,CL17-03_5180,-1118.29,94,Consumers
+Caldeirao,CL17-03_5400,-1399.6399999999999,110,Consumers
+Caldeirao,CL17-03_5470,-1489.1599999999999,137,Consumers
+Caldeirao,CL17-03_5540,-1578.6799999999998,110,Consumers
+Caldeirao,CL17-03_5610,-1668.1999999999998,101,Consumers
+Caldeirao,CL17-03_5680,-1757.7199999999998,105,Consumers
+Caveiro,CVL_1B_450,1863,63,Consumers
+Caveiro,CVL_1B_500,1813,26,Consumers
+Caveiro,CVL_1B_550,1764,62,Consumers
+Caveiro,CVL_1B_600,1715,29,Consumers
+Caveiro,CVL_1B_700,1621,58,Consumers
+Caveiro,CVL_1B_750,1578,45,Consumers
+Caveiro,CVL_1B_800,1536,70,Consumers
+Caveiro,CVL_1B_900,1453,128,Consumers
+Caveiro,CVL_1B_1000,1378,75,Consumers
+Caveiro,CVL_1B_1050,1378,101,Consumers
+Caveiro,CVL_1B_1100,1349,133,Consumers
+Caveiro,CVL_1B_1200,1266,368,Consumers
+Caveiro,CVL_1B_1300,1183,412,Consumers
+Caveiro,CVL_1B_1350,1140,144,Consumers
+Caveiro,CVL_1B_1400,1097,65,Consumers
+Caveiro,CVL_1B_1450,1054,371,Consumers
+Caveiro,CVL_1B_1500,1010,383,Consumers
+Caveiro,CVL_1B_1600,924,483,Consumers
+Caveiro,CVL_1B_1800,751,399,Consumers
+Caveiro,CVL_1B_1910,659,237,Consumers
+Caveiro,CVL_1B_2020,564,143,Consumers
+Caveiro,CVL_1B_2130,489,251,Consumers
+Caveiro,CVL_1B_2240,394,234,Consumers
+Caveiro,CVL_1B_2350,319,154,Consumers
+Caveiro,CVL_1B_2400,303,12,Consumers
+Caveiro,CVL_1B_2450,303,99,Consumers
+Caveiro,CVL_1B_2510,285,129,Consumers
+Caveiro,CVL_1B_2560,262,81,Consumers
+Caveiro,CVL_1B_2670,163,197,Consumers
+Caveiro,CVL_1B_2730,110,102,Consumers
+Caveiro,CVL_1B_2780,79,8,Consumers
+Caveiro,CVL_1B_2840,54,83,Consumers
+Caveiro,CVL_1B_2890,52,100,Consumers
+Caveiro,CVL_1B_2950,41,194,Consumers
+Caveiro,CVL_1B_3000,-3,115,Consumers
+Caveiro,CVL_1B_3110,-102,101,Consumers
+Caveiro,CVL_1B_3220,-200,149,Consumers
+Caveiro,CVL_1B_3330,-228,84,Consumers
+Caveiro,CVL_1B_3380,-228,16,Consumers
+Caveiro,CVL_1B_3440,-228,12,Consumers
+Caveiro,CVL_1B_3490,-228,155,Consumers
+Caveiro,CVL_1B_3600,-228,44,Consumers
+Caveiro,CVL_1B_3650,-228,30,Consumers
+Caveiro,CVL_1B_3700,-228,21,Consumers
+Caveiro,CVL_1B_3750,-228,11,Consumers
+Caveiro,CVL_1B_3800,-228,10,Consumers
+Caveiro,CVL_1B_3850,-228,16,Consumers
+Caveiro,CVL_1B_3900,-228,209,Consumers
+Caveiro,CVL_1B_3990,-228,180,Consumers
+Caveiro,CVL_1B_4090,-228,192,Consumers
+Caveiro,CVL_1B_4190,-268,91,Consumers
+Caveiro,CVL_1B_4290,-374,263,Consumers
+Caveiro,CVL_1B_4390,-481,110,Consumers
+Caveiro,CVL_1B_4490,-583,40,Consumers
+Caveiro,CVL_1B_4590,-679,4,Consumers
+Caveiro,CVL_1B_4640,-735,89,Consumers
+Caveiro,CVL_1B_4690,-784,12,Consumers
+Caveiro,CVL_1B_4740,-784,21,Consumers
+Caveiro,CVL_1B_4780,-793,213,Consumers
+Caveiro,CVL_1B_4830,-848,197,Consumers
+Caveiro,CVL_1B_4880,-904,465,Consumers
+Caveiro,CVL_1B_5080,-1127,193,Consumers
+Empadadas Norte,EN_04_1,2010.701012,23,Consumers
+Empadadas Norte,EN_04_2,2010.593845,17,Consumers
+Empadadas Norte,EN_04_3,2010.461394,10,Consumers
+Empadadas Norte,EN_04_4,2010.286803,10,Consumers
+Empadadas Norte,EN_04_5,2010.053216,15,Consumers
+Empadadas Norte,EN_04_6,2009.743776,10,Consumers
+Empadadas Norte,EN_04_7,2009.341628,17,Consumers
+Empadadas Norte,EN_04_8,2008.829916,17,Consumers
+Empadadas Norte,EN_04_9,2008.191782,8,Consumers
+Empadadas Norte,EN_04_10,2007.410372,14,Consumers
+Empadadas Norte,EN_04_11,2006.468829,15,Consumers
+Empadadas Norte,EN_04_12,2005.350298,13,Consumers
+Empadadas Norte,EN_04_13,2004.037921,23,Consumers
+Empadadas Norte,EN_04_14,2002.515645,17,Consumers
+Empadadas Norte,EN_04_15,2000.785849,14,Consumers
+Empadadas Norte,EN_04_16,1998.869346,14,Consumers
+Empadadas Norte,EN_04_17,1996.787752,11,Consumers
+Empadadas Norte,EN_04_18,1994.562682,5,Consumers
+Empadadas Norte,EN_04_19,1992.215751,3,Consumers
+Empadadas Norte,EN_04_20,1989.768574,6,Consumers
+Empadadas Norte,EN_04_21,1987.242766,14,Consumers
+Empadadas Norte,EN_04_22,1984.659943,10,Consumers
+Empadadas Norte,EN_04_23,1982.04172,10,Consumers
+Empadadas Norte,EN_04_24,1979.409711,30,Consumers
+Empadadas Norte,EN_04_25,1976.785532,17,Consumers
+Empadadas Norte,EN_04_26,1974.190798,16,Consumers
+Empadadas Norte,EN_04_27,1971.647124,11,Consumers
+Empadadas Norte,EN_04_28,1969.176126,15,Consumers
+Empadadas Norte,EN_04_29,1966.799418,15,Consumers
+Empadadas Norte,EN_04_30,1964.538615,10,Consumers
+Empadadas Norte,EN_04_31,1962.414577,1,Consumers
+Empadadas Norte,EN_04_115,1956.8271406,7,Consumers
+Empadadas Norte,EN_04_116,1955.1779225,13,Consumers
+Empadadas Norte,EN_04_117,1953.6108064,6,Consumers
+Empadadas Norte,EN_04_118,1952.1110754,3,Consumers
+Empadadas Norte,EN_04_119,1950.6640125,16,Consumers
+Empadadas Norte,EN_04_120,1949.25490088,13,Consumers
+Empadadas Norte,EN_04_121,1947.86902349,6,Consumers
+Empadadas Norte,EN_04_122,1946.49166342,6,Consumers
+Empadadas Norte,EN_04_123,1945.10810373,10,Consumers
+Empadadas Norte,EN_04_124,1943.70362748,18,Consumers
+Empadadas Norte,EN_04_125,1942.26351772,50,Consumers
+Empadadas Norte,EN_04_126,1940.77305752,22,Consumers
+Empadadas Norte,EN_04_127,1939.2175299,9,Consumers
+Empadadas Norte,EN_04_128,1937.582218,33,Consumers
+Empadadas Norte,EN_04_129,1935.8524048,30,Consumers
+Empadadas Norte,EN_04_130,1934.0133734,15,Consumers
+Empadadas Norte,EN_04_131,1932.0504068,19,Consumers
+Empadadas Norte,EN_04_132,1929.9487882,20,Consumers
+Empadadas Norte,EN_04_133,1927.6938005,20,Consumers
+Empadadas Norte,EN_04_134,1925.2707268,14,Consumers
+Empadadas Norte,EN_04_135,1922.6648502,21,Consumers
+Empadadas Norte,EN_04_136,1919.8614537,23,Consumers
+Empadadas Norte,EN_04_137,1916.8458204,12,Consumers
+Empadadas Norte,EN_04_138,1913.6032334,48,Consumers
+Empadadas Norte,EN_04_139,1910.1189757,50,Consumers
+Empadadas Norte,EN_04_140,1906.3783303,36,Consumers
+Empadadas Norte,EN_04_141,1902.3665804,26,Consumers
+Empadadas Norte,EN_04_142,1898.0690089,73,Consumers
+Empadadas Norte,EN_04_143,1893.470899,23,Consumers
+Empadadas Norte,EN_04_144,1888.5617793,20,Consumers
+Empadadas Norte,EN_04_145,1883.3481609,8,Consumers
+Empadadas Norte,EN_04_146,1877.8408005000001,21,Consumers
+Empadadas Norte,EN_04_147,1872.0504547,12,Consumers
+Empadadas Norte,EN_04_148,1865.9878803,13,Consumers
+Empadadas Norte,EN_04_149,1859.663834,5,Consumers
+Empadadas Norte,EN_04_150,1853.0890724,36,Consumers
+Empadadas Norte,EN_04_167,1846.274352,192,Consumers
+Empadadas Norte,EN_04_168,1839.23043,165,Consumers
+Empadadas Norte,EN_04_169,1831.968063,155,Consumers
+Empadadas Norte,EN_04_170,1824.498007,150,Consumers
+Empadadas Norte,EN_04_171,1816.83102,219,Consumers
+Empadadas Norte,EN_04_172,1808.977857,198,Consumers
+Empadadas Norte,EN_04_173,1800.949276,245,Consumers
+Empadadas Norte,EN_04_174,1792.7560330000001,198,Consumers
+Empadadas Norte,EN_04_175,1784.408885,163,Consumers
+Empadadas Norte,EN_04_176,1775.9185889999999,151,Consumers
+Empadadas Norte,EN_04_177,1767.295901,168,Consumers
+Empadadas Norte,EN_04_178,1758.551578,63,Consumers
+Empadadas Norte,EN_04_179,1749.696377,219,Consumers
+Empadadas Norte,EN_04_180,1740.741059,276,Consumers
+Empadadas Norte,EN_04_181,1731.696384,181,Consumers
+Empadadas Norte,EN_04_182,1722.573113,278,Consumers
+Empadadas Norte,EN_04_183,1713.382006,310,Consumers
+Empadadas Norte,EN_04_184,1704.133825,249,Consumers
+Empadadas Norte,EN_04_185,1694.839329,194,Consumers
+Empadadas Norte,EN_04_186,1685.50928,352,Consumers
+Empadadas Norte,EN_04_187,1676.154439,311,Consumers
+Empadadas Norte,EN_04_188,1666.785566,287,Consumers
+Empadadas Norte,EN_04_189,1657.413421,233,Consumers
+Empadadas Norte,EN_04_190,1648.048766,326,Consumers
+Empadadas Norte,EN_04_191,1638.702361,94,Consumers
+Empadadas Norte,EN_04_192,1629.384968,65,Consumers
+Empadadas Norte,EN_04_193,1620.107345,91,Consumers
+Empadadas Norte,EN_04_194,1610.880255,175,Consumers
+Empadadas Norte,EN_04_195,1601.714459,129,Consumers
+Empadadas Norte,EN_04_196,1592.620716,169,Consumers
+Empadadas Norte,EN_04_197,1583.6097869999999,40,Consumers
+Empadadas Norte,EN_04_198,1574.692434,389,Consumers
+Empadadas Norte,EN_04_199,1565.879416,465,Consumers
+Empadadas Norte,EN_04_200,1557.181495,374,Consumers
+Empadadas Norte,EN_04_201,1548.609432,408,Consumers
+Empadadas Norte,EN_04_202,1540.173986,209,Consumers
+Empadadas Norte,EN_04_203,1531.885919,574,Consumers
+Empadadas Norte,EN_04_204,1523.7559919999999,230,Consumers
+Empadadas Norte,EN_04_205,1515.794965,260,Consumers
+Empadadas Norte,EN_04_206,1508.013598,340,Consumers
+Empadadas Norte,EN_04_207,1500.422654,427,Consumers
+Empadadas Norte,EN_04_208,1493.032522,362,Consumers
+Empadadas Norte,EN_04_209,1485.845094,540,Consumers
+Empadadas Norte,EN_04_210,1478.853763,337,Consumers
+Empadadas Norte,EN_04_211,1472.0515500000001,439,Consumers
+Empadadas Norte,EN_04_212,1465.43148,618,Consumers
+Empadadas Norte,EN_04_213,1458.9865730000001,323,Consumers
+Empadadas Norte,EN_04_214,1452.709853,461,Consumers
+Empadadas Norte,EN_04_215,1446.5943419999999,546,Consumers
+Empadadas Norte,EN_04_216,1440.633063,404,Consumers
+Empadadas Norte,EN_04_217,1434.819038,601,Consumers
+Empadadas Norte,EN_04_218,1429.14529,650,Consumers
+Empadadas Norte,EN_04_219,1423.6048409999999,420,Consumers
+Empadadas Norte,EN_04_220,1418.1907139999998,315,Consumers
+Empadadas Norte,EN_04_221,1412.895932,523,Consumers
+Empadadas Norte,EN_04_222,1407.7135170000001,397,Consumers
+Funda,FN02_8_7,2009.14,11,Consumers
+Funda,FN02_58_7,1952.08,1,Consumers
+Funda,FN02_108_7,1793.96,2,Consumers
+Funda,FN02_128_7,1727.96,2,Consumers
+Funda,FN02_158_7,1628.96,2,Consumers
+Funda,FN02_168_7,1595.96,3,Consumers
+Funda,FN02_187_9,1532.6100000000001,21,Consumers
+Funda,FN02_199_4,1494.66,3,Consumers
+Funda,FN02_211,1456.512,8,Consumers
+Funda,FN02_222_5,1421.938,55.5,Consumers
+Funda,FN02_245_5,1407.588,46.5,Consumers
+Funda,FN02_257_1,1400.392,8,Consumers
+Funda,FN02_268_6,1393.234,18.5,Consumers
+Funda,FN02_280_1,1386.042,18,Consumers
+Funda,FN02_291_6,1378.886,40,Consumers
+Funda,FN02_303_2,1369.23,18,Consumers
+Funda,FN02_314_7,1358.54,14,Consumers
+Funda,FN02_326_3,1347.796,24,Consumers
+Funda,FN02_337_8,1337.106,8,Consumers
+Funda,FN02_349_3,1326.362,31.5,Consumers
+Funda,FN02_368_7,1308.35,5,Consumers
+Funda,FN02_380_4,1297.47,20.5,Consumers
+Funda,FN02_394_3,1284.577,9.5,Consumers
+Funda,FN02_409,1270.935,10,Consumers
+Funda,FN02_423_4,1257.455,30,Consumers
+Funda,FN02_432_3,1249.2,2,Consumers
+Funda,FN02_450_1,1226.2469999999998,2,Consumers
+Funda,FN02_463_2,1208.7893158000002,3,Consumers
+Funda,FN02_509_4,1187.008,21,Consumers
+Funda,FN02_523_9,1167.368,9,Consumers
+Funda,FN02_549_8,1157.2359999999999,26,Consumers
+Funda,FN02_561_8,1140.9859999999999,33,Consumers
+Funda,FN02_573_8,1124.624,21.5,Consumers
+Funda,FN02_585_8,1108.368,25,Consumers
+Funda,FN02_597_9,1092.004,62,Consumers
+Funda,FN02_609_9,1075.752,45.5,Consumers
+Funda,FN02_622,1059.3899999999999,6,Consumers
+Funda,FN02_634,1043.13,27,Consumers
+Funda,FN02_646_1,1026.7759999999998,4.5,Consumers
+Funda,FN02_657_3,1017.234,12,Consumers
+Funda,FN02_692_6,969.45,3,Consumers
+Funda,FN02_704_6,953.2,3,Consumers
+Ginjal,GN_2_5,2013,54,Consumers
+Ginjal,GN_5,2007,38,Consumers
+Ginjal,GN_7_5,2001,40,Consumers
+Ginjal,GN_10,1995,28,Consumers
+Ginjal,GN_12_5,1988,34,Consumers
+Ginjal,GN_15,1982,13,Consumers
+Ginjal,GN_17_5,1976,11,Consumers
+Ginjal,GN_20,1970,11,Consumers
+Ginjal,GN_22_5,1964,10,Consumers
+Ginjal,GN_27_5,1952,8,Consumers
+Ginjal,GN_32_5,1939,4,Consumers
+Ginjal,GN_35,1933,5,Consumers
+Ginjal,GN_37_5,1927,5,Consumers
+Ginjal,GN_40,1921,8,Consumers
+Ginjal,GN_42_5,1914,5,Consumers
+Ginjal,GN_45,1908,8,Consumers
+Ginjal,GN_50,1895,4,Consumers
+Ginjal,GN_55,1882,7,Consumers
+Ginjal,GN_57_5,1876,4,Consumers
+Ginjal,GN_60,1869,8,Consumers
+Ginjal,GN_62_5,1863,10,Consumers
+Ginjal,GN_65,1856,9,Consumers
+Ginjal,GN_67_5,1850,17,Consumers
+Ginjal,GN_70,1843,13,Consumers
+Ginjal,GN_77_5,1823,16,Consumers
+Ginjal,GN_80,1816,8,Consumers
+Ginjal,GN_82_5,1809,6,Consumers
+Ginjal,GN_85,1802,39,Consumers
+Ginjal,GN_87_5,1795,19,Consumers
+Ginjal,GN_92_5,1780,24,Consumers
+Ginjal,GN_95,1773,34,Consumers
+Ginjal,GN_97_5,1764,25,Consumers
+Ginjal,GN_100,1755,22,Consumers
+Ginjal,GN_105,1739,24,Consumers
+Ginjal,GN_110,1723,25,Consumers
+Ginjal,GN_112_5,1716,44,Consumers
+Ginjal,GN_115,1708,34,Consumers
+Ginjal,GN_117_5,1700,43,Consumers
+Ginjal,GN_122_5,1684,16,Consumers
+Ginjal,GN_127_5,1668,53,Consumers
+Ginjal,GN_132_5,1652,39,Consumers
+Ginjal,GN_142_5,1632,93,Consumers
+Ginjal,GN_145,1627,77,Consumers
+Ginjal,GN_147_5,1620,16,Consumers
+Ginjal,GN_150,1613,54,Consumers
+Ginjal,GN_152_5,1607,41,Consumers
+Ginjal,GN_155,1602,69,Consumers
+Ginjal,GN_157_5,1595,25,Consumers
+Ginjal,GN_160,1589,46,Consumers
+Ginjal,GN_162_5,1586,106,Consumers
+Ginjal,GN_165,1583,21,Consumers
+Ginjal,GN_167_5,1580,53,Consumers
+Ginjal,GN_170,1577,20,Consumers
+Ginjal,GN_172_5,1574,4,Consumers
+Ginjal,GN_175,1571,55,Consumers
+Ginjal,GN_177_5,1567,17,Consumers
+Ginjal,GN_180,1564,21,Consumers
+Ginjal,GN_182_5,1561,5,Consumers
+Ginjal,GN_185,1558,21,Consumers
+Ginjal,GN_190,1549,51,Consumers
+Ginjal,GN_192_5,1545,14,Consumers
+Ginjal,GN_197_5,1537,15,Consumers
+Ginjal,GN_200,1532,6,Consumers
+Ginjal,GN_202_5,1528,18,Consumers
+Ginjal,GN_207_5,1521,13,Consumers
+Ginjal,GN_210,1518,34,Consumers
+Ginjal,GN_212_5,1515,16,Consumers
+Ginjal,GN_215,1512,24,Consumers
+Ginjal,GN_217_5,1510,28,Consumers
+Ginjal,GN_220,1507,22,Consumers
+Ginjal,GN_225,1501,6,Consumers
+Ginjal,GN_227_5,1499,37,Consumers
+Ginjal,GN_230,1496,24,Consumers
+Ginjal,GN_232_5,1493,17,Consumers
+Ginjal,GN_235,1490,4,Consumers
+Ginjal,GN_237_5,1487,21,Consumers
+Ginjal,GN_240,1485,17,Consumers
+Ginjal,GN_242_5,1482,16,Consumers
+Ginjal,GN_247_5,1476,17,Consumers
+Ginjal,GN_250,1474,6,Consumers
+Ginjal,GN_252_5,1470,18,Consumers
+Ginjal,GN_255,1467,16,Consumers
+Ginjal,GN_260,1460,14,Consumers
+Ginjal,GN_262_5,1456,31,Consumers
+Ginjal,GN_270,1448,27,Consumers
+Ginjal,GN_275,1441,13,Consumers
+Ginjal,GN_277_5,1438,44,Consumers
+Ginjal,GN_282_5,1433,12,Consumers
+Ginjal,GN_287_5,1428,19,Consumers
+Peixinho,PEX1_40,2013.81,46,Consumers
+Peixinho,PEX1_80,2009.64,66,Consumers
+Peixinho,PEX1_100,2007.44,38,Consumers
+Peixinho,PEX1_120,2005.35,25,Consumers
+Peixinho,PEX1_160,2001.21,43,Consumers
+Peixinho,PEX1_500,1981.97,47,Consumers
+Peixinho,PEX1_540,1923.77,26,Consumers
+Peixinho,PEX1_580,1836.55,55,Consumers
+Peixinho,PEX1_620,1731.79,26,Consumers
+Peixinho,PEX1_660,1621,32,Consumers
+Peixinho,PEX1_700,1515.67,22,Consumers
+Peixinho,PEX1_740,1427.3,46,Consumers
+Peixinho,PEX1_780,1367.38,38,Consumers
+Peixinho,PEX1_820,1347.23,98,Consumers
+Peixinho,PEX1_860,1343.31,106,Consumers
+Peixinho,PEX1_900,1333.33,95,Consumers
+Peixinho,PEX1_940,1318.38,213,Consumers
+Peixinho,PEX1_980,1299.54,212,Consumers
+Peixinho,PEX1_1020,1277.9,210,Consumers
+Peixinho,PEX1_1060,1254.54,173,Consumers
+Peixinho,PEX1_1100,1230.55,214,Consumers
+Peixinho,PEX1_1140,1207,225,Consumers
+Peixinho,PEX1_1180,1184.98,210,Consumers
+Peixinho,PEX1_1220,1165.58,206,Consumers
+Peixinho,PEX1_1260,1149.87,214,Consumers
+Peixinho,PEX1_1300,1138.94,207,Consumers
+Peixinho,PEX1_1340,1133.88,213,Consumers
+Peixinho,PEX1_1380,1127.8600000000001,194,Consumers
+Peixinho,PEX1_1400,1118.06,190,Consumers
+Peixinho,PEX1_1440,1086.45,246,Consumers
+Peixinho,PEX1_1480,1042.0700000000002,343,Consumers
+Peixinho,PEX1_1500,1016.33,205,Consumers
+Peixinho,PEX1_1520,988.86,453,Consumers
+Peixinho,PEX1_1540,960.17,226,Consumers
+Peixinho,PEX1_1560,930.7,610,Consumers
+Peixinho,PEX1_2120,627.7,223,Consumers
+Peixinho,PEX1_2160,515.4000000000001,211,Consumers
+Peixinho,PEX1_2200,365.29999999999995,229,Consumers
+Peixinho,PEX1_2240,189.79999999999995,223,Consumers
+Peixinho,PEX1_2280,1.2999999999999545,213,Consumers
+Peixinho,PEX1_2320,-187.9000000000001,236,Consumers
+Prata,PR_2020_151,1990,44,Consumers
+Prata,PR_2020_155,1976,38,Consumers
+Prata,PR_2020_159,1962,34,Consumers
+Prata,PR_2020_163,1948,121,Consumers
+Prata,PR_2020_167,1935,77,Consumers
+Prata,PR_2020_171,1921,112,Consumers
+Prata,PR_2020_175,1908,99,Consumers
+Prata,PR_2020_179,1895,116,Consumers
+Prata,PR_2020_183,1882,59,Consumers
+Prata,PR_2020_187,1868,88,Consumers
+Prata,PR_2020_191,1855,128,Consumers
+Prata,PR_2020_195,1842,159,Consumers
+Prata,PR_2020_199,1829,90,Consumers
+Prata,PR_2020_201,1822,79,Consumers
+Prata,PR_2020_205,1809,86,Consumers
+Prata,PR_2020_209,1796,76,Consumers
+Prata,PR_2020_213,1783,135,Consumers
+Prata,PR_2020_217,1771,81,Consumers
+Prata,PR_2020_221,1760,111,Consumers
+Prata,PR_2020_225,1749,60,Consumers
+Prata,PR_2020_229,1738,112,Consumers
+Prata,PR_2020_233,1727,73,Consumers
+Prata,PR_2020_237,1716,80,Consumers
+Prata,PR_2020_241,1705,86,Consumers
+Prata,PR_2020_245,1694,85,Consumers
+Prata,PR_2020_249,1683,86,Consumers
+Prata,PR_2020_251,1678,138,Consumers
+Prata,PR_2020_255,1667,102,Consumers
+Prata,PR_2020_259,1656,108,Consumers
+Prata,PR_2020_263,1645,106,Consumers
+Prata,PR_2020_267,1634,75,Consumers
+Prata,PR_2020_271,1623,87,Consumers
+Prata,PR_2020_275,1612,69,Consumers
+Prata,PR_2020_279,1600,71,Consumers
+Prata,PR_2020_283,1589,73,Consumers
+Prata,PR_2020_287,1578,77,Consumers
+Prata,PR_2020_291,1568,58,Consumers
+Prata,PR_2020_295,1557,96,Consumers
+Prata,PR_2020_299,1547,50,Consumers
+Prata,PR_2020_301,1541,112,Consumers
+Prata,PR_2020_305,1531,97,Consumers
+Prata,PR_2020_309,1520,92,Consumers
+Prata,PR_2020_313,1509,145,Consumers
+Prata,PR_2020_317,1498,99,Consumers
+Prata,PR_2020_321,1487,112,Consumers
+Prata,PR_2020_325,1477,135,Consumers
+Prata,PR_2020_329,1460,51,Consumers
+Prata,PR_2020_333,1436,74,Consumers
+Prata,PR_2020_337,1410,41,Consumers
+Prata,PR_2020_345,1356,52,Consumers
+Prata,PR_2020_349,1329,25,Consumers
+Prata,PR_2020_351,1315,115,Consumers
+Prata,PR_2020_355,1290,115,Consumers
+Prata,PR_2020_359,1262,111,Consumers
+Prata,PR_2020_361,1247,126,Consumers
+Prata,PR_2020_375,1218,119,Consumers
+Prata,PR_2020_379,1188,128,Consumers
+Prata,PR_2020_383,1156,115,Consumers
+Prata,PR_2020_387,1126,101,Consumers
+Prata,PR_2020_391,1092,132,Consumers
+Prata,PR_2020_395,1046,189,Consumers
+Prata,PR_2020_399,929,153,Consumers
+Prata,PR_2020_415,810,145,Consumers
+Prata,PR_2020_419,733,140,Consumers
+Santiago,SA11_02_0,2011,24,Consumers
+Santiago,SA11_02_1,2009,38,Consumers
+Santiago,SA11_02_2,2006,26,Consumers
+Santiago,SA11_02_3,2004,32,Consumers
+Santiago,SA11_02_4,2001,46,Consumers
+Santiago,SA11_02_5,1999,42,Consumers
+Santiago,SA11_02_6,1997,28,Consumers
+Santiago,SA11_02_7,1994,26,Consumers
+Santiago,SA11_02_8,1992,8,Consumers
+Santiago,SA11_02_9,1990,8,Consumers
+Santiago,SA11_02_10,1987,8,Consumers
+Santiago,SA11_02_11,1985,12,Consumers
+Santiago,SA11_02_12,1982,10,Consumers
+Santiago,SA11_02_13,1980,34,Consumers
+Santiago,SA11_02_14,1978,36,Consumers
+Santiago,SA11_02_15,1975,60,Consumers
+Santiago,SA11_02_16,1973,22,Consumers
+Santiago,SA11_02_17,1971,16,Consumers
+Santiago,SA11_02_18,1968,18,Consumers
+Santiago,SA11_02_19,1966,16,Consumers
+Santiago,SA11_02_20,1963,24,Consumers
+Santiago,SA11_02_21,1961,26,Consumers
+Santiago,SA11_02_22,1959,16,Consumers
+Santiago,SA11_02_24,1954,36,Consumers
+Santiago,SA11_02_25,1951,22,Consumers
+Santiago,SA11_02_26,1950,16,Consumers
+Santiago,SA11_02_27,1949,34,Consumers
+Santiago,SA11_02_28,1948,12,Consumers
+Santiago,SA11_02_29,1947,28,Consumers
+Santiago,SA11_02_30,1945,42,Consumers
+Santiago,SA11_02_31,1944,4,Consumers
+Santiago,SA11_02_32,1943,42,Consumers
+Santiago,SA11_02_33,1942,42,Consumers
+Santiago,SA11_02_34,1940,20,Consumers
+Santiago,SA11_02_35,1939,10,Consumers
+Santiago,SA11_02_36,1938,34,Consumers
+Santiago,SA11_02_37,1937,20,Consumers
+Santiago,SA11_02_39,1934,12,Consumers
+Santiago,SA11_02_40,1933,34,Consumers
+Santiago,SA11_02_41,1932,82,Consumers
+Santiago,SA11_02_42,1930,40,Consumers
+Santiago,SA11_02_43,1929,42,Consumers
+Santiago,SA11_02_44,1928,32,Consumers
+Santiago,SA11_02_45,1927,32,Consumers
+Santiago,SA11_02_46,1926,16,Consumers
+Santiago,SA11_02_47,1924,30,Consumers
+Santiago,SA11_02_48,1923,38,Consumers
+Santiago,SA11_02_49,1922,48,Consumers
+Santiago,SA11_02_50,1921,52,Consumers
+Santiago,SA11_02_51,1919,38,Consumers
+Santiago,SA11_02_52,1918,134,Consumers
+Santiago,SA11_02_53,1917,88,Consumers
+Santiago,SA11_02_54,1916,50,Consumers
+Santiago,SA11_02_55,1914,48,Consumers
+Santiago,SA11_02_56,1913,64,Consumers
+Santiago,SA11_02_57,1912,36,Consumers
+Santiago,SA11_02_58,1911,16,Consumers
+Santiago,SA11_02_59,1910,38,Consumers
+Santiago,SA11_02_60,1908,40,Consumers
+Santiago,SA11_02_61,1907,86,Consumers
+Santiago,SA11_02_62,1906,26,Consumers
+Santiago,SA11_02_63,1905,46,Consumers
+Santiago,SA11_02_64,1903,24,Consumers
+Santiago,SA11_02_65,1902,28,Consumers
+Santiago,SA11_02_66,1901,44,Consumers
+Santiago,SA11_02_67,1900,48,Consumers
+Santiago,SA11_02_68,1898,34,Consumers
+Santiago,SA11_02_69,1897,30,Consumers
+Santiago,SA11_02_70,1896,34,Consumers
+Santiago,SA11_02_71,1895,6,Consumers
+Santiago,SA11_02_72,1893,26,Consumers
+Santiago,SA11_02_73,1892,40,Consumers
+Santiago,SA11_02_74,1891,30,Consumers
+Santiago,SA11_02_75,1890,18,Consumers
+Santiago,SA11_02_76,1889,32,Consumers
+Santiago,SA11_02_77,1887,14,Consumers
+Santiago,SA11_02_78,1886,24,Consumers
+Santiago,SA11_02_79,1885,48,Consumers
+Santiago,SA11_02_80,1884,26,Consumers
+Santiago,SA11_02_81,1882,36,Consumers
+Santiago,SA11_02_82,1881,18,Consumers
+Santiago,SA11_02_83,1880,36,Consumers
+Santiago,SA11_02_84,1879,18,Consumers
+Santiago,SA11_02_85,1877,38,Consumers
+Santiago,SA11_02_86,1876,42,Consumers
+Santiago,SA11_02_87,1875,24,Consumers
+Santiago,SA11_02_88,1874,8,Consumers
+Santiago,SA11_02_89,1872,16,Consumers
+Santiago,SA11_02_90,1871,10,Consumers
+Santiago,SA11_02_91,1869.9,2,Consumers
+Santiago,SA11_02_92,1869.9,28,Consumers
+Santiago,SA11_02_93,1869.8,4,Consumers
+Santiago,SA11_02_94,1869.8,2,Consumers
+Santiago,SA11_02_95,1869.7,6,Consumers
+Santiago,SA11_02_96,1869.7,6,Consumers
+Santiago,SA11_02_97,1869.6,62,Consumers
+Santiago,SA11_02_98,1869.6,52,Consumers
+Santiago,SA11_02_99,1869.5,104,Consumers
+Santiago,SA11_02_100,1869.5,102,Consumers
+Santiago,SA11_02_101,1869.4,92,Consumers
+Santiago,SA11_02_102,1864,134,Consumers
+Santiago,SA11_02_103,1858,198,Consumers
+Santiago,SA11_02_104,1851,122,Consumers
+Santiago,SA11_02_105,1845,34,Consumers
+Santiago,SA11_02_106,1839,276,Consumers
+Santiago,SA11_02_108,1826,198,Consumers
+Santiago,SA11_02_109,1820,98,Consumers
+Santiago,SA11_02_110,1814,42,Consumers
+Santiago,SA11_02_111,1808,96,Consumers
+Santiago,SA11_02_112,1802,182,Consumers
+Santiago,SA11_02_113,1795,138,Consumers
+Santiago,SA11_02_114,1789,244,Consumers
+Santiago,SA11_02_115,1783,140,Consumers
+Santiago,SA11_02_116,1777,258,Consumers
+Santiago,SA11_02_117,1771,36,Consumers
+Santiago,SA11_02_118,1764,100,Consumers
+Santiago,SA11_02_119,1758,106,Consumers
+Santiago,SA11_02_120,1752,52,Consumers
+Santiago,SA11_02_121,1746,106,Consumers
+Santiago,SA11_02_122,1739,116,Consumers
+Santiago,SA11_02_123,1733,106,Consumers
+Santiago,SA11_02_124,1727,72,Consumers
+Santiago,SA11_02_125,1721,66,Consumers
+Santiago,SA11_02_126,1715,152,Consumers
+Santiago,SA11_02_127,1708,168,Consumers
+Santiago,SA11_02_128,1702,60,Consumers
+Santiago,SA11_02_129,1696,62,Consumers
+Santiago,SA11_02_130,1690,68,Consumers
+Santiago,SA11_02_131,1684,66,Consumers
+Santiago,SA11_02_132,1677,240,Consumers
+Santiago,SA11_02_133,1671,140,Consumers
+Santiago,SA11_02_134,1665,94,Consumers
+Santiago,SA11_02_135,1659,98,Consumers
+Santiago,SA11_02_136,1652,280,Consumers
+Santiago,SA11_02_137,1646,154,Consumers
+Santiago,SA11_02_138,1640,108,Consumers
+Santiago,SA11_02_139,1634,106,Consumers
+Santiago,SA11_02_140,1628,150,Consumers
+Santiago,SA11_02_141,1621,110,Consumers
+Santiago,SA11_02_142,1615,100,Consumers
+Santiago,SA11_02_143,1609,64,Consumers
+Santiago,SA11_02_144,1603,38,Consumers
+Santiago,SA11_02_145,1597,164,Consumers

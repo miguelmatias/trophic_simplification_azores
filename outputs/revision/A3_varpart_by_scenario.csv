@@ -1,0 +1,76 @@
+phase,component,value,n_bins,scenario
+Phase 1,Pure NAO_Median_Value,0,23,full_record
+Phase 1,Pure estimate,0,23,full_record
+Phase 1,Shared,0,23,full_record
+Phase 2,Pure NAO_Median_Value,0,10,full_record
+Phase 2,Pure estimate,0,10,full_record
+Phase 2,Shared,0,10,full_record
+Phase 3,Pure NAO_Median_Value,0.08763191653365532,14,full_record
+Phase 3,Pure estimate,0.5590523933206534,14,full_record
+Phase 3,Shared,0,14,full_record
+Phase 4,Pure NAO_Median_Value,0,10,full_record
+Phase 4,Pure estimate,0.253715361892923,10,full_record
+Phase 4,Shared,0.0024048939750200837,10,full_record
+Phase 5,Pure NAO_Median_Value,0.11437535018047906,8,full_record
+Phase 5,Pure estimate,0.13993548856310078,8,full_record
+Phase 5,Shared,0.04310233644338146,8,full_record
+Phase 1,Pure NAO_Median_Value,NA,0,common_1400_2000
+Phase 1,Pure estimate,NA,0,common_1400_2000
+Phase 1,Shared,NA,0,common_1400_2000
+Phase 2,Pure NAO_Median_Value,NA,0,common_1400_2000
+Phase 2,Pure estimate,NA,0,common_1400_2000
+Phase 2,Shared,NA,0,common_1400_2000
+Phase 3,Pure NAO_Median_Value,NA,2,common_1400_2000
+Phase 3,Pure estimate,NA,2,common_1400_2000
+Phase 3,Shared,NA,2,common_1400_2000
+Phase 4,Pure NAO_Median_Value,0,10,common_1400_2000
+Phase 4,Pure estimate,0.253715361892923,10,common_1400_2000
+Phase 4,Shared,0.0024048939750200837,10,common_1400_2000
+Phase 5,Pure NAO_Median_Value,0.11437535018047906,8,common_1400_2000
+Phase 5,Pure estimate,0.13993548856310078,8,common_1400_2000
+Phase 5,Shared,0.04310233644338146,8,common_1400_2000
+Phase 1,Pure NAO_Median_Value,NA,0,n_lakes_ge_6
+Phase 1,Pure estimate,NA,0,n_lakes_ge_6
+Phase 1,Shared,NA,0,n_lakes_ge_6
+Phase 2,Pure NAO_Median_Value,NA,0,n_lakes_ge_6
+Phase 2,Pure estimate,NA,0,n_lakes_ge_6
+Phase 2,Shared,NA,0,n_lakes_ge_6
+Phase 3,Pure NAO_Median_Value,0,6,n_lakes_ge_6
+Phase 3,Pure estimate,0.2155154581923978,6,n_lakes_ge_6
+Phase 3,Shared,0,6,n_lakes_ge_6
+Phase 4,Pure NAO_Median_Value,0,10,n_lakes_ge_6
+Phase 4,Pure estimate,0.253715361892923,10,n_lakes_ge_6
+Phase 4,Shared,0.0024048939750200837,10,n_lakes_ge_6
+Phase 5,Pure NAO_Median_Value,0.11437535018047906,8,n_lakes_ge_6
+Phase 5,Pure estimate,0.13993548856310078,8,n_lakes_ge_6
+Phase 5,Shared,0.04310233644338146,8,n_lakes_ge_6
+Phase 1,Pure NAO_Median_Value,0,23,island_balanced
+Phase 1,Pure estimate,0,23,island_balanced
+Phase 1,Shared,0,23,island_balanced
+Phase 2,Pure NAO_Median_Value,0,10,island_balanced
+Phase 2,Pure estimate,0,10,island_balanced
+Phase 2,Shared,0,10,island_balanced
+Phase 3,Pure NAO_Median_Value,0.06496306045566613,14,island_balanced
+Phase 3,Pure estimate,0.5306715576211827,14,island_balanced
+Phase 3,Shared,0,14,island_balanced
+Phase 4,Pure NAO_Median_Value,0,10,island_balanced
+Phase 4,Pure estimate,0.1670678794464142,10,island_balanced
+Phase 4,Shared,0,10,island_balanced
+Phase 5,Pure NAO_Median_Value,0.08171111200023307,8,island_balanced
+Phase 5,Pure estimate,0.06718320702429548,8,island_balanced
+Phase 5,Shared,0,8,island_balanced
+Phase 1,Pure NAO_Median_Value,0,43,lake_conditioned
+Phase 1,Pure estimate,0,43,lake_conditioned
+Phase 1,Shared,0.0040686404867703585,43,lake_conditioned
+Phase 2,Pure NAO_Median_Value,0,28,lake_conditioned
+Phase 2,Pure estimate,0,28,lake_conditioned
+Phase 2,Shared,0,28,lake_conditioned
+Phase 3,Pure NAO_Median_Value,2.97025617993274e-4,71,lake_conditioned
+Phase 3,Pure estimate,0.06159396711462661,71,lake_conditioned
+Phase 3,Shared,0,71,lake_conditioned
+Phase 4,Pure NAO_Median_Value,0,73,lake_conditioned
+Phase 4,Pure estimate,0.013210211120883608,73,lake_conditioned
+Phase 4,Shared,0,73,lake_conditioned
+Phase 5,Pure NAO_Median_Value,0.0033039056034442904,63,lake_conditioned
+Phase 5,Pure estimate,0.01356426935723265,63,lake_conditioned
+Phase 5,Shared,0.005354634148824755,63,lake_conditioned
