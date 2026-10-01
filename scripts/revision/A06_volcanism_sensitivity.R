@@ -213,7 +213,7 @@ calc_phase_varpart_lake3 <- function(df, phase_breaks, min_n = 8) {
   })
 }
 
-# ---- Significance (mirror Fig. 5 / A11; Condition(lake) throughout) ----
+# ---- Significance (mirror Fig. 5; Condition(lake) throughout) ----
 phase_sig2 <- purrr::imap_dfr(phase_breaks, function(bounds, phase_name) {
   lo <- bounds[1]; hi <- bounds[2]
   sub <- lake_env %>%
@@ -960,20 +960,6 @@ out_png <- "outputs/revision/figures/A6_alt_figure5_standard_vs_tephra.png"
 ggplot2::ggsave(
   out_png, alt_fig5,
   width = 9.0, height = 10.8, units = "in", dpi = 300, bg = "white"
-)
-
-# Keep simpler phase-only extract (same data as row a) for SI continuity
-p_phase_only <- p_a +
-  ggplot2::labs(
-    title = "A6: Lake-level varpart with lake-specific tephra (+ Condition(lake))",
-    subtitle = paste0(
-      "Faded fractions = non-significant (permutation p ≥ 0.05); ",
-      "extract of alt Fig. 5 row (a)"
-    )
-  )
-ggplot2::ggsave(
-  "outputs/revision/figures/A6_tephra_varpart.png",
-  p_phase_only, width = 9.0, height = 4.2, dpi = 150, bg = "white"
 )
 
 message("Saved ", out_png)

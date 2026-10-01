@@ -1,4 +1,4 @@
-# Revision analyses A1–A11 — results summary
+# Revision analyses A1–A9 + A1x — results summary
 
 Branch: `revision-response`  
 Generated from scripts in `scripts/revision/`.  
@@ -36,9 +36,11 @@ Chironomid counts remain low (lake medians often <<100); n = 50 is the honest co
 
 **Implication for claims:** A1 answers R1’s sedimentation / time-standardisation concern about **temporal richness curves** (Fig. 4 style). After rarefaction, regional producer richness is only mildly lower post-1600 and consumers are flat — so do **not** hang the title on a long-term decline in rarefied regional richness.
 
-That is **not** the Mendoza & Araújo “simplification” claim used in this paper. Simplification here means increasing prevalence of **species-poor CTS** (yellow CTS1). That claim is tested by Fig. 3d (CTS occupancy over time) + Fig. 3e / **A10** (CTS1 remains the lowest-richness structure with and without rarefaction). A1 does not overturn it.
+That is **not** the Mendoza & Araújo “simplification” claim used in this paper. Simplification here means increasing prevalence of **species-poor CTS** (yellow CTS1). That claim is tested by Fig. 3d (CTS occupancy over time) + Fig. 3e / **A1x** (CTS1 remains the lowest-richness structure with and without rarefaction). A1 does not overturn it.
 
 Figures: `outputs/revision/figures/A1_fig4_rarefied_richness.png`, `A1_fig3e_lake_rarefied_richness.png`, `A1_sample_counts.png`
+
+See also **A1x** (observed vs rarefied richness by CTS), which follows A1 and addresses the same rarefaction / simplification question at the CTS level.
 
 ---
 
@@ -132,7 +134,7 @@ Tephra inventory: **27 lake-specific** rows in `data/revision/tephra_events.csv`
 **Interpretation (response letter / SI caption):**  
 This lake-level alternative Figure 5 places the standard NAO + vegetation partitioning (left) beside the same design with lake-specific tephra added (right), both after Condition(lake), so the tephra contrast is apples-to-apples rather than a regional-vs-lake comparison. Across historical phases where tephra varies (Phases 1–4), pure tephra is small: Phase 1 adj. R² ≈ 0.014 (p ≈ 0.066, NS); Phases 2–4 ≈ 0 (all NS). Pure vegetation remains the only significant unique fraction in Phases 3–4 and is essentially unchanged when tephra is included; Phase 5 (+tephra) is not estimable (no tephra variation after 1620 CE), so the empty right Phase 5 bar is “n/a”, not a null effect. Moving-window panels keep the vegetation-dominated interval (~1000–1400 CE) on both sides, but early windows (~480–660 CE) show significant pure-tephra fractions (adj. R² ≈ 0.037–0.049; p ≈ 0.031–0.045) consistent with a local volcanic signal before major vegetation change. Right-side windows after ~1780 are missing because tephra is invariant (dropped), not because fits failed. Magnitudes are smaller than published regional Figure 5 because Condition(lake) absorbs among-lake structure; compare left vs right within this figure. Overall, lake-specific volcanism does not reallocate the main NAO/vegetation chronology, but early tephra is not uniformly non-significant.
 
-Figures/tables: `outputs/revision/figures/A6_alt_figure5_standard_vs_tephra.png` (+ PDF), `A6_tephra_varpart.png` (phase-only extract of row a), `A6_varpart_tephra_sensitivity.csv`, `A6_varpart_delta.csv`, `A6_varpart_results_with_p.csv`, `A6_window_varpart.csv`, `A6_window_sig.csv`, `A6_alt_fig5_*.csv`, `A6_tephra_lake_bin_matrix.csv`, `A6_tephra_presence_ages.csv`, `A6_phase_sig_*.csv`  
+Figures/tables: `outputs/revision/figures/A6_alt_figure5_standard_vs_tephra.png` (+ PDF), `A6_varpart_tephra_sensitivity.csv`, `A6_varpart_delta.csv`, `A6_varpart_results_with_p.csv`, `A6_window_varpart.csv`, `A6_window_sig.csv`, `A6_alt_fig5_*.csv`, `A6_tephra_lake_bin_matrix.csv`, `A6_tephra_presence_ages.csv`, `A6_phase_sig_*.csv`  
 Script: `scripts/revision/A06_volcanism_sensitivity.R`
 
 ---
