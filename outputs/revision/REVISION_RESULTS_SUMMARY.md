@@ -10,7 +10,7 @@ Rscript scripts/revision/00_run_all.R
 
 Editable side tables (fill/verify before finalising the response letter):
 
-- `data/revision/tephra_events.csv` (PLACEHOLDER ages — replace from Fig. S5)
+- `data/revision/tephra_events.csv` (curated lake×event inventory + refs; `include_sensitivity` flags A6 ages)
 - `data/revision/fish_stocking.csv` (Azul = 1792 CE; other lakes still NA)
 - `data/revision/lake_trophic_state.csv` (Caldeirão seeded; others from Table S3)
 
@@ -90,9 +90,19 @@ Arboreal % vs NAO is weak within eras (pre/post 1300 ns) but positive overall (r
 
 ## A6 — Volcanism sensitivity (R3#5–6)
 
-Excluding ±1 thirty-year bin around seeded tephra ages changes Phase 4 vegetation pure R² only slightly (+0.013). Other phases unchanged.
+Tephra inventory: 39 lake×event / regional rows in `data/revision/tephra_events.csv` (raw + refs under `data/revision/tephra_*`). A6 excludes ±1 thirty-year bin around **18 lake-specific SUPPORTED/TENTATIVE** ages (7 lakes: Azul, Caveiro, Empadadas Norte, Ginjal, Peixinho, Prata, Santiago) → **27** community 30-yr bins flagged.
 
-**Action required:** replace PLACEHOLDER ages in `data/revision/tephra_events.csv` with Fig. S5 / Appendix S1 tie points and re-run `A06_volcanism_sensitivity.R`.
+Varpart delta (excluding − including; Pure estimate = vegetation):
+
+| Phase | Pure NAO Δ | Pure vegetation Δ | Shared Δ | n bins (full → ex) |
+|---|---:|---:|---:|---:|
+| 1 | 0 | +0.022 | 0 | 23 → 16 |
+| 2 | NA | NA | NA | 10 → 4 (below min_n) |
+| 3 | −0.088 | **−0.557** | +0.093 | 14 → 5 |
+| 4 | 0 | **−0.254** | −0.002 | 10 → 5 |
+| 5 | 0 | 0 | 0 | 8 → 8 |
+
+Phase 5 (recent) is unchanged. Large Phase 3–4 vegetation pure-R² drops coincide with heavy sample loss around medieval–early modern tephras (esp. P17 ~1235–1300 CE cluster); Phase 2 becomes inestimable. Interpret as **sensitivity to bin removal / n**, not proof that volcanism drives guild structure. Caveiro proxy-only TENTATIVE layers and global (not lake-specific) age exclusion inflate the excluded set.
 
 ---
 
