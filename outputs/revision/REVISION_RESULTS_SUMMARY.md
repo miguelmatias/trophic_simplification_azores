@@ -1,4 +1,4 @@
-# Revision analyses A1–A9 — results summary
+# Revision analyses A1–A11 — results summary
 
 Branch: `revision-response`  
 Generated from scripts in `scripts/revision/`.  
@@ -149,6 +149,22 @@ ANOVA p ≪ 0.001 for both series. The richness gradient across CTS persists aft
 **Implication for the simplification claim (Mendoza & Araújo):** CTS1 (yellow) remains the **species-poorest** structure under rarefaction (median 25 → 20.8). So if Fig. 3d still shows rising CTS1 prevalence toward the present, the structural “simplification” argument holds with or without rarefaction. A10 supports keeping that framing; it does not require retitling away from simplification on richness-gradient grounds.
 
 Figures: `outputs/revision/figures/A10_fig3e_observed_vs_rarefied_cts.png`, `A10_fig3e_observed_vs_rarefied_cts_dodged.png`
+
+---
+
+## A11 — Alternative Figure 4 with tephra overlay
+
+Alternative regional standardised richness figure with the **A6 tephra signal** overlaid on every panel (annotation only; no bins dropped).
+
+**Panels:**
+- **(a)** Producers by guild — same content/style as published Fig. 4a
+- **(b)** Consumers by guild — same content/style as published Fig. 4b
+- **(c)** Overall producers vs consumers (aggregate smooths) — *not* in published Fig. 4 (which has only a–b); added so the alt figure has three panels
+
+**Tephra visual:** subtle vertical taupe bands = merged ±1×30-yr windows around lake-specific SUPPORTED/TENTATIVE ages (`include_sensitivity`; same coding as A6). Legend/caption: “Tephra (±1×30-yr)”.
+
+Figures: `outputs/revision/figures/A11_alt_figure4_with_tephra.png`, `A11_alt_figure4_with_tephra.pdf`  
+Script: `scripts/revision/A11_alt_figure4_tephra.R`
 
 ---
 
