@@ -1,12 +1,14 @@
 method,n,estimate,p.value,response,predictor
-pearson,8,0.13737652985161372,0.7456414240430508,prop_CTS1,zmax
-spearman,8,0.09523809523809525,0.8401289682539682,prop_CTS1,zmax
-pearson,7,0.3620279333694058,0.4248735148825289,prop_CTS1,area
-spearman,7,0.607142857142857,0.16666666666666666,prop_CTS1,area
-pearson,8,-0.2676926693524521,0.5215391212319126,prop_CTS1,alt
-spearman,8,-0.20359646452525404,0.6286746732890389,prop_CTS1,alt
+pearson,8,0.7620418586098023,0.027959724598175608,prop_CTS1,zmax
+spearman,8,0.80511756018254,0.01590456229166141,prop_CTS1,zmax
+pearson,7,-0.2934549404616628,0.5229862002645462,prop_CTS1,area
+spearman,7,0.0741249316661101,0.8745070324258755,prop_CTS1,area
+pearson,8,-0.39177276821086315,0.3371295483154016,prop_CTS1,alt
+spearman,8,-0.7240490231688785,0.042261001948063426,prop_CTS1,alt
 pearson,1,NA,NA,prop_CTS1,tp_ug_l
 spearman,1,NA,NA,prop_CTS1,tp_ug_l
+pearson,1,NA,NA,prop_CTS1,trophic_state
+spearman,1,NA,NA,prop_CTS1,trophic_state
 pearson,8,0.30985750628937764,0.45513347013073624,mean_turnover,zmax
 spearman,8,-0.09523809523809525,0.8401289682539682,mean_turnover,zmax
 pearson,7,-0.05758770672482673,0.9023981014082296,mean_turnover,area
@@ -15,6 +17,8 @@ pearson,8,-0.3136881573073172,0.44927945518838053,mean_turnover,alt
 spearman,8,-0.16766767666785626,0.6914653516467361,mean_turnover,alt
 pearson,1,NA,NA,mean_turnover,tp_ug_l
 spearman,1,NA,NA,mean_turnover,tp_ug_l
+pearson,1,NA,NA,mean_turnover,trophic_state
+spearman,1,NA,NA,mean_turnover,trophic_state
 pearson,8,-0.04231392905043385,0.9207560343632359,total_dca_change_Producers,zmax
 spearman,8,-0.09523809523809525,0.8401289682539682,total_dca_change_Producers,zmax
 pearson,7,-0.14366952198564883,0.7586084029967576,total_dca_change_Producers,area
@@ -23,6 +27,8 @@ pearson,8,0.016561431254534156,0.9689529940380444,total_dca_change_Producers,alt
 spearman,8,-0.01197626261913259,0.977546654703887,total_dca_change_Producers,alt
 pearson,1,NA,NA,total_dca_change_Producers,tp_ug_l
 spearman,1,NA,NA,total_dca_change_Producers,tp_ug_l
+pearson,1,NA,NA,total_dca_change_Producers,trophic_state
+spearman,1,NA,NA,total_dca_change_Producers,trophic_state
 pearson,8,0.37914985820946184,0.3542864634280582,total_dca_change_Consumers,zmax
 spearman,8,0.07142857142857144,0.8819940476190476,total_dca_change_Consumers,zmax
 pearson,7,0.009141312196440338,0.984481874821708,total_dca_change_Consumers,area
@@ -31,3 +37,5 @@ pearson,8,-0.3689584686831921,0.3684219248980386,total_dca_change_Consumers,alt
 spearman,8,0.04790505047653036,0.9103153570041667,total_dca_change_Consumers,alt
 pearson,1,NA,NA,total_dca_change_Consumers,tp_ug_l
 spearman,1,NA,NA,total_dca_change_Consumers,tp_ug_l
+pearson,1,NA,NA,total_dca_change_Consumers,trophic_state
+spearman,1,NA,NA,total_dca_change_Consumers,trophic_state

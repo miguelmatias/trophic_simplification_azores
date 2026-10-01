@@ -476,7 +476,15 @@ revision_load_lake_meta <- function(path = "data/table_lake_metadata.csv") {
     )
 }
 
+#' Viridis CTS palette matching main_script (CTS1 = yellow)
+revision_cts_colours <- function(k = 5L) {
+  cols <- viridis::viridis(as.integer(k), direction = -1)
+  stats::setNames(cols, paste0("CTS", seq_len(k)))
+}
+
 #' Assign AMD clusters at fixed k without lumping
+#' Clusters are relabelled by mean euplanctonic relative abundance
+#' (highest → CTS1), matching the original MS yellow/euplanctonic CTS1 logic.
 revision_assign_cts <- function(norm_abund, k = 6L, iterations = 400L) {
   mat <- norm_abund %>%
     dplyr::select(dplyr::all_of(revision_guild_cols)) %>%
@@ -491,9 +499,11 @@ revision_assign_cts <- function(norm_abund, k = 6L, iterations = 400L) {
     dplyr::summarise(
       mean_euplanktonic = mean(euplanktonic, na.rm = TRUE),
       mean_consumer = mean(algivore + detritivore + plantivore + predator, na.rm = TRUE),
+      n = dplyr::n(),
       .groups = "drop"
     ) %>%
-    dplyr::arrange(mean_consumer, mean_euplanktonic) %>%
+    # Highest euplanctonic → CTS1 (yellow); consumers break remaining ties
+    dplyr::arrange(dplyr::desc(mean_euplanktonic), mean_consumer) %>%
     dplyr::mutate(rank = dplyr::row_number())
 
   map_rank <- stats::setNames(key$rank, as.character(key$amd_raw))

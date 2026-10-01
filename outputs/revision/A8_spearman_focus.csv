@@ -1,0 +1,9 @@
+method,n,estimate,p.value,response,predictor
+spearman,7,0.42857142857142844,0.3535714285714286,mean_turnover,area
+spearman,1,NA,NA,mean_turnover,tp_ug_l
+spearman,1,NA,NA,mean_turnover,trophic_state
+spearman,8,-0.09523809523809525,0.8401289682539682,mean_turnover,zmax
+spearman,7,0.0741249316661101,0.8745070324258755,prop_CTS1,area
+spearman,1,NA,NA,prop_CTS1,tp_ug_l
+spearman,1,NA,NA,prop_CTS1,trophic_state
+spearman,8,0.80511756018254,0.01590456229166141,prop_CTS1,zmax
