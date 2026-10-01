@@ -88,15 +88,22 @@ Arboreal % vs NAO is weak within eras (pre/post 1300 ns) but positive overall (r
 
 ---
 
-## A6 — Volcanism sensitivity (R3#5–6)
+## A6 — Volcanism sensitivity / alternative Figure 5 (R3#5–6)
 
 Tephra inventory: **27 lake-specific** rows in `data/revision/tephra_events.csv` (no regional rows). A6 uses **18 SUPPORTED/TENTATIVE** ages (`include_sensitivity`; 7 lakes) as a **lake-specific predictor**, not a regional curve and not a data filter.
 
-**Predictor coding (lake × 30-yr bin matrix):** for each lake×bin, `tephra = 1` if that bin centre is within ±1×30-yr of **that lake’s** retained tephra ages, else 0. This flags **28/283** lake×bins (9.9%; 6 lakes with any flag in the abundance table — Santiago has inventory ages but no overlapping bio bins). No regional “any-lake tephra” indicator.
+**Predictor coding (lake × 30-yr bin matrix):** for each lake×bin, `tephra = 1` if that bin centre is within ±1×30-yr of **that lake’s** retained tephra ages, else 0. This flags **28/283** lake×bins (9.9%; 6 lakes with any tephra flag in the abundance table — Santiago has inventory ages but no overlapping bio bins). No regional “any-lake tephra” indicator.
 
-**Design:** phase varpart on `bio_lake_30` joined to regional NAO + vegetation, with **`Condition(lake)`** so lake identity is not confounded with tephra. Compare NAO+vegetation vs NAO+vegetation+tephra. Significance: residual permutation tests (`n_perm = 999`; published Fig. 5 used 9999) with faded NS fractions (same rule as Fig. 5: Shared always opaque).
+**Design (prefer apples-to-apples):** both columns are **lake-level with `Condition(lake)`** on `bio_lake_30` joined to regional NAO + vegetation (± lake-specific tephra). This is a **lake-level alternative Fig. 5**, not a replot of the published regional Fig. 5. Significance: residual permutation tests (`n_perm = 999`; published Fig. 5 used 9999) with faded NS fractions (Shared always opaque).
 
-**Primary result — lake-level varpart with vs without tephra** (adj. R² after Condition(lake); Pure estimate = vegetation):
+**Layout — `A6_alt_figure5_standard_vs_tephra` (2 columns × 3 rows):**
+- **Left:** NAO + vegetation only (+ Condition(lake))
+- **Right:** NAO + vegetation + lake-specific tephra (+ Condition(lake))
+- **(a)** Historical phases — stacked Pure Climate / Pure Vegetation / Pure tephra (right only) / Shared
+- **(b)** Moving window (300-yr window, 30-yr step) — same components
+- **(c)** Effect size (Vegetation − Climate) by window (tephra partialled on the right)
+
+**Primary phase result** (adj. R² after Condition(lake); Pure estimate = vegetation):
 
 | Phase | Pure NAO (base → +tep) | Pure veg (base → +tep) | Pure tephra (p) | Shared (+tep) | n bins / lakes |
 |---|---:|---:|---:|---:|---:|
@@ -106,11 +113,13 @@ Tephra inventory: **27 lake-specific** rows in `data/revision/tephra_events.csv`
 | 4 | 0 → 0 | **0.013 → 0.014 (p = 0.023)** | 0 (p = 0.959) | 0 | 73 / 9 |
 | 5 | 0.003 (NS) | **0.014 (p = 0.032)** | — (no tephra variation) | 0.005 | 63 / 9 |
 
-Phase 5 has no lake×bins with tephra=1, so the 3-predictor model is undefined there (baseline unchanged).
+Phase 5 has no lake×bins with tephra=1, so the 3-predictor model is undefined there (baseline left column unchanged; right blank).
 
-**Implication:** With lake-specific tephra and Condition(lake), **pure tephra explains almost nothing** (max adj. R² ≈ 0.014 in Phase 1, non-significant). Vegetation remains the only significant unique fraction in Phases 3–5. Adding tephra does **not** reallocate NAO/vegetation conclusions. Magnitudes are smaller than regional Fig. 5 because Condition(lake) absorbs among-lake structure — interpret relative to the lake-level baseline, not as a drop relative to Fig. 5.
+**Interpretation (response letter / SI caption):**  
+This lake-level alternative Figure 5 places the standard NAO + vegetation partitioning (left) beside the same design with lake-specific tephra added (right), both after Condition(lake), so the tephra contrast is apples-to-apples rather than a regional-vs-lake comparison. Across historical phases, pure tephra remains small and non-significant (maximum adj. R² ≈ 0.014 in Phase 1, p ≈ 0.066), while pure vegetation stays the only consistently significant unique fraction in Phases 3–5 and is essentially unchanged when tephra is included. Moving-window panels show the same pattern: vegetation-dominated intervals (especially ~1000–1400 CE) persist on both sides, and any pure-tephra fractions that appear early are modest and mostly non-significant. The Climate vs VegChange row likewise keeps the same dominant-driver chronology after partialling tephra. Magnitudes are smaller than published regional Figure 5 because Condition(lake) absorbs among-lake structure; the relevant comparison is left vs right within this figure, not against the regional figure. Altogether, lake-specific volcanism does not reallocate the NAO/vegetation conclusions under this sensitivity design.
 
-Figures/tables: `outputs/revision/figures/A6_tephra_varpart.png`, `A6_varpart_tephra_sensitivity.csv`, `A6_varpart_delta.csv`, `A6_varpart_results_with_p.csv`, `A6_tephra_lake_bin_matrix.csv`, `A6_phase_sig_*.csv`
+Figures/tables: `outputs/revision/figures/A6_alt_figure5_standard_vs_tephra.png` (+ PDF), `A6_tephra_varpart.png` (phase-only extract of row a), `A6_varpart_tephra_sensitivity.csv`, `A6_varpart_delta.csv`, `A6_varpart_results_with_p.csv`, `A6_window_varpart.csv`, `A6_window_sig.csv`, `A6_alt_fig5_*.csv`, `A6_tephra_lake_bin_matrix.csv`, `A6_phase_sig_*.csv`  
+Script: `scripts/revision/A06_volcanism_sensitivity.R`
 
 ---
 
@@ -156,7 +165,7 @@ Figures: `outputs/revision/figures/A10_fig3e_observed_vs_rarefied_cts.png`, `A10
 
 ## A11 — Fig. 5 rebuild (no tephra bars)
 
-Rebuild of variance-partitioning panels (Fig. 5 a–c) with significance fading. **No taupe tephra bands** — volcanism sensitivity is handled in **A6** (lake-specific tephra predictor + Condition(lake)), not as shading on Fig. 5.
+Rebuild of variance-partitioning panels (Fig. 5 a–c) with significance fading. **No taupe tephra bands** — volcanism sensitivity is handled in **A6** (lake-level alternative Fig. 5: standard vs +tephra with Condition(lake)), not as shading on Fig. 5.
 
 **Panels:**
 - **(a)** Historical phases — stacked Pure Climate / Pure Vegetation / Shared (adj. R²; faded if NS)
