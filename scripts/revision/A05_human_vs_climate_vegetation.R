@@ -68,8 +68,18 @@ veg_change <- veg %>%
   )
 revision_write_csv(veg_change, "outputs/revision/A5_veg_smooth_change_pre_post_1300.csv")
 
-p <- ggplot(arb_nao, aes(x = age_ce)) +
-  geom_line(aes(y = arboreal_pct), colour = "#1b9e77", linewidth = 0.9) +
+# Regional 30-yr bin means as transparent points + GAM smooth (same series as correlations)
+p <- ggplot(arb_nao, aes(x = age_ce, y = arboreal_pct)) +
+  geom_point(colour = "#1b9e77", alpha = 0.35, size = 1.8) +
+  geom_smooth(
+    method = "gam",
+    formula = y ~ s(x, bs = "cs"),
+    colour = "#1b9e77",
+    fill = "#1b9e77",
+    alpha = 0.15,
+    linewidth = 0.9,
+    se = TRUE
+  ) +
   geom_vline(
     data = ind_summary,
     aes(xintercept = median_first_ce, colour = category),
@@ -81,5 +91,6 @@ p <- ggplot(arb_nao, aes(x = age_ce)) +
     x = "Age (CE)", y = "Arboreal pollen (%)"
   )
 ggsave("outputs/revision/figures/A5_arboreal_and_indicators.png", p, width = 8, height = 4.5, dpi = 150)
+ggsave("outputs/revision/figures/A5_arboreal_and_indicators.pdf", p, width = 8, height = 4.5)
 
 message("A5 complete")
