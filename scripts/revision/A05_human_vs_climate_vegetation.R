@@ -91,6 +91,5 @@ p <- ggplot(arb_nao, aes(x = age_ce, y = arboreal_pct)) +
     x = "Age (CE)", y = "Arboreal pollen (%)"
   )
 ggsave("outputs/revision/figures/A5_arboreal_and_indicators.png", p, width = 8, height = 4.5, dpi = 150)
-ggsave("outputs/revision/figures/A5_arboreal_and_indicators.pdf", p, width = 8, height = 4.5)
 
 message("A5 complete")

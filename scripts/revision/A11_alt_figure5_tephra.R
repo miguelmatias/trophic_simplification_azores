@@ -350,21 +350,11 @@ alt_fig5 <- (p_a / p_b / p_c) +
   patchwork::plot_layout(guides = "keep", heights = c(1, 1.2, 1.15))
 
 out_png <- "outputs/revision/figures/A11_alt_figure5_with_tephra.png"
-out_pdf <- "outputs/revision/figures/A11_alt_figure5_with_tephra.pdf"
 
 ggplot2::ggsave(
   out_png, alt_fig5,
   width = fig_width, height = fig_height, units = "in", dpi = 300, bg = "white"
 )
 
-ggplot2::ggsave(
-  out_pdf, alt_fig5,
-  width = fig_width, height = fig_height, units = "in", device = "pdf", bg = "white"
-)
-
-if (!file.exists(out_pdf)) {
-  warning("PDF was not written: ", out_pdf)
-} else {
-  message("Saved ", out_png, " and ", out_pdf)
-}
+message("Saved ", out_png)
 message("A11 complete (no tephra bars; see A6 for volcanism sensitivity)")

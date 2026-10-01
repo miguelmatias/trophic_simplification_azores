@@ -778,6 +778,8 @@ panel_theme <- ggplot2::theme_minimal(base_size = base_size) +
     axis.text         = ggplot2::element_text(size = axis_text_size),
     strip.text        = ggplot2::element_text(size = title_size, face = "bold"),
     legend.position   = "bottom",
+    legend.box        = "vertical",
+    legend.box.just   = "left",
     legend.title      = ggplot2::element_text(size = legend_title_sz),
     legend.text       = ggplot2::element_text(size = legend_text_sz),
     legend.key.height = grid::unit(2.5, "mm"),
@@ -793,21 +795,12 @@ ylim_c <- c(min(ylim_c[1] * 1.1, -0.02), max(ylim_c[2] * 1.1, 0.02))
 
 label_phase <- phase_plot %>% dplyr::filter(value > 0.015)
 
-# Right-column tephra presence ticks (not full-height n/a grey bars).
-# Phase ticks: phases with any lake×bin tephra = 1 (prevalence > 0).
+# Right-column tephra presence ticks on panels (b)–(c) only (not on phase bars).
 # Continuous ticks: unique 30-yr bin centres with tephra = 1 in the analysis matrix.
 tephra_col_lvl <- factor(
   "NAO + vegetation + tephra",
   levels = c("NAO + vegetation", "NAO + vegetation + tephra")
 )
-
-tep_phase_ticks <- results_table %>%
-  dplyr::filter(is.finite(tephra_prevalence), tephra_prevalence > 0) %>%
-  dplyr::mutate(
-    column = tephra_col_lvl,
-    phase = factor(phase, levels = paste("Phase", 1:5)),
-    y = ylim_a[2]
-  )
 
 # Light text only for non-estimable Phase 5 (no tall grey bar)
 na_phase_ann <- phase_sig3 %>%
@@ -839,12 +832,6 @@ p_a <- ggplot2::ggplot(
     ggplot2::aes(label = paste0(round(value * 100, 1), "%")),
     position = ggplot2::position_stack(vjust = 0.5),
     color = "black", size = 2.1, alpha = 1
-  ) +
-  ggplot2::geom_point(
-    data = tep_phase_ticks,
-    ggplot2::aes(x = phase, y = y),
-    inherit.aes = FALSE,
-    shape = 18, size = 2.4, color = "#2F6B4F"
   ) +
   ggplot2::geom_text(
     data = na_phase_ann,
@@ -947,7 +934,7 @@ p_c <- ggplot2::ggplot(
       "Left = NAO + vegetation; right = + lake-specific tephra ",
       "(tephra = 1 only within ±1×30-yr of that lake's SUPPORTED/TENTATIVE ages; ",
       "no regional tephra curve). Faded = permutation p ≥ 0.05. ",
-      "Right-panel ticks mark lake×bins (b–c) or phases (a) with tephra = 1 present; ",
+      "Right-panel ticks on (b)–(c) mark lake×bins with tephra = 1 present; ",
       "Phase 5 n/a text = no tephra variation (model skipped), not a null effect. ",
       "n_perm = ", n_perm, " (published Fig. 5 used 9999)."
     )
@@ -962,18 +949,17 @@ p_c <- ggplot2::ggplot(
 
 alt_fig5 <- (p_a / p_b / p_c) +
   patchwork::plot_layout(guides = "collect", heights = c(1, 1.15, 1.15)) &
-  ggplot2::theme(legend.position = "bottom")
+  ggplot2::theme(
+    legend.position = "bottom",
+    legend.box = "vertical",
+    legend.box.just = "left"
+  )
 
 out_png <- "outputs/revision/figures/A6_alt_figure5_standard_vs_tephra.png"
-out_pdf <- "outputs/revision/figures/A6_alt_figure5_standard_vs_tephra.pdf"
 
 ggplot2::ggsave(
   out_png, alt_fig5,
-  width = 9.0, height = 10.5, units = "in", dpi = 300, bg = "white"
-)
-ggplot2::ggsave(
-  out_pdf, alt_fig5,
-  width = 9.0, height = 10.5, units = "in", device = "pdf", bg = "white"
+  width = 9.0, height = 10.8, units = "in", dpi = 300, bg = "white"
 )
 
 # Keep simpler phase-only extract (same data as row a) for SI continuity
@@ -982,19 +968,15 @@ p_phase_only <- p_a +
     title = "A6: Lake-level varpart with lake-specific tephra (+ Condition(lake))",
     subtitle = paste0(
       "Faded fractions = non-significant (permutation p ≥ 0.05); ",
-      "extract of alt Fig. 5 row (a); diamonds = phases with tephra present"
+      "extract of alt Fig. 5 row (a)"
     )
   )
 ggplot2::ggsave(
   "outputs/revision/figures/A6_tephra_varpart.png",
   p_phase_only, width = 9.0, height = 4.2, dpi = 150, bg = "white"
 )
-ggplot2::ggsave(
-  "outputs/revision/figures/A6_tephra_varpart.pdf",
-  p_phase_only, width = 9.0, height = 4.2, device = "pdf", bg = "white"
-)
 
-message("Saved ", out_png, " and ", out_pdf)
+message("Saved ", out_png)
 message(
   "A6 complete (", nrow(tephra), " tephra ages; ",
   nrow(flagged), "/", nrow(lake_env), " lake×bins with tephra=1; ",
