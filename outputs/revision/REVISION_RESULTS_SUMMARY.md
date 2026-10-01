@@ -175,13 +175,15 @@ Script: `scripts/revision/A06_volcanism_sensitivity.R`; tephra build: `scripts/r
 | **k = 6** | Single k = 6 AMD partition (5000 iterations, same seed as merge path) |
 | **k = 5 (merged from k = 6, manuscript)** | Same k = 6 partition → richness rank → merge ranks 6+5 → euplanctonic CTS1–5 |
 
-**CTS display labels:** Euplanctonic reordering (highest → **CTS1**, viridis **yellow**) for all panels. Manuscript **merge criterion** uses **`total_nspp_by_lake_core`** on raw k = 6 clusters (`A7_k6_manuscript_merge_map.csv`, `A7_cts_diversity_by_scheme.csv`).
+**CTS display labels:** Euplanctonic reordering (highest → **CTS1**, viridis **yellow**) for all A7 panels. Manuscript **merge criterion** uses **`total_nspp_by_lake_core`** on raw k = 6 clusters (`A7_k6_manuscript_merge_map.csv`, `A7_cts_diversity_by_scheme.csv`).
+
+**Manuscript vs revision CTS names:** In `main_script.Rmd`, CTS1–CTS5 are labelled by **ascending richness** after the k = 6 → k = 5 merge (CTS1 = lowest richness / euplanctonic-dominated raw cluster 5; the merged pair = **CTS5** = highest richness). Revision **A7** and **A1x** use **euplanctonic reorder** (`revision_assign_cts` / `revision_manuscript_k6_merged_to_k5`) for **colours and comparability with A8 k = 6** (yellow CTS1). That can swap **CTS3 vs CTS4** names relative to manuscript richness order; **sample membership** of merged k = 5 still matches the manuscript merge.
 
 **Downstream:** `A7_sample_cts5_assignments.csv` is now the **manuscript merged k = 5** (for A1x / Fig. 3e). **A8** still uses **k = 6** assignments for euplanctonic **CTS1** vs morphometry.
 
 Temporal occupancy is normalised **within each 30-yr Age(CE) bin** (proportions sum to 1; `A7_cts_temporal_bin_sums.csv`).
 
-**Interpretation:** Independent k = 5 AMD can split guild structure differently from k = 6 (e.g. CTS3 mean profiles need not match). The **merged** k = 5 reuses the k = 6 sample partition and only collapses the two **lowest-richness** raw clusters (per manuscript rule); guild means for merged CTS5 are **mixtures** of those two k = 6 euplanctonic classes, not equal to naive `CTS5`+`CTS6` relabelling.
+**Interpretation:** Independent k = 5 AMD can split guild structure differently from k = 6 (e.g. CTS3 mean profiles need not match). The **merged** k = 5 reuses the k = 6 sample partition and only collapses **richness ranks 5 and 6**—the two **highest** mean-`total_nspp_by_lake_core` k = 6 groups (raw AMD clusters **2** and **6** after richness relabelling; manuscript `amd_clusts[amd_clusts == 6] <- 5`). Guild means for merged euplanctonic **CTS5** are **mixtures** of k = 6 **CTS4** + **CTS6**, not equal to naive euplanctonic `CTS5`+`CTS6` relabelling without the richness merge.
 
 Figures: `outputs/revision/figures/A7_cts_guild_profiles_k5_k6_merged.png` (alias of updated guild plot), `A7_cts_temporal.png` (three facets).  
 CSVs: `A7_cts_guild_profiles.csv`, `A7_k6_manuscript_merge_map.csv`, `A7_cts_diversity_by_scheme.csv`, assignment files `A7_sample_cts5_*` / `A7_sample_cts6_assignments.csv`.  
