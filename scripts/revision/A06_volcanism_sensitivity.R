@@ -793,6 +793,44 @@ ylim_c <- c(min(ylim_c[1] * 1.1, -0.02), max(ylim_c[2] * 1.1, 0.02))
 
 label_phase <- phase_plot %>% dplyr::filter(value > 0.015)
 
+# Annotate phases/windows where +tephra is not estimable (invariant tephra),
+# so empty right panels are not read as "zero effect".
+na_phase_ann <- phase_sig3 %>%
+  dplyr::filter(!tephra_varies) %>%
+  dplyr::mutate(
+    column = factor(
+      "NAO + vegetation + tephra",
+      levels = c("NAO + vegetation", "NAO + vegetation + tephra")
+    ),
+    phase = factor(phase, levels = paste("Phase", 1:5)),
+    y = ylim_a[2] * 0.55,
+    label = "n/a — no\ntephra variation"
+  )
+
+na_win <- win_sig %>%
+  dplyr::filter(scenario == "NAO_veg_tephra", !is.na(tephra_varies), !tephra_varies) %>%
+  dplyr::arrange(midpoint)
+
+# Contiguous blocks of invariant-tephra windows (early gap + post-~1780)
+na_win_ann <- if (nrow(na_win) > 0) {
+  gap <- c(0, which(diff(na_win$midpoint) > step_size * 1.5), nrow(na_win))
+  purrr::map_dfr(seq_len(length(gap) - 1), function(i) {
+    block <- na_win[(gap[i] + 1):gap[i + 1], , drop = FALSE]
+    tibble::tibble(
+      column = factor(
+        "NAO + vegetation + tephra",
+        levels = c("NAO + vegetation", "NAO + vegetation + tephra")
+      ),
+      x = mean(range(block$midpoint)),
+      xmin = min(block$midpoint) - step_size / 2,
+      xmax = max(block$midpoint) + step_size / 2,
+      label = "n/a — no tephra variation"
+    )
+  })
+} else {
+  tibble::tibble()
+}
+
 p_a <- ggplot2::ggplot(
   phase_plot,
   ggplot2::aes(x = phase, y = value, fill = component_label, alpha = alpha_flag)
@@ -803,6 +841,12 @@ p_a <- ggplot2::ggplot(
     ggplot2::aes(label = paste0(round(value * 100, 1), "%")),
     position = ggplot2::position_stack(vjust = 0.5),
     color = "black", size = 2.1, alpha = 1
+  ) +
+  ggplot2::geom_text(
+    data = na_phase_ann,
+    ggplot2::aes(x = phase, y = y, label = label),
+    inherit.aes = FALSE,
+    color = "grey35", size = 2.2, lineheight = 0.9, fontface = "italic"
   ) +
   ggplot2::facet_wrap(~column, nrow = 1) +
   ggplot2::scale_alpha_identity() +
@@ -827,6 +871,26 @@ p_b <- ggplot2::ggplot(
   ggplot2::aes(x = midpoint, y = value, fill = component, alpha = alpha_flag)
 ) +
   ggplot2::geom_col(width = step_size, position = "stack") +
+  {
+    if (nrow(na_win_ann) > 0) {
+      list(
+        ggplot2::geom_rect(
+          data = na_win_ann,
+          ggplot2::aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf),
+          inherit.aes = FALSE,
+          fill = "grey90", alpha = 0.55
+        ),
+        ggplot2::geom_text(
+          data = na_win_ann,
+          ggplot2::aes(x = x, y = ylim_b[2] * 0.85, label = label),
+          inherit.aes = FALSE,
+          color = "grey35", size = 2.0, fontface = "italic", angle = 90, vjust = 0.5
+        )
+      )
+    } else {
+      list()
+    }
+  } +
   ggplot2::facet_wrap(~column, nrow = 1) +
   ggplot2::scale_alpha_identity() +
   ggplot2::scale_fill_manual(
@@ -855,6 +919,26 @@ p_c <- ggplot2::ggplot(
 ) +
   ggplot2::geom_col(width = step_size) +
   ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "black", linewidth = 0.3) +
+  {
+    if (nrow(na_win_ann) > 0) {
+      list(
+        ggplot2::geom_rect(
+          data = na_win_ann,
+          ggplot2::aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf),
+          inherit.aes = FALSE,
+          fill = "grey90", alpha = 0.55
+        ),
+        ggplot2::geom_text(
+          data = na_win_ann,
+          ggplot2::aes(x = x, y = ylim_c[2] * 0.75, label = label),
+          inherit.aes = FALSE,
+          color = "grey35", size = 2.0, fontface = "italic", angle = 90, vjust = 0.5
+        )
+      )
+    } else {
+      list()
+    }
+  } +
   ggplot2::facet_wrap(~column, nrow = 1) +
   ggplot2::scale_alpha_identity() +
   ggplot2::scale_fill_manual(
@@ -883,6 +967,7 @@ p_c <- ggplot2::ggplot(
       "Left = NAO + vegetation; right = + lake-specific tephra ",
       "(tephra = 1 only within ±1×30-yr of that lake's SUPPORTED/TENTATIVE ages; ",
       "no regional tephra curve). Faded = permutation p ≥ 0.05. ",
+      "Grey bands / Phase 5 n/a = no tephra variation (model skipped), not a null effect. ",
       "n_perm = ", n_perm, " (published Fig. 5 used 9999)."
     )
   ) +

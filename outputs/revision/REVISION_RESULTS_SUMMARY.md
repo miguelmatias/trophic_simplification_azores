@@ -111,12 +111,26 @@ Tephra inventory: **27 lake-specific** rows in `data/revision/tephra_events.csv`
 | 2 | 0 → 0 | 0 → 0 | 0 (p = 0.966) | 0 | 28 / 5 |
 | 3 | ~0 → ~0 | **0.062 → 0.062 (p = 0.001)** | 0 (p = 0.831) | 0 | 71 / 8 |
 | 4 | 0 → 0 | **0.013 → 0.014 (p = 0.023)** | 0 (p = 0.959) | 0 | 73 / 9 |
-| 5 | 0.003 (NS) | **0.014 (p = 0.032)** | — (no tephra variation) | 0.005 | 63 / 9 |
+| 5 | 0.003 (NS) | **0.014 (p = 0.032)** | — (not estimable) | — | 63 / 9 |
 
-Phase 5 has no lake×bins with tephra=1, so the 3-predictor model is undefined there (baseline left column unchanged; right blank).
+**Phase 5 right blank is not “zero tephra effect”:** Phase 5 (≥1750 CE; n = 63 bins / 9 lakes) has `tephra_prevalence = 0` (last lake×bin tephra flag is 1620 CE). The 3-predictor model is **skipped** when `length(unique(tephra)) < 2` (`tephra_varies = FALSE` → all adj. R² / p = NA). Left Phase 5 is the standard 2-predictor fit only; do not read the empty right bar as a null result. Pure-vegetation significance with tephra is therefore claimable for **Phases 3–4 only** on the right (Phase 3: 0.062, p = 0.001; Phase 4: 0.014, p = 0.023); Phase 5 vegetation (0.014, p = 0.032) is left-column only.
+
+**Early moving-window pure tephra (selected midpoints; n_perm = 999):** several ~470–660 CE windows are significant at α = 0.05 and plot at full opacity:
+
+| Midpoint (CE) | Window | Pure tephra adj. R² | p (pure tephra) | Sig? |
+|---:|---|---:|---:|:---:|
+| 480 | 330–630 | 0.049 | 0.031 | yes |
+| 510 | 360–660 | 0.045 | 0.039 | yes |
+| 540 | 390–690 | 0.043 | 0.050 | borderline |
+| 600 | 450–750 | 0.047 | 0.033 | yes |
+| 660 | 510–810 | 0.037 | 0.045 | yes |
+
+(Pure veg/NAO in these windows are NS.) This is a plausible **local volcanic signal before the main vegetation-change interval** in the Pico/Corvo/Prata–dominated early record; it does not overturn the later vegetation-dominated pattern (~1000–1400 CE).
+
+**Post-~1780 right-side gap:** windows with midpoints 1800, 1830, 1860 (n = 78–80 bins) have `tephra_prevalence = 0` / `tephra_varies = FALSE` and are **dropped** (NA, not a failed RDA fit). Midpoint 1770 still has one tephra-flagged bin (prev ≈ 0.013) and is estimable. Left-column late windows remain.
 
 **Interpretation (response letter / SI caption):**  
-This lake-level alternative Figure 5 places the standard NAO + vegetation partitioning (left) beside the same design with lake-specific tephra added (right), both after Condition(lake), so the tephra contrast is apples-to-apples rather than a regional-vs-lake comparison. Across historical phases, pure tephra remains small and non-significant (maximum adj. R² ≈ 0.014 in Phase 1, p ≈ 0.066), while pure vegetation stays the only consistently significant unique fraction in Phases 3–5 and is essentially unchanged when tephra is included. Moving-window panels show the same pattern: vegetation-dominated intervals (especially ~1000–1400 CE) persist on both sides, and any pure-tephra fractions that appear early are modest and mostly non-significant. The Climate vs VegChange row likewise keeps the same dominant-driver chronology after partialling tephra. Magnitudes are smaller than published regional Figure 5 because Condition(lake) absorbs among-lake structure; the relevant comparison is left vs right within this figure, not against the regional figure. Altogether, lake-specific volcanism does not reallocate the NAO/vegetation conclusions under this sensitivity design.
+This lake-level alternative Figure 5 places the standard NAO + vegetation partitioning (left) beside the same design with lake-specific tephra added (right), both after Condition(lake), so the tephra contrast is apples-to-apples rather than a regional-vs-lake comparison. Across historical phases where tephra varies (Phases 1–4), pure tephra is small: Phase 1 adj. R² ≈ 0.014 (p ≈ 0.066, NS); Phases 2–4 ≈ 0 (all NS). Pure vegetation remains the only significant unique fraction in Phases 3–4 and is essentially unchanged when tephra is included; Phase 5 (+tephra) is not estimable (no tephra variation after 1620 CE), so the empty right Phase 5 bar is “n/a”, not a null effect. Moving-window panels keep the vegetation-dominated interval (~1000–1400 CE) on both sides, but early windows (~480–660 CE) show significant pure-tephra fractions (adj. R² ≈ 0.037–0.049; p ≈ 0.031–0.045) consistent with a local volcanic signal before major vegetation change. Right-side windows after ~1780 are missing because tephra is invariant (dropped), not because fits failed. Magnitudes are smaller than published regional Figure 5 because Condition(lake) absorbs among-lake structure; compare left vs right within this figure. Overall, lake-specific volcanism does not reallocate the main NAO/vegetation chronology, but early tephra is not uniformly non-significant.
 
 Figures/tables: `outputs/revision/figures/A6_alt_figure5_standard_vs_tephra.png` (+ PDF), `A6_tephra_varpart.png` (phase-only extract of row a), `A6_varpart_tephra_sensitivity.csv`, `A6_varpart_delta.csv`, `A6_varpart_results_with_p.csv`, `A6_window_varpart.csv`, `A6_window_sig.csv`, `A6_alt_fig5_*.csv`, `A6_tephra_lake_bin_matrix.csv`, `A6_phase_sig_*.csv`  
 Script: `scripts/revision/A06_volcanism_sensitivity.R`
