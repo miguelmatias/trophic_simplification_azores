@@ -152,19 +152,20 @@ Figures: `outputs/revision/figures/A10_fig3e_observed_vs_rarefied_cts.png`, `A10
 
 ---
 
-## A11 — Alternative Figure 4 with tephra overlay
+## A11 — Alternative Figure 5 with tephra overlay
 
-Alternative regional standardised richness figure with the **A6 tephra signal** overlaid on every panel (annotation only; no bins dropped).
+Alternative variance-partitioning figure (Fig. 5 a–c) with the **A6 tephra signal** overlaid on every panel (annotation only; no bins dropped).
 
 **Panels:**
-- **(a)** Producers by guild — same content/style as published Fig. 4a
-- **(b)** Consumers by guild — same content/style as published Fig. 4b
-- **(c)** Overall producers vs consumers (aggregate smooths) — *not* in published Fig. 4 (which has only a–b); added so the alt figure has three panels
+- **(a)** Historical phases — stacked Pure Climate / Pure Vegetation / Shared (adj. R²)
+- **(b)** Moving-window varpart (300-yr window, 30-yr step)
+- **(c)** Effect size (Vegetation − Climate) by window
 
-**Tephra visual:** subtle vertical taupe bands = merged ±1×30-yr windows around lake-specific SUPPORTED/TENTATIVE ages (`include_sensitivity`; same coding as A6). Legend/caption: “Tephra (±1×30-yr)”.
+**Tephra visual:** lake-specific SUPPORTED/TENTATIVE ages (`include_sensitivity`; same coding as A6), ±1×30-yr merged windows. Panels **(b–c)**: vertical taupe year bands. Panel **(a)**: full-column taupe shading for phases that overlap any tephra window (categorical x-axis). Legend/caption: “Tephra (±1×30-yr)”.
 
-Figures: `outputs/revision/figures/A11_alt_figure4_with_tephra.png`, `A11_alt_figure4_with_tephra.pdf`  
-Script: `scripts/revision/A11_alt_figure4_tephra.R`
+Figures: `outputs/revision/figures/A11_alt_figure5_with_tephra.png`, `A11_alt_figure5_with_tephra.pdf`  
+Script: `scripts/revision/A11_alt_figure5_tephra.R`  
+Tables: `A11_tephra_bands.csv`, `A11_fig5_phase_varpart.csv`, `A11_fig5_window_varpart.csv`, `A11_fig5_effect_diff.csv`
 
 ---
 
