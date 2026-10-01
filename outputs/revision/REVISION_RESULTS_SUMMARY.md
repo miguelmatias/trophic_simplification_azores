@@ -34,7 +34,9 @@ Chironomid counts remain low (lake medians often <<100); n = 50 is the honest co
 | Producers | 31.7 | 29.3 |
 | Consumers | 6.84 | 6.92 |
 
-**Implication for claims:** Producer rarefied richness does **not** show a strong long-term decline; consumers are essentially flat after rarefaction. The min–max standardised Fig. 4 trends are not reproduced as declines under rarefaction. Title / “simplification” wording needs caution (Decision 3 in the revision plan).
+**Implication for claims:** A1 answers R1’s sedimentation / time-standardisation concern about **temporal richness curves** (Fig. 4 style). After rarefaction, regional producer richness is only mildly lower post-1600 and consumers are flat — so do **not** hang the title on a long-term decline in rarefied regional richness.
+
+That is **not** the Mendoza & Araújo “simplification” claim used in this paper. Simplification here means increasing prevalence of **species-poor CTS** (yellow CTS1). That claim is tested by Fig. 3d (CTS occupancy over time) + Fig. 3e / **A10** (CTS1 remains the lowest-richness structure with and without rarefaction). A1 does not overturn it.
 
 Figures: `outputs/revision/figures/A1_fig4_rarefied_richness.png`, `A1_fig3e_lake_rarefied_richness.png`, `A1_sample_counts.png`
 
@@ -128,6 +130,8 @@ Paired boxplots for each CTS (CTS5→CTS1): **observed** total species richness 
 
 ANOVA p ≪ 0.001 for both series. The richness gradient across CTS persists after rarefaction (CTS5 > CTS1), but absolute differences shrink.
 
+**Implication for the simplification claim (Mendoza & Araújo):** CTS1 (yellow) remains the **species-poorest** structure under rarefaction (median 25 → 20.8). So if Fig. 3d still shows rising CTS1 prevalence toward the present, the structural “simplification” argument holds with or without rarefaction. A10 supports keeping that framing; it does not require retitling away from simplification on richness-gradient grounds.
+
 Figures: `outputs/revision/figures/A10_fig3e_observed_vs_rarefied_cts.png`, `A10_fig3e_observed_vs_rarefied_cts_dodged.png`
 
 ---
@@ -135,7 +139,7 @@ Figures: `outputs/revision/figures/A10_fig3e_observed_vs_rarefied_cts.png`, `A10
 ## Suggested claim updates (for response letter)
 
 1. Drop or heavily qualify “stronger” producer response (A2).
-2. Qualify richness decline / “simplification” until rarefied trends are framed carefully (A1).
+2. Keep **simplification** as rising prevalence of species-poor CTS1 (Fig. 3d + A10/Fig. 3e); do not equate it with a regional rarefied-richness decline (A1). Soften any Abstract/Discussion lines that say “long-term declines in species richness” unless restricted to consumers or to CTS composition.
 3. Restrict early-phase / pristine statements to lakes actually covering that interval (A3).
 4. Soften catchment → regional vegetation (A5).
 5. Keep “earlier in 6 of 9 lakes”; name Caveiro and Santiago as consumer-first (A2/A9).
