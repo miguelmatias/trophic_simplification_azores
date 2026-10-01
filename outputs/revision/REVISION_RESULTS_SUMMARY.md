@@ -10,7 +10,7 @@ Rscript scripts/revision/00_run_all.R
 
 Editable side tables (fill/verify before finalising the response letter):
 
-- `data/revision/tephra_events.csv` (curated lake×event inventory + refs; `include_sensitivity` flags A6 ages)
+- `data/revision/tephra_events.csv` (curated lake×event inventory + refs; regional rows excluded; `include_sensitivity` flags A6 predictor ages)
 - `data/revision/fish_stocking.csv` (Azul = 1792 CE; other lakes still NA)
 - `data/revision/lake_trophic_state.csv` (Caldeirão seeded; others from Table S3)
 
@@ -90,19 +90,25 @@ Arboreal % vs NAO is weak within eras (pre/post 1300 ns) but positive overall (r
 
 ## A6 — Volcanism sensitivity (R3#5–6)
 
-Tephra inventory: 39 lake×event / regional rows in `data/revision/tephra_events.csv` (raw + refs under `data/revision/tephra_*`). A6 excludes ±1 thirty-year bin around **18 lake-specific SUPPORTED/TENTATIVE** ages (7 lakes: Azul, Caveiro, Empadadas Norte, Ginjal, Peixinho, Prata, Santiago) → **27** community 30-yr bins flagged.
+Tephra inventory: **27 lake-specific** rows in `data/revision/tephra_events.csv` (regional-only rows removed; raw + refs under `data/revision/tephra_*`). A6 uses **18 SUPPORTED/TENTATIVE** ages (7 lakes: Azul, Caveiro, Empadadas Norte, Ginjal, Peixinho, Prata, Santiago) as a **predictor**, not a filter.
 
-Varpart delta (excluding − including; Pure estimate = vegetation):
+**Predictor coding:** on the regional joined 30-yr series, `tephra` = 1 if the bin centre is within ±1 thirty-year bin of any retained lake-specific tephra age, else 0 (27/66 bins = 1). Optional intensity = count of lakes with overlapping influence windows. Full n retained in all phases for the main test.
 
-| Phase | Pure NAO Δ | Pure vegetation Δ | Shared Δ | n bins (full → ex) |
-|---|---:|---:|---:|---:|
-| 1 | 0 | +0.022 | 0 | 23 → 16 |
-| 2 | NA | NA | NA | 10 → 4 (below min_n) |
-| 3 | −0.088 | **−0.557** | +0.093 | 14 → 5 |
-| 4 | 0 | **−0.254** | −0.002 | 10 → 5 |
-| 5 | 0 | 0 | 0 | 8 → 8 |
+**Primary result — varpart with vs without tephra** (adj. R²; Pure estimate = vegetation):
 
-Phase 5 (recent) is unchanged. Large Phase 3–4 vegetation pure-R² drops coincide with heavy sample loss around medieval–early modern tephras (esp. P17 ~1235–1300 CE cluster); Phase 2 becomes inestimable. Interpret as **sensitivity to bin removal / n**, not proof that volcanism drives guild structure. Caveiro proxy-only TENTATIVE layers and global (not lake-specific) age exclusion inflate the excluded set.
+| Phase | Pure NAO (base → +tep) | Pure veg (base → +tep) | Pure tephra | Shared (+tep) | Total AB → ABC | n |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 0 → 0 | 0 → 0 | 0 | 0 | 0 → 0 | 23 |
+| 2 | 0 → 0 | 0 → 0 | 0 | 0 | 0 → 0 | 10 |
+| 3 | 0.088 → 0.104 | 0.559 → 0.246 | **0.054** | 0.184 | 0.533 → 0.587 | 14 |
+| 4 | 0 → 0.073 | 0.254 → 0.096 | **0.031** | 0.086 | 0.256 → 0.288 | 10 |
+| 5 | 0.114 (base) | 0.140 (base) | — | — | — | 8 |
+
+Phase 5 has no tephra-influenced bins in this window, so the 3-predictor model is undefined there (baseline unchanged).
+
+**Implication:** Tephra explains little unique variance (≤ ~0.05–0.07 adj. R²). Adding it reallocates some Phase 3–4 vegetation pure-R² into shared fractions (tephra windows overlap clearance-era bins), but vegetation still dominates Phase 3 and NAO still rises in Phase 5. **Do not** treat volcanism as overturning the NAO/vegetation conclusions. An exclusion diagnostic (±1 bin drop) still destroys n (Phase 3: 14→5) and is **not** the main A6 result.
+
+Figures/tables: `outputs/revision/figures/A6_tephra_varpart.png`, `A6_varpart_tephra_sensitivity.csv`, `A6_varpart_delta.csv`
 
 ---
 

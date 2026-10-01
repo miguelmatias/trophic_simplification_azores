@@ -23,6 +23,10 @@ read_utf8_csv <- function(path) {
 events <- read_utf8_csv("data/revision/tephra_events_raw.csv")
 refs <- read_utf8_csv("data/revision/tephra_references.csv")
 
+# Drop regional-only provenance rows (lake like "none (regional)"); keep lake-specific inventory
+events <- events %>%
+  filter(!grepl("^none", lake, ignore.case = TRUE))
+
 primary_ref <- trimws(sub(";.*$", "", events$reference))
 
 refs_use <- refs %>%
@@ -44,8 +48,8 @@ out <- events %>%
     lake = gsub("^Emp Norte$", "Empadadas Norte", lake),
     age_ce = as.numeric(age_ce),
     primary_ref = primary_ref,
-    # Lake-specific SUPPORTED / TENTATIVE only (not NOT SUPPORTED / NOT A TEPHRA / regional)
-    include_sensitivity = !grepl("^none", lake, ignore.case = TRUE) &
+    # Lake-specific SUPPORTED / TENTATIVE only (not NOT SUPPORTED / NOT A TEPHRA)
+    include_sensitivity =
       grepl("^(SUPPORTED|TENTATIVE)", status, ignore.case = TRUE) &
       is.finite(age_ce)
   ) %>%
@@ -72,4 +76,5 @@ message("include_sensitivity TRUE: ", sum(out$include_sensitivity, na.rm = TRUE)
 message("Unmatched primary_ref (no DOI):")
 print(sort(unique(out$primary_ref[is.na(out$doi) | out$doi == ""])))
 message("Sensitivity rows:")
-print(out %>% filter(include_sensitivity) %>% select(lake, age_ce, status, event), n = 50)
+sens <- out %>% filter(include_sensitivity) %>% select(lake, age_ce, status, event)
+print(as.data.frame(sens), row.names = FALSE)
