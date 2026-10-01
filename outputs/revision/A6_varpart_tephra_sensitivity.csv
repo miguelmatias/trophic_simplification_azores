@@ -1,51 +1,51 @@
-phase,component,value,n_bins,n_lakes,tephra_prevalence,scenario
-Phase 1,Pure NAO_Median_Value,0,43,4,0.18604651162790697,NAO_veg
-Phase 1,Pure estimate,0,43,4,0.18604651162790697,NAO_veg
-Phase 1,Shared,0.0040686404867703585,43,4,0.18604651162790697,NAO_veg
-Phase 1,Total_AB,0.0040686404867703585,43,4,0.18604651162790697,NAO_veg
-Phase 2,Pure NAO_Median_Value,0,28,5,0.14285714285714285,NAO_veg
-Phase 2,Pure estimate,0,28,5,0.14285714285714285,NAO_veg
-Phase 2,Shared,0,28,5,0.14285714285714285,NAO_veg
-Phase 2,Total_AB,0,28,5,0.14285714285714285,NAO_veg
-Phase 3,Pure NAO_Median_Value,2.97025617993274e-4,71,8,0.14084507042253522,NAO_veg
-Phase 3,Pure estimate,0.06159396711462661,71,8,0.14084507042253522,NAO_veg
-Phase 3,Shared,0,71,8,0.14084507042253522,NAO_veg
-Phase 3,Total_AB,0.05898150998865681,71,8,0.14084507042253522,NAO_veg
-Phase 4,Pure NAO_Median_Value,0,73,9,0.0821917808219178,NAO_veg
-Phase 4,Pure estimate,0.013210211120883608,73,9,0.0821917808219178,NAO_veg
-Phase 4,Shared,0,73,9,0.0821917808219178,NAO_veg
-Phase 4,Total_AB,0.011988599703988134,73,9,0.0821917808219178,NAO_veg
-Phase 5,Pure NAO_Median_Value,0.0033039056034442904,63,9,0,NAO_veg
-Phase 5,Pure estimate,0.01356426935723265,63,9,0,NAO_veg
-Phase 5,Shared,0.005354634148824755,63,9,0,NAO_veg
-Phase 5,Total_AB,0.022222809109501696,63,9,0,NAO_veg
-Phase 1,Pure NAO_Median_Value,0,43,4,0.18604651162790697,NAO_veg_tephra
-Phase 1,Pure estimate,0,43,4,0.18604651162790697,NAO_veg_tephra
-Phase 1,Pure tephra,0.013868730880408853,43,4,0.18604651162790697,NAO_veg_tephra
-Phase 1,Shared,0.0040686404867702475,43,4,0.18604651162790697,NAO_veg_tephra
-Phase 1,Total_AB,0.0040686404867703585,43,4,0.18604651162790697,NAO_veg_tephra
-Phase 1,Total_ABC,0.0179373713671791,43,4,0.18604651162790697,NAO_veg_tephra
-Phase 2,Pure NAO_Median_Value,0,28,5,0.14285714285714285,NAO_veg_tephra
-Phase 2,Pure estimate,0,28,5,0.14285714285714285,NAO_veg_tephra
-Phase 2,Pure tephra,0,28,5,0.14285714285714285,NAO_veg_tephra
-Phase 2,Shared,0,28,5,0.14285714285714285,NAO_veg_tephra
-Phase 2,Total_AB,0,28,5,0.14285714285714285,NAO_veg_tephra
-Phase 2,Total_ABC,0,28,5,0.14285714285714285,NAO_veg_tephra
-Phase 3,Pure NAO_Median_Value,2.865130622643486e-4,71,8,0.14084507042253522,NAO_veg_tephra
-Phase 3,Pure estimate,0.06168334119127694,71,8,0.14084507042253522,NAO_veg_tephra
-Phase 3,Pure tephra,0,71,8,0.14084507042253522,NAO_veg_tephra
-Phase 3,Shared,0,71,8,0.14084507042253522,NAO_veg_tephra
-Phase 3,Total_AB,0.05898150998865681,71,8,0.14084507042253522,NAO_veg_tephra
-Phase 3,Total_ABC,0.054871413463483454,71,8,0.14084507042253522,NAO_veg_tephra
-Phase 4,Pure NAO_Median_Value,0,73,9,0.0821917808219178,NAO_veg_tephra
-Phase 4,Pure estimate,0.013587113122083938,73,9,0.0821917808219178,NAO_veg_tephra
-Phase 4,Pure tephra,0,73,9,0.0821917808219178,NAO_veg_tephra
-Phase 4,Shared,0,73,9,0.0821917808219178,NAO_veg_tephra
-Phase 4,Total_AB,0.011988599703988134,73,9,0.0821917808219178,NAO_veg_tephra
-Phase 4,Total_ABC,0.006932381672040355,73,9,0.0821917808219178,NAO_veg_tephra
-Phase 5,Pure NAO_Median_Value,NA,63,9,0,NAO_veg_tephra
-Phase 5,Pure estimate,NA,63,9,0,NAO_veg_tephra
-Phase 5,Pure tephra,NA,63,9,0,NAO_veg_tephra
-Phase 5,Shared,NA,63,9,0,NAO_veg_tephra
-Phase 5,Total_AB,NA,63,9,0,NAO_veg_tephra
-Phase 5,Total_ABC,NA,63,9,0,NAO_veg_tephra
+phase,component,value,n_bins,n_lakes,tephra_prevalence,scenario,tephra_fallback,model
+Phase 1,Pure NAO_Median_Value,0,43,4,0.09302325581395349,NAO_veg,FALSE,NAO_veg
+Phase 1,Pure estimate,0,43,4,0.09302325581395349,NAO_veg,FALSE,NAO_veg
+Phase 1,Shared,0.0040686404867703585,43,4,0.09302325581395349,NAO_veg,FALSE,NAO_veg
+Phase 1,Total_AB,0.0040686404867703585,43,4,0.09302325581395349,NAO_veg,FALSE,NAO_veg
+Phase 2,Pure NAO_Median_Value,0,28,5,0.14285714285714285,NAO_veg,FALSE,NAO_veg
+Phase 2,Pure estimate,0,28,5,0.14285714285714285,NAO_veg,FALSE,NAO_veg
+Phase 2,Shared,0,28,5,0.14285714285714285,NAO_veg,FALSE,NAO_veg
+Phase 2,Total_AB,0,28,5,0.14285714285714285,NAO_veg,FALSE,NAO_veg
+Phase 3,Pure NAO_Median_Value,2.97025617993274e-4,71,8,0.07042253521126761,NAO_veg,FALSE,NAO_veg
+Phase 3,Pure estimate,0.06159396711462661,71,8,0.07042253521126761,NAO_veg,FALSE,NAO_veg
+Phase 3,Shared,0,71,8,0.07042253521126761,NAO_veg,FALSE,NAO_veg
+Phase 3,Total_AB,0.05898150998865681,71,8,0.07042253521126761,NAO_veg,FALSE,NAO_veg
+Phase 4,Pure NAO_Median_Value,0,73,9,0,NAO_veg,FALSE,NAO_veg
+Phase 4,Pure estimate,0.013210211120883608,73,9,0,NAO_veg,FALSE,NAO_veg
+Phase 4,Shared,0,73,9,0,NAO_veg,FALSE,NAO_veg
+Phase 4,Total_AB,0.011988599703988134,73,9,0,NAO_veg,FALSE,NAO_veg
+Phase 5,Pure NAO_Median_Value,0.0033039056034442904,63,9,0,NAO_veg,FALSE,NAO_veg
+Phase 5,Pure estimate,0.01356426935723265,63,9,0,NAO_veg,FALSE,NAO_veg
+Phase 5,Shared,0.005354634148824755,63,9,0,NAO_veg,FALSE,NAO_veg
+Phase 5,Total_AB,0.022222809109501696,63,9,0,NAO_veg,FALSE,NAO_veg
+Phase 1,Pure NAO_Median_Value,0,43,4,0.09302325581395349,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 1,Pure estimate,0,43,4,0.09302325581395349,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 1,Pure tephra,0.005015150686300873,43,4,0.09302325581395349,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 1,Shared,0.0040686404867703585,43,4,0.09302325581395349,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 1,Total_AB,0.0040686404867703585,43,4,0.09302325581395349,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 1,Total_ABC,0.009083791173071232,43,4,0.09302325581395349,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 2,Pure NAO_Median_Value,0,28,5,0.14285714285714285,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 2,Pure estimate,0,28,5,0.14285714285714285,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 2,Pure tephra,0,28,5,0.14285714285714285,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 2,Shared,0,28,5,0.14285714285714285,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 2,Total_AB,0,28,5,0.14285714285714285,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 2,Total_ABC,0,28,5,0.14285714285714285,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 3,Pure NAO_Median_Value,1.2050853462786115e-4,71,8,0.07042253521126761,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 3,Pure estimate,0.05928570264737798,71,8,0.07042253521126761,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 3,Pure tephra,0,71,8,0.07042253521126761,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 3,Shared,0,71,8,0.07042253521126761,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 3,Total_AB,0.05898150998865681,71,8,0.07042253521126761,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 3,Total_ABC,0.05618174773373008,71,8,0.07042253521126761,NAO_veg_tephra,FALSE,NAO_veg_tephra
+Phase 4,Pure NAO_Median_Value,0,73,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 4,Pure estimate,0.013210211120883608,73,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 4,Pure tephra,NA,73,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 4,Shared,0,73,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 4,Total_AB,0.011988599703988134,73,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 4,Total_ABC,NA,73,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 5,Pure NAO_Median_Value,0.0033039056034442904,63,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 5,Pure estimate,0.01356426935723265,63,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 5,Pure tephra,NA,63,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 5,Shared,0.005354634148824755,63,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 5,Total_AB,0.022222809109501696,63,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback
+Phase 5,Total_ABC,NA,63,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback

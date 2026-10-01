@@ -48,9 +48,9 @@ out <- events %>%
     lake = gsub("^Emp Norte$", "Empadadas Norte", lake),
     age_ce = as.numeric(age_ce),
     primary_ref = primary_ref,
-    # Lake-specific SUPPORTED / TENTATIVE only (not NOT SUPPORTED / NOT A TEPHRA)
+    # Lake-specific SUPPORTED layers only (drop proxy-inferred TENTATIVE / NOT SUPPORTED)
     include_sensitivity =
-      grepl("^(SUPPORTED|TENTATIVE)", status, ignore.case = TRUE) &
+      grepl("^SUPPORTED", status, ignore.case = TRUE) &
       is.finite(age_ce)
   ) %>%
   left_join(refs_use, by = "primary_ref") %>%

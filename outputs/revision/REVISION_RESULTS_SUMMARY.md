@@ -114,62 +114,73 @@ Arboreal % vs NAO is weak within eras (pre/post 1300 ns) but positive overall (r
 
 ## A6 — Volcanism sensitivity / alternative Figure 5 (R3#5–6)
 
-Tephra inventory: **27 lake-specific** rows in `data/revision/tephra_events.csv` (no regional rows). A6 uses **18 SUPPORTED/TENTATIVE** ages (`include_sensitivity`; 7 lakes) as a **lake-specific predictor**, not a regional curve and not a data filter.
+Tephra inventory: **27 lake-specific** rows in `data/revision/tephra_events.csv` (no regional rows). A6 uses **11 SUPPORTED-only** ages (`include_sensitivity`; 6 lakes) as a **lake-specific predictor**, not a regional curve and not a data filter. **Seven rows dropped** from the previous SUPPORTED/TENTATIVE set: four **Caveiro proxy-inferred** layers (100, 500, 1350, 1615 CE; Björck Table 3, no visible tephra) plus three **TENTATIVE** Empadadas/Ginjal entries (Furnas I / Fogo 1563 / Ginjal basal ash).
 
-**Predictor coding (lake × 30-yr bin matrix):** for each lake×bin, `tephra = 1` if that bin centre is within ±1×30-yr of **that lake’s** retained tephra ages, else 0. This flags **28/283** lake×bins (9.9%; 6 lakes with any tephra flag in the abundance table — Santiago has inventory ages but no overlapping bio bins). No regional “any-lake tephra” indicator.
+**Predictor coding (lake × 30-yr bin matrix):** for each lake×bin, `tephra = 1` if that bin centre is within ±1×30-yr of **that lake’s** retained SUPPORTED ages, else 0. This flags **13/283** lake×bins (4.6%; 4 lakes with any tephra flag — Santiago/Peixinho inventory ages no longer overlap bins after proxy removal). No regional “any-lake tephra” indicator.
 
 **Design (prefer apples-to-apples):** both columns are **lake-level with `Condition(lake)`** on `bio_lake_30` joined to regional NAO + vegetation (± lake-specific tephra). This is a **lake-level alternative Fig. 5**, not a replot of the published regional Fig. 5. Significance: residual permutation tests (`n_perm = 999`; published Fig. 5 used 9999) with faded NS fractions (Shared always opaque).
 
 **Layout — `A6_alt_figure5_standard_vs_tephra` (2 columns × 3 rows):**
 - **Left:** NAO + vegetation only (+ Condition(lake))
-- **Right:** NAO + vegetation + lake-specific tephra (+ Condition(lake))
-- **(a)** Historical phases — stacked Pure Climate / Pure Vegetation / Pure tephra (right only) / Shared
+- **Right:** NAO + vegetation + lake-specific tephra where `tephra` varies; **NAO + vegetation-only fallback** (same partial-RDA framework) where tephra is invariant, marked with **\***
+- **(a)** Historical phases — stacked Pure Climate / Pure Vegetation / Pure tephra (right, full model only) / Shared
 - **(b)** Moving window (300-yr window, 30-yr step) — same components
-- **(c)** Effect size (Vegetation − Climate) by window (tephra partialled on the right)
+- **(c)** Effect size (Vegetation − Climate) by window (tephra partialled on the right when estimable)
 
 **Primary phase result** (adj. R² after Condition(lake); Pure estimate = vegetation):
 
-| Phase | Pure NAO (base → +tep) | Pure veg (base → +tep) | Pure tephra (p) | Shared (+tep) | n bins / lakes |
-|---|---:|---:|---:|---:|---:|
-| 1 | 0 → 0 | 0 → 0 | **0.014 (p = 0.066, NS)** | 0.004 | 43 / 4 |
-| 2 | 0 → 0 | 0 → 0 | 0 (p = 0.966) | 0 | 28 / 5 |
-| 3 | ~0 → ~0 | **0.062 → 0.062 (p = 0.001)** | 0 (p = 0.831) | 0 | 71 / 8 |
-| 4 | 0 → 0 | **0.013 → 0.014 (p = 0.023)** | 0 (p = 0.959) | 0 | 73 / 9 |
-| 5 | 0.003 (NS) | **0.014 (p = 0.032)** | — (not estimable) | — | 63 / 9 |
+| Phase | Pure NAO (base → +tep) | Pure veg (base → +tep) | Pure tephra (p) | Right column |
+|---|---:|---:|---:|---|
+| 1 | 0 → 0 | 0 → 0 | 0.005 (p = 0.204, NS) | full +tephra |
+| 2 | 0 → 0 | 0 → 0 | 0 (p = 0.966) | full +tephra |
+| 3 | ~0 → ~0 | **0.062 → 0.059 (p = 0.001)** | 0 (p = 0.663) | full +tephra |
+| 4 | 0 → 0 | **0.013 (p = 0.037)** | — | **\* fallback** (no tephra flags in phase) |
+| 5 | 0.003 (NS) | **0.014 (p = 0.032)** | — | **\* fallback** (no tephra variation) |
 
-**Phase 5 right blank is not “zero tephra effect”:** Phase 5 (≥1750 CE; n = 63 bins / 9 lakes) has `tephra_prevalence = 0` (last lake×bin tephra flag is 1620 CE). The 3-predictor model is **skipped** when `length(unique(tephra)) < 2` (`tephra_varies = FALSE` → all adj. R² / p = NA). Left Phase 5 is the standard 2-predictor fit only; do not read the empty right bar as a null result. Pure-vegetation significance with tephra is therefore claimable for **Phases 3–4 only** on the right (Phase 3: 0.062, p = 0.001; Phase 4: 0.014, p = 0.023); Phase 5 vegetation (0.014, p = 0.032) is left-column only.
+Phases 4–5 on the right repeat the left-column NAO + vegetation partition (asterisk); they are not empty and do not imply a null tephra effect.
 
-**Early moving-window pure tephra (selected midpoints; n_perm = 999):** several ~470–660 CE windows are significant at α = 0.05 and plot at full opacity:
+**Early moving-window pure tephra (470–660 CE midpoints; SUPPORTED-only; n_perm = 999):** after removing proxy-inferred Caveiro layers, **no window remains significant** at α = 0.05:
 
 | Midpoint (CE) | Window | Pure tephra adj. R² | p (pure tephra) | Sig? |
 |---:|---|---:|---:|:---:|
-| 480 | 330–630 | 0.049 | 0.031 | yes |
-| 510 | 360–660 | 0.045 | 0.039 | yes |
-| 540 | 390–690 | 0.043 | 0.050 | borderline |
-| 600 | 450–750 | 0.047 | 0.033 | yes |
-| 660 | 510–810 | 0.037 | 0.045 | yes |
+| 480 | 330–630 | 0.013 | 0.224 | no |
+| 510 | 360–660 | 0.023 | 0.120 | no |
+| 540 | 390–690 | 0.035 | 0.068 | no |
+| 600 | 450–750 | 0.006 | 0.302 | no |
+| 660 | 510–810 | 0.013 | 0.222 | no |
 
-(Pure veg/NAO in these windows are NS.) This is a plausible **local volcanic signal before the main vegetation-change interval** in the Pico/Corvo/Prata–dominated early record; it does not overturn the later vegetation-dominated pattern (~1000–1400 CE).
+The earlier significant early-tephra pattern was driven largely by **proxy-only Caveiro ages** in the old inventory; with SUPPORTED layers only, early pure-tephra fractions are small and NS. The later vegetation-dominated interval (~1000–1400 CE) is unchanged.
 
-**Post-~1780 right-side gap:** windows with midpoints 1800, 1830, 1860 (n = 78–80 bins) have `tephra_prevalence = 0` / `tephra_varies = FALSE` and are **dropped** (NA, not a failed RDA fit). Midpoint 1770 still has one tephra-flagged bin (prev ≈ 0.013) and is estimable. Left-column late windows remain. The figure marks tephra **presence** with ticks on the right panels (not grey n/a bands): panel (a) diamonds above phases with `tephra_prevalence > 0`; panels (b–c) tick marks at unique 30-yr bin centres where lake-specific `tephra = 1`. Phase 5 keeps a light italic “n/a” text label only (no full-height grey bar).
+**Post-~1780 right column:** windows with no tephra variation (e.g. midpoints 1800, 1830, 1860) now show the **NAO + vegetation fallback** with \*, matching the left column for those windows rather than blank panels. Tephra **presence** ticks on right panels (b)–(c) mark unique 30-yr bin centres where lake-specific `tephra = 1`.
+
+**Caption / encoding:** figure caption uses UTF-8 “±1 × 30-yr” and explains full +tephra vs \* fallback bars.
 
 **Interpretation (response letter / SI caption):**  
-This lake-level alternative Figure 5 places the standard NAO + vegetation partitioning (left) beside the same design with lake-specific tephra added (right), both after Condition(lake), so the tephra contrast is apples-to-apples rather than a regional-vs-lake comparison. Across historical phases where tephra varies (Phases 1–4), pure tephra is small: Phase 1 adj. R² ≈ 0.014 (p ≈ 0.066, NS); Phases 2–4 ≈ 0 (all NS). Pure vegetation remains the only significant unique fraction in Phases 3–4 and is essentially unchanged when tephra is included; Phase 5 (+tephra) is not estimable (no tephra variation after 1620 CE), so the empty right Phase 5 bar is “n/a”, not a null effect. Moving-window panels keep the vegetation-dominated interval (~1000–1400 CE) on both sides, but early windows (~480–660 CE) show significant pure-tephra fractions (adj. R² ≈ 0.037–0.049; p ≈ 0.031–0.045) consistent with a local volcanic signal before major vegetation change. Right-side windows after ~1780 are missing because tephra is invariant (dropped), not because fits failed. Magnitudes are smaller than published regional Figure 5 because Condition(lake) absorbs among-lake structure; compare left vs right within this figure. Overall, lake-specific volcanism does not reallocate the main NAO/vegetation chronology, but early tephra is not uniformly non-significant.
+Lake-level alternative Fig. 5 contrasts NAO + vegetation (left) with the same design plus lake-specific **SUPPORTED** tephra where it varies (right), both with Condition(lake). Pure tephra is small in Phases 1–3 and never significant at α = 0.05 after the stricter inventory; pure vegetation in Phase 3 remains the main significant unique fraction and is barely altered by tephra. Phases 4–5 and late moving windows on the right use an explicit NAO + vegetation fallback (\*) when tephra is invariant, so no information is hidden as empty cells. Early-window pure-tephra peaks that appeared with proxy-inferred Caveiro layers **do not survive** SUPPORTED-only filtering. Overall, defensible lake-specific volcanism does not reallocate the main NAO/vegetation chronology.
 
-Figures/tables: `outputs/revision/figures/A6_alt_figure5_standard_vs_tephra.png` (+ PDF), `A6_varpart_tephra_sensitivity.csv`, `A6_varpart_delta.csv`, `A6_varpart_results_with_p.csv`, `A6_window_varpart.csv`, `A6_window_sig.csv`, `A6_alt_fig5_*.csv`, `A6_tephra_lake_bin_matrix.csv`, `A6_tephra_presence_ages.csv`, `A6_phase_sig_*.csv`  
-Script: `scripts/revision/A06_volcanism_sensitivity.R`
+Figures/tables: `outputs/revision/figures/A6_alt_figure5_standard_vs_tephra.png`, `A6_varpart_tephra_sensitivity.csv`, `A6_varpart_delta.csv`, `A6_varpart_results_with_p.csv`, `A6_window_varpart.csv`, `A6_window_sig.csv`, `A6_alt_fig5_*.csv`, `A6_tephra_lake_bin_matrix.csv`, `A6_tephra_presence_ages.csv`, `A6_phase_sig_*.csv`  
+Script: `scripts/revision/A06_volcanism_sensitivity.R`; tephra build: `scripts/revision/_build_tephra_events.R`
 
 ---
 
 ## A7 — CTS5/CTS6 split (R3#4)
 
-Before 750 CE, k = 6 recovers a distinct **CTS5** (~15% of early samples) that k = 5 / lumping hides. Early composition is still dominated by CTS2 (~67–69%), so “relative early stability” can be kept if qualified, but lumping CTS5→CTS5/6 should be justified or reversed.
+**CTS labelling (corrected):** After AMD clustering, clusters are **reordered by mean euplanctonic relative abundance** (highest → **CTS1**), with the MS viridis palette (**CTS1 = yellow**). CTS1 mean euplanctonic ≈ 0.79–0.80 under both k = 5 and k = 6. Temporal occupancy is normalised **within each 30-yr Age(CE) bin** (proportions sum to 1; see `A7_cts_temporal_bin_sums.csv`).
+
+Before 750 CE, early samples are dominated by **low-euplanctonic** classes (k = 5: CTS5 ≈ 69%, CTS4 ≈ 26%; k = 6: CTS4 ≈ 67%, plus a distinct CTS6 ≈ 16%). Euplanctonic **CTS1** rises mainly after ~1200 CE. k = 6 still recovers structure that k = 5 / lumping hides; “relative early stability” can be kept if qualified as dominance of non-CTS1 (non-euplanctonic) states.
 
 ---
 
-## A8 — Morphometry / CTS1 (H4)
+## A8 — Morphometry / CTS1 (H4; reviewer L415 / L484)
 
-CTS1 occupancy vs Zmax is weak (Spearman ≈ 0.10, n = 8). Deep lakes (Funda, Santiago, Azul) do not uniquely monopolise CTS1 under the k = 6 ranking used here. Fill Table S3 TP / trophic state for a proper test; Prata still lacks morphometry.
+With **corrected CTS1** (euplanctonic-dominated, k = 6), CTS1 occupancy vs **Zmax** is **strong and positive** (Spearman **ρ ≈ 0.81, p ≈ 0.016, n = 8**). Deep lakes carry more CTS1 (Santiago ≈ 0.95, Funda ≈ 0.41; shallow lakes ≈ 0). **Prata is excluded** from depth tests: it is now a peatland (Zmax = 0 / unavailable in metadata).
+
+Same Spearman tests (n limited by missing Table S3):
+- CTS1 vs **lake area**: ρ ≈ 0.07, p ≈ 0.88 (n = 7; Ginjal area missing)
+- CTS1 vs **trophic state / TP**: not estimable (only Caldeirão has Table S3 values; n = 1)
+- **Turnover** vs Zmax: ρ ≈ −0.10, p ≈ 0.84 (n = 8); **Funda** is a high-turnover outlier. Area/trophic likewise NS or missing.
+
+**Implication:** after fixing CTS labelling, morphometry (depth) supports H4 for euplanctonic CTS1; fill Table S3 before claiming trophic-state contingency.
 
 ---
 

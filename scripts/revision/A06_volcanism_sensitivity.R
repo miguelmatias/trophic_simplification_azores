@@ -4,7 +4,8 @@
 #   Right: same + lake-specific tephra predictor with Condition(lake)
 # Panels: (a) historical phases, (b) moving window, (c) Climate vs VegChange
 # Tephra is coded per lake×bin (1 if within ±1×30-yr of that lake's
-# SUPPORTED/TENTATIVE tephra ages); no regional tephra curve.
+# SUPPORTED tephra ages); no regional tephra curve.
+# Right column: NAO+veg+tephra where tephra varies; else NAO+veg-only fallback (*).
 # Significance: permutation tests + faded NS fractions (Fig. 5 style).
 source("scripts/revision/_bootstrap.R")
 shared <- revision_bootstrap()
@@ -40,6 +41,36 @@ safe_adj_r2 <- function(mod) {
   max(0, r2)
 }
 
+base_varpart_components <- function(pred_a, pred_b) {
+  c(
+    paste0("Pure ", pred_a), paste0("Pure ", pred_b),
+    "Shared", "Total_AB"
+  )
+}
+
+apply_tephra_fallback_vp <- function(
+    vp_tep, vp_base, varies_tbl, id_col, base_components) {
+  fb_mask <- !varies_tbl$tephra_varies | is.na(varies_tbl$tephra_varies)
+  fb_ids <- varies_tbl[fb_mask, id_col, drop = TRUE]
+  vp_tep <- vp_tep %>%
+    dplyr::mutate(tephra_fallback = .data[[id_col]] %in% fb_ids)
+  fb_vals <- vp_base %>%
+    dplyr::filter(.data[[id_col]] %in% fb_ids, component %in% base_components) %>%
+    dplyr::select(dplyr::all_of(c(id_col, "component")), value_fb = value)
+  vp_tep %>%
+    dplyr::left_join(fb_vals, by = c(id_col, "component")) %>%
+    dplyr::mutate(
+      value = dplyr::if_else(
+        tephra_fallback & component %in% base_components,
+        value_fb, value
+      ),
+      model = dplyr::if_else(
+        tephra_fallback, "NAO_veg_only_fallback", "NAO_veg_tephra"
+      )
+    ) %>%
+    dplyr::select(-value_fb)
+}
+
 # ---- Tephra inventory (lake-specific only) ----
 tephra_all <- read_tephra() %>%
   dplyr::mutate(
@@ -52,7 +83,7 @@ if ("include_sensitivity" %in% names(tephra_all)) {
   tephra_all$include_sensitivity <- as.logical(tephra_all$include_sensitivity)
 } else if ("status" %in% names(tephra_all)) {
   tephra_all$include_sensitivity <-
-    grepl("^(SUPPORTED|TENTATIVE)", tephra_all$status, ignore.case = TRUE) &
+    grepl("^SUPPORTED", tephra_all$status, ignore.case = TRUE) &
     is.finite(tephra_all$age_ce)
 } else {
   tephra_all$include_sensitivity <- is.finite(tephra_all$age_ce)
@@ -315,9 +346,16 @@ phase_sig3 <- purrr::imap_dfr(phase_breaks, function(bounds, phase_name) {
 # ---- Effect sizes ----
 message("Computing phase varpart effect sizes...")
 vp_base <- calc_phase_varpart_lake2(lake_env, phase_breaks, min_n = min_n) %>%
-  dplyr::mutate(scenario = "NAO_veg")
-vp_tep <- calc_phase_varpart_lake3(lake_env, phase_breaks, min_n = min_n) %>%
+  dplyr::mutate(scenario = "NAO_veg", tephra_fallback = FALSE, model = "NAO_veg")
+vp_tep_raw <- calc_phase_varpart_lake3(lake_env, phase_breaks, min_n = min_n) %>%
   dplyr::mutate(scenario = "NAO_veg_tephra")
+vp_tep <- apply_tephra_fallback_vp(
+  vp_tep_raw,
+  vp_base,
+  phase_sig3 %>% dplyr::select(phase, tephra_varies),
+  id_col = "phase",
+  base_components = base_varpart_components(A, B)
+)
 
 vp <- dplyr::bind_rows(vp_base, vp_tep)
 revision_write_csv(vp, "outputs/revision/A6_varpart_tephra_sensitivity.csv")
@@ -573,13 +611,10 @@ win_base <- purrr::map_dfr(
   ~ calc_window_varpart_lake2(lake_env, .x, window_size, min_n = min_n)
 ) %>% dplyr::mutate(scenario = "NAO_veg")
 
-win_tep <- purrr::map_dfr(
+win_tep_raw <- purrr::map_dfr(
   window_starts,
   ~ calc_window_varpart_lake3(lake_env, .x, window_size, min_n = min_n)
 ) %>% dplyr::mutate(scenario = "NAO_veg_tephra")
-
-win_vp <- dplyr::bind_rows(win_base, win_tep)
-revision_write_csv(win_vp, "outputs/revision/A6_window_varpart.csv")
 
 message("Computing moving-window significance (base; n_perm = ", n_perm, ")...")
 win_sig2 <- purrr::map_dfr(
@@ -592,6 +627,19 @@ win_sig3 <- purrr::map_dfr(
   window_starts,
   ~ calc_window_sig_lake3(lake_env, .x, window_size, min_n = min_n, n_perm = n_perm)
 ) %>% dplyr::mutate(scenario = "NAO_veg_tephra")
+
+win_tep <- apply_tephra_fallback_vp(
+  win_tep_raw,
+  win_base,
+  win_sig3 %>% dplyr::select(window_start, tephra_varies),
+  id_col = "window_start",
+  base_components = c("Pure Climate", "Pure Vegetation", "Shared", "Total_AB")
+)
+win_base <- win_base %>%
+  dplyr::mutate(tephra_fallback = FALSE, model = "NAO_veg")
+
+win_vp <- dplyr::bind_rows(win_base, win_tep)
+revision_write_csv(win_vp, "outputs/revision/A6_window_varpart.csv")
 
 win_sig <- dplyr::bind_rows(
   win_sig2 %>% dplyr::mutate(p_pure_C = NA_real_, tephra_varies = NA),
@@ -615,22 +663,38 @@ effect_colors_split <- c(
   "Climate > VegChange"            = "#F4B942"
 )
 
+phase_sig_tep_plot <- phase_sig3 %>%
+  dplyr::left_join(
+    phase_sig2 %>%
+      dplyr::select(phase, p_pure_A_base = p_pure_A, p_pure_B_base = p_pure_B,
+                    p_full_base = p_full),
+    by = "phase"
+  ) %>%
+  dplyr::mutate(
+    tephra_fallback = !tephra_varies | is.na(tephra_varies),
+    p_pure_A_plot = dplyr::if_else(tephra_fallback, p_pure_A_base, p_pure_A),
+    p_pure_B_plot = dplyr::if_else(tephra_fallback, p_pure_B_base, p_pure_B),
+    p_full_plot = dplyr::if_else(tephra_fallback, p_full_base, p_full)
+  )
+
 phase_flags <- dplyr::bind_rows(
   phase_sig2 %>%
     dplyr::transmute(
       phase, scenario = "NAO_veg",
+      tephra_fallback = FALSE,
       sig_pure_A = !is.na(p_pure_A) & p_pure_A < 0.05,
       sig_pure_B = !is.na(p_pure_B) & p_pure_B < 0.05,
       sig_pure_C = FALSE,
       sig_full   = !is.na(p_full) & p_full < 0.05
     ),
-  phase_sig3 %>%
+  phase_sig_tep_plot %>%
     dplyr::transmute(
       phase, scenario = "NAO_veg_tephra",
-      sig_pure_A = !is.na(p_pure_A) & p_pure_A < 0.05,
-      sig_pure_B = !is.na(p_pure_B) & p_pure_B < 0.05,
-      sig_pure_C = !is.na(p_pure_C) & p_pure_C < 0.05,
-      sig_full   = !is.na(p_full) & p_full < 0.05
+      tephra_fallback = tephra_fallback,
+      sig_pure_A = !is.na(p_pure_A_plot) & p_pure_A_plot < 0.05,
+      sig_pure_B = !is.na(p_pure_B_plot) & p_pure_B_plot < 0.05,
+      sig_pure_C = !tephra_fallback & !is.na(p_pure_C) & p_pure_C < 0.05,
+      sig_full   = !is.na(p_full_plot) & p_full_plot < 0.05
     )
 )
 
@@ -639,6 +703,8 @@ phase_plot <- vp %>%
     paste0("Pure ", A), paste0("Pure ", B), paste0("Pure ", C), "Shared"
   )) %>%
   dplyr::filter(!is.na(value), value > 0) %>%
+  dplyr::filter(!(scenario == "NAO_veg_tephra" & tephra_fallback &
+                    component == paste0("Pure ", C))) %>%
   dplyr::left_join(phase_flags, by = c("phase", "scenario")) %>%
   dplyr::mutate(
     component_label = dplyr::recode(
@@ -673,19 +739,45 @@ phase_plot <- vp %>%
   )
 
 # ---- Plot data: windows ----
-win_flags <- win_sig %>%
-  dplyr::transmute(
-    window_start, window_end, midpoint, scenario,
-    sig_pure_A = !is.na(p_pure_A) & p_pure_A < 0.05,
-    sig_pure_B = !is.na(p_pure_B) & p_pure_B < 0.05,
-    sig_pure_C = !is.na(p_pure_C) & p_pure_C < 0.05
+win_sig_tep_plot <- win_sig3 %>%
+  dplyr::left_join(
+    win_sig2 %>%
+      dplyr::select(window_start, p_pure_A_base = p_pure_A, p_pure_B_base = p_pure_B),
+    by = "window_start"
+  ) %>%
+  dplyr::mutate(
+    tephra_fallback = !tephra_varies | is.na(tephra_varies),
+    p_pure_A_plot = dplyr::if_else(tephra_fallback, p_pure_A_base, p_pure_A),
+    p_pure_B_plot = dplyr::if_else(tephra_fallback, p_pure_B_base, p_pure_B)
   )
+
+win_flags <- dplyr::bind_rows(
+  win_sig2 %>%
+    dplyr::transmute(
+      window_start, window_end, midpoint, scenario,
+      tephra_fallback = FALSE,
+      sig_pure_A = !is.na(p_pure_A) & p_pure_A < 0.05,
+      sig_pure_B = !is.na(p_pure_B) & p_pure_B < 0.05,
+      sig_pure_C = FALSE
+    ),
+  win_sig_tep_plot %>%
+    dplyr::transmute(
+      window_start, window_end, midpoint,
+      scenario = "NAO_veg_tephra",
+      tephra_fallback = tephra_fallback,
+      sig_pure_A = !is.na(p_pure_A_plot) & p_pure_A_plot < 0.05,
+      sig_pure_B = !is.na(p_pure_B_plot) & p_pure_B_plot < 0.05,
+      sig_pure_C = !tephra_fallback & !is.na(p_pure_C) & p_pure_C < 0.05
+    )
+)
 
 win_plot <- win_vp %>%
   dplyr::filter(component %in% c(
     "Pure Climate", "Pure Vegetation", "Pure tephra", "Shared"
   )) %>%
   dplyr::filter(!is.na(value), value > 0) %>%
+  dplyr::filter(!(scenario == "NAO_veg_tephra" & tephra_fallback &
+                    component == "Pure tephra")) %>%
   dplyr::left_join(win_flags, by = c("window_start", "window_end", "midpoint", "scenario")) %>%
   dplyr::mutate(
     keep = !(scenario == "NAO_veg" & component == "Pure tephra")
@@ -711,15 +803,55 @@ win_plot <- win_vp %>%
   )
 
 # ---- Plot data: effect difference (Vegetation − Climate) ----
+win_tephra_fallback <- win_tep %>%
+  dplyr::distinct(window_start, window_end, midpoint, tephra_fallback)
+
 effect_diff <- win_vp %>%
   dplyr::filter(component %in% c("Pure Vegetation", "Pure Climate")) %>%
   dplyr::select(window_start, window_end, midpoint, scenario, component, value) %>%
   tidyr::pivot_wider(names_from = component, values_from = value) %>%
   dplyr::left_join(
-    win_sig %>%
-      dplyr::select(window_start, window_end, midpoint, scenario, p_pure_A, p_pure_B),
-    by = c("window_start", "window_end", "midpoint", "scenario")
+    win_tephra_fallback,
+    by = c("window_start", "window_end", "midpoint")
   ) %>%
+  dplyr::mutate(
+    tephra_fallback = dplyr::coalesce(
+      tephra_fallback & scenario == "NAO_veg_tephra", FALSE
+    )
+  ) %>%
+  dplyr::left_join(
+    win_sig2 %>%
+      dplyr::select(window_start, p_pure_A_base = p_pure_A, p_pure_B_base = p_pure_B),
+    by = "window_start"
+  ) %>%
+  dplyr::left_join(
+    win_sig_tep_plot %>%
+      dplyr::select(
+        window_start, p_pure_A_tep = p_pure_A_plot, p_pure_B_tep = p_pure_B_plot
+      ),
+    by = "window_start"
+  ) %>%
+  dplyr::left_join(
+    win_sig2 %>%
+      dplyr::select(window_start, p_pure_A_left = p_pure_A, p_pure_B_left = p_pure_B),
+    by = "window_start"
+  ) %>%
+  dplyr::mutate(
+    p_pure_A = dplyr::case_when(
+      scenario == "NAO_veg_tephra" & tephra_fallback ~ p_pure_A_base,
+      scenario == "NAO_veg_tephra" ~ p_pure_A_tep,
+      scenario == "NAO_veg" ~ p_pure_A_left,
+      TRUE ~ NA_real_
+    ),
+    p_pure_B = dplyr::case_when(
+      scenario == "NAO_veg_tephra" & tephra_fallback ~ p_pure_B_base,
+      scenario == "NAO_veg_tephra" ~ p_pure_B_tep,
+      scenario == "NAO_veg" ~ p_pure_B_left,
+      TRUE ~ NA_real_
+    )
+  ) %>%
+  dplyr::select(-p_pure_A_tep, -p_pure_B_tep, -p_pure_A_base, -p_pure_B_base,
+                -p_pure_A_left, -p_pure_B_left) %>%
   dplyr::mutate(
     `Pure Vegetation` = dplyr::coalesce(`Pure Vegetation`, 0),
     `Pure Climate` = dplyr::coalesce(`Pure Climate`, 0),
@@ -755,6 +887,21 @@ effect_diff <- win_vp %>%
 revision_write_csv(phase_plot, "outputs/revision/A6_alt_fig5_phase_plot.csv")
 revision_write_csv(win_plot, "outputs/revision/A6_alt_fig5_window_plot.csv")
 revision_write_csv(effect_diff, "outputs/revision/A6_alt_fig5_effect_diff.csv")
+
+early_tephra_windows <- win_vp %>%
+  dplyr::filter(
+    scenario == "NAO_veg_tephra",
+    component == "Pure tephra",
+    midpoint >= 470, midpoint <= 660,
+    !tephra_fallback
+  ) %>%
+  dplyr::left_join(
+    win_sig3 %>% dplyr::select(window_start, p_pure_C),
+    by = "window_start"
+  ) %>%
+  dplyr::arrange(midpoint)
+message("Early windows (470\u2013660 CE) pure tephra (SUPPORTED-only inventory):")
+print(as.data.frame(early_tephra_windows), row.names = FALSE)
 
 # =====================================================================
 # Alternative Figure 5: 2 columns × 3 rows (both lake-conditioned)
@@ -802,15 +949,29 @@ tephra_col_lvl <- factor(
   levels = c("NAO + vegetation", "NAO + vegetation + tephra")
 )
 
-# Light text only for non-estimable Phase 5 (no tall grey bar)
-na_phase_ann <- phase_sig3 %>%
-  dplyr::filter(!tephra_varies) %>%
-  dplyr::mutate(
-    column = tephra_col_lvl,
-    phase = factor(phase, levels = paste("Phase", 1:5)),
-    y = ylim_a[2] * 0.55,
-    label = "n/a — no\ntephra variation"
-  )
+phase_fallback_ann <- phase_plot %>%
+  dplyr::filter(column == "NAO + vegetation + tephra") %>%
+  dplyr::group_by(phase, column) %>%
+  dplyr::summarise(y = sum(value), .groups = "drop") %>%
+  dplyr::inner_join(
+    phase_sig_tep_plot %>%
+      dplyr::filter(tephra_fallback) %>%
+      dplyr::select(phase),
+    by = "phase"
+  ) %>%
+  dplyr::mutate(label = "*")
+
+win_fallback_ann <- win_plot %>%
+  dplyr::filter(column == "NAO + vegetation + tephra") %>%
+  dplyr::group_by(midpoint, column) %>%
+  dplyr::summarise(y = sum(value), .groups = "drop") %>%
+  dplyr::inner_join(
+    win_sig_tep_plot %>%
+      dplyr::filter(tephra_fallback) %>%
+      dplyr::select(midpoint),
+    by = "midpoint"
+  ) %>%
+  dplyr::mutate(label = "*")
 
 tep_age_ticks <- flagged %>%
   dplyr::distinct(age_ce) %>%
@@ -834,10 +995,10 @@ p_a <- ggplot2::ggplot(
     color = "black", size = 2.1, alpha = 1
   ) +
   ggplot2::geom_text(
-    data = na_phase_ann,
-    ggplot2::aes(x = phase, y = y, label = label),
+    data = phase_fallback_ann,
+    ggplot2::aes(x = phase, y = y + 0.008, label = label),
     inherit.aes = FALSE,
-    color = "grey35", size = 2.2, lineheight = 0.9, fontface = "italic"
+    color = "grey20", size = 3.5, fontface = "plain"
   ) +
   ggplot2::facet_wrap(~column, nrow = 1) +
   ggplot2::scale_alpha_identity() +
@@ -865,6 +1026,12 @@ p_b <- ggplot2::ggplot(
   ggplot2::aes(x = midpoint, y = value, fill = component, alpha = alpha_flag)
 ) +
   ggplot2::geom_col(width = step_size, position = "stack") +
+  ggplot2::geom_text(
+    data = win_fallback_ann,
+    ggplot2::aes(x = midpoint, y = y + 0.006, label = label),
+    inherit.aes = FALSE,
+    color = "grey20", size = 2.2
+  ) +
   ggplot2::geom_point(
     data = tep_age_ticks,
     ggplot2::aes(x = age_ce, y = ylim_b[2]),
@@ -900,6 +1067,20 @@ p_c <- ggplot2::ggplot(
 ) +
   ggplot2::geom_col(width = step_size) +
   ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "black", linewidth = 0.3) +
+  ggplot2::geom_text(
+    data = effect_diff %>%
+      dplyr::filter(
+        column == "NAO + vegetation + tephra",
+        tephra_fallback
+      ) %>%
+      dplyr::mutate(
+        y = pmax(effect_diff, 0) + 0.004,
+        label = "*"
+      ),
+    ggplot2::aes(x = midpoint, y = y, label = label),
+    inherit.aes = FALSE,
+    color = "grey20", size = 2.2
+  ) +
   ggplot2::geom_point(
     data = tep_age_ticks,
     ggplot2::aes(x = age_ce, y = ylim_c[2]),
@@ -931,11 +1112,12 @@ p_c <- ggplot2::ggplot(
     title = "(c) Climate vs VegChange",
     caption = paste0(
       "Lake-level alternative Fig. 5 (both columns: Condition(lake)). ",
-      "Left = NAO + vegetation; right = + lake-specific tephra ",
-      "(tephra = 1 only within ±1×30-yr of that lake's SUPPORTED/TENTATIVE ages; ",
-      "no regional tephra curve). Faded = permutation p ≥ 0.05. ",
-      "Right-panel ticks on (b)–(c) mark lake×bins with tephra = 1 present; ",
-      "Phase 5 n/a text = no tephra variation (model skipped), not a null effect. ",
+      "Left = NAO + vegetation; right = NAO + vegetation + lake-specific tephra ",
+      "where tephra varies (SUPPORTED layers only; tephra = 1 within ",
+      "\u00b11 \u00d7 30-yr of that lake's ages; no regional curve). ",
+      "Asterisk (*) = right-column bars from NAO + vegetation only ",
+      "(tephra invariant in that phase/window). Faded = permutation p \u2265 0.05. ",
+      "Ticks on right (b)\u2013(c) mark lake\u00d7bins with tephra = 1. ",
       "n_perm = ", n_perm, " (published Fig. 5 used 9999)."
     )
   ) +

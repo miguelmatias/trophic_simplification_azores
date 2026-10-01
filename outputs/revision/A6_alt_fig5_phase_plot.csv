@@ -1,13 +1,16 @@
-phase,component,value,n_bins,n_lakes,tephra_prevalence,scenario,sig_pure_A,sig_pure_B,sig_pure_C,sig_full,component_label,keep,alpha_flag,column
-Phase 1,Shared,0.0040686404867703585,43,4,0.18604651162790697,NAO_veg,FALSE,FALSE,FALSE,FALSE,Shared,TRUE,1,NAO + vegetation
-Phase 3,Pure NAO_Median_Value,2.97025617993274e-4,71,8,0.14084507042253522,NAO_veg,FALSE,TRUE,FALSE,TRUE,Pure Climate,TRUE,0.25,NAO + vegetation
-Phase 3,Pure estimate,0.06159396711462661,71,8,0.14084507042253522,NAO_veg,FALSE,TRUE,FALSE,TRUE,Pure Vegetation,TRUE,1,NAO + vegetation
-Phase 4,Pure estimate,0.013210211120883608,73,9,0.0821917808219178,NAO_veg,FALSE,TRUE,FALSE,FALSE,Pure Vegetation,TRUE,1,NAO + vegetation
-Phase 5,Pure NAO_Median_Value,0.0033039056034442904,63,9,0,NAO_veg,FALSE,TRUE,FALSE,TRUE,Pure Climate,TRUE,0.25,NAO + vegetation
-Phase 5,Pure estimate,0.01356426935723265,63,9,0,NAO_veg,FALSE,TRUE,FALSE,TRUE,Pure Vegetation,TRUE,1,NAO + vegetation
-Phase 5,Shared,0.005354634148824755,63,9,0,NAO_veg,FALSE,TRUE,FALSE,TRUE,Shared,TRUE,1,NAO + vegetation
-Phase 1,Pure tephra,0.013868730880408853,43,4,0.18604651162790697,NAO_veg_tephra,FALSE,FALSE,FALSE,FALSE,Pure tephra,TRUE,0.25,NAO + vegetation + tephra
-Phase 1,Shared,0.0040686404867702475,43,4,0.18604651162790697,NAO_veg_tephra,FALSE,FALSE,FALSE,FALSE,Shared,TRUE,1,NAO + vegetation + tephra
-Phase 3,Pure NAO_Median_Value,2.865130622643486e-4,71,8,0.14084507042253522,NAO_veg_tephra,FALSE,TRUE,FALSE,TRUE,Pure Climate,TRUE,0.25,NAO + vegetation + tephra
-Phase 3,Pure estimate,0.06168334119127694,71,8,0.14084507042253522,NAO_veg_tephra,FALSE,TRUE,FALSE,TRUE,Pure Vegetation,TRUE,1,NAO + vegetation + tephra
-Phase 4,Pure estimate,0.013587113122083938,73,9,0.0821917808219178,NAO_veg_tephra,FALSE,TRUE,FALSE,FALSE,Pure Vegetation,TRUE,1,NAO + vegetation + tephra
+phase,component,value,n_bins,n_lakes,tephra_prevalence,scenario,tephra_fallback.x,model,tephra_fallback.y,sig_pure_A,sig_pure_B,sig_pure_C,sig_full,component_label,keep,alpha_flag,column
+Phase 1,Shared,0.0040686404867703585,43,4,0.09302325581395349,NAO_veg,FALSE,NAO_veg,FALSE,FALSE,FALSE,FALSE,FALSE,Shared,TRUE,1,NAO + vegetation
+Phase 3,Pure NAO_Median_Value,2.97025617993274e-4,71,8,0.07042253521126761,NAO_veg,FALSE,NAO_veg,FALSE,FALSE,TRUE,FALSE,TRUE,Pure Climate,TRUE,0.25,NAO + vegetation
+Phase 3,Pure estimate,0.06159396711462661,71,8,0.07042253521126761,NAO_veg,FALSE,NAO_veg,FALSE,FALSE,TRUE,FALSE,TRUE,Pure Vegetation,TRUE,1,NAO + vegetation
+Phase 4,Pure estimate,0.013210211120883608,73,9,0,NAO_veg,FALSE,NAO_veg,FALSE,FALSE,TRUE,FALSE,FALSE,Pure Vegetation,TRUE,1,NAO + vegetation
+Phase 5,Pure NAO_Median_Value,0.0033039056034442904,63,9,0,NAO_veg,FALSE,NAO_veg,FALSE,FALSE,TRUE,FALSE,TRUE,Pure Climate,TRUE,0.25,NAO + vegetation
+Phase 5,Pure estimate,0.01356426935723265,63,9,0,NAO_veg,FALSE,NAO_veg,FALSE,FALSE,TRUE,FALSE,TRUE,Pure Vegetation,TRUE,1,NAO + vegetation
+Phase 5,Shared,0.005354634148824755,63,9,0,NAO_veg,FALSE,NAO_veg,FALSE,FALSE,TRUE,FALSE,TRUE,Shared,TRUE,1,NAO + vegetation
+Phase 1,Pure tephra,0.005015150686300873,43,4,0.09302325581395349,NAO_veg_tephra,FALSE,NAO_veg_tephra,FALSE,FALSE,FALSE,FALSE,FALSE,Pure tephra,TRUE,0.25,NAO + vegetation + tephra
+Phase 1,Shared,0.0040686404867703585,43,4,0.09302325581395349,NAO_veg_tephra,FALSE,NAO_veg_tephra,FALSE,FALSE,FALSE,FALSE,FALSE,Shared,TRUE,1,NAO + vegetation + tephra
+Phase 3,Pure NAO_Median_Value,1.2050853462786115e-4,71,8,0.07042253521126761,NAO_veg_tephra,FALSE,NAO_veg_tephra,FALSE,FALSE,TRUE,FALSE,TRUE,Pure Climate,TRUE,0.25,NAO + vegetation + tephra
+Phase 3,Pure estimate,0.05928570264737798,71,8,0.07042253521126761,NAO_veg_tephra,FALSE,NAO_veg_tephra,FALSE,FALSE,TRUE,FALSE,TRUE,Pure Vegetation,TRUE,1,NAO + vegetation + tephra
+Phase 4,Pure estimate,0.013210211120883608,73,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback,TRUE,FALSE,TRUE,FALSE,FALSE,Pure Vegetation,TRUE,1,NAO + vegetation + tephra
+Phase 5,Pure NAO_Median_Value,0.0033039056034442904,63,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback,TRUE,FALSE,TRUE,FALSE,TRUE,Pure Climate,TRUE,0.25,NAO + vegetation + tephra
+Phase 5,Pure estimate,0.01356426935723265,63,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback,TRUE,FALSE,TRUE,FALSE,TRUE,Pure Vegetation,TRUE,1,NAO + vegetation + tephra
+Phase 5,Shared,0.005354634148824755,63,9,0,NAO_veg_tephra,TRUE,NAO_veg_only_fallback,TRUE,FALSE,TRUE,FALSE,TRUE,Shared,TRUE,1,NAO + vegetation + tephra
