@@ -114,6 +114,24 @@ Azul stocking = 1792 CE; both producer (1486) and consumer (1740) onsets **prece
 
 ---
 
+## A10 — Fig. 3e observed vs rarefied richness by CTS
+
+Paired boxplots for each CTS (CTS5→CTS1): **observed** total species richness (diatoms + chironomids; uses stored `total_nspp_by_lake_core` when available) and **rarefied** richness (diatoms to n = 400; chironomids to n = 20; sample-level, ≥70% retention).
+
+| CTS | Observed median | Rarefied median |
+|---|---:|---:|
+| CTS5 | 44 | 34.8 |
+| CTS4 | 43 | 31.6 |
+| CTS3 | 41 | 32.0 |
+| CTS2 | 28.5 | 26.9 |
+| CTS1 | 25 | 20.8 |
+
+ANOVA p ≪ 0.001 for both series. The richness gradient across CTS persists after rarefaction (CTS5 > CTS1), but absolute differences shrink.
+
+Figures: `outputs/revision/figures/A10_fig3e_observed_vs_rarefied_cts.png`, `A10_fig3e_observed_vs_rarefied_cts_dodged.png`
+
+---
+
 ## Suggested claim updates (for response letter)
 
 1. Drop or heavily qualify “stronger” producer response (A2).

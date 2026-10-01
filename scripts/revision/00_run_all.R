@@ -11,7 +11,8 @@ scripts <- c(
   "scripts/revision/A03_common_period_coverage.R",
   "scripts/revision/A05_human_vs_climate_vegetation.R",
   "scripts/revision/A06_volcanism_sensitivity.R",
-  "scripts/revision/A08_morphometry_cts.R"
+  "scripts/revision/A08_morphometry_cts.R",
+  "scripts/revision/A10_fig3e_rarefied_cts.R"
 )
 
 # Avoid re-running setup twice when individual scripts bootstrap
