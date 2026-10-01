@@ -44,6 +44,28 @@ See also **A1x** (observed vs rarefied richness by CTS), which follows A1 and ad
 
 ---
 
+## A1x — Fig. 3e observed vs rarefied richness by CTS
+
+Companion to **A1**: paired boxplots for each CTS (CTS5→CTS1) addressing whether the CTS richness gradient (and thus the structural simplification claim) holds after rarefaction. **Observed** total species richness (diatoms + chironomids; uses stored `total_nspp_by_lake_core` when available) vs **rarefied** richness (diatoms to n = 400; chironomids to n = 20; sample-level, ≥70% retention).
+
+| CTS | Observed median | Rarefied median |
+|---|---:|---:|
+| CTS5 | 44 | 34.8 |
+| CTS4 | 43 | 31.6 |
+| CTS3 | 41 | 32.0 |
+| CTS2 | 28.5 | 26.9 |
+| CTS1 | 25 | 20.8 |
+
+ANOVA p ≪ 0.001 for both series. The richness gradient across CTS persists after rarefaction (CTS5 > CTS1), but absolute differences shrink.
+
+**Implication for the simplification claim (Mendoza & Araújo):** CTS1 (yellow) remains the **species-poorest** structure under rarefaction (median 25 → 20.8). So if Fig. 3d still shows rising CTS1 prevalence toward the present, the structural “simplification” argument holds with or without rarefaction. A1x supports keeping that framing; it does not require retitling away from simplification on richness-gradient grounds.
+
+Figure: `outputs/revision/figures/A1x_fig3e_observed_vs_rarefied_cts.png`  
+Script: `scripts/revision/A1x_fig3e_rarefied_cts.R`  
+Tables: `A1x_cts_observed_vs_rarefied_richness.csv`, `A1x_cts_richness_summary.csv`, `A1x_anova_pvalues.csv`
+
+---
+
 ## A2 — Resolution-matched turnover (R2c, R3#8)
 
 | Resolution | Producers earlier | Consumers earlier | Mean mag. diff (P−C) |
@@ -159,45 +181,10 @@ Azul stocking = 1792 CE; both producer (1486) and consumer (1740) onsets **prece
 
 ---
 
-## A10 — Fig. 3e observed vs rarefied richness by CTS
-
-Paired boxplots for each CTS (CTS5→CTS1): **observed** total species richness (diatoms + chironomids; uses stored `total_nspp_by_lake_core` when available) and **rarefied** richness (diatoms to n = 400; chironomids to n = 20; sample-level, ≥70% retention).
-
-| CTS | Observed median | Rarefied median |
-|---|---:|---:|
-| CTS5 | 44 | 34.8 |
-| CTS4 | 43 | 31.6 |
-| CTS3 | 41 | 32.0 |
-| CTS2 | 28.5 | 26.9 |
-| CTS1 | 25 | 20.8 |
-
-ANOVA p ≪ 0.001 for both series. The richness gradient across CTS persists after rarefaction (CTS5 > CTS1), but absolute differences shrink.
-
-**Implication for the simplification claim (Mendoza & Araújo):** CTS1 (yellow) remains the **species-poorest** structure under rarefaction (median 25 → 20.8). So if Fig. 3d still shows rising CTS1 prevalence toward the present, the structural “simplification” argument holds with or without rarefaction. A10 supports keeping that framing; it does not require retitling away from simplification on richness-gradient grounds.
-
-Figures: `outputs/revision/figures/A10_fig3e_observed_vs_rarefied_cts.png`, `A10_fig3e_observed_vs_rarefied_cts_dodged.png`
-
----
-
-## A11 — Fig. 5 rebuild (no tephra bars)
-
-Rebuild of variance-partitioning panels (Fig. 5 a–c) with significance fading. **No taupe tephra bands** — volcanism sensitivity is handled in **A6** (lake-level alternative Fig. 5: standard vs +tephra with Condition(lake)), not as shading on Fig. 5.
-
-**Panels:**
-- **(a)** Historical phases — stacked Pure Climate / Pure Vegetation / Shared (adj. R²; faded if NS)
-- **(b)** Moving-window varpart (300-yr window, 30-yr step)
-- **(c)** Effect size (Vegetation − Climate) by window
-
-Figures: `outputs/revision/figures/A11_alt_figure5_with_tephra.png`, `A11_alt_figure5_with_tephra.pdf`  
-Script: `scripts/revision/A11_alt_figure5_tephra.R`  
-Tables: `A11_fig5_phase_varpart.csv`, `A11_fig5_window_varpart.csv`, `A11_fig5_effect_diff.csv`
-
----
-
 ## Suggested claim updates (for response letter)
 
 1. Drop or heavily qualify “stronger” producer response (A2).
-2. Keep **simplification** as rising prevalence of species-poor CTS1 (Fig. 3d + A10/Fig. 3e); do not equate it with a regional rarefied-richness decline (A1). Soften any Abstract/Discussion lines that say “long-term declines in species richness” unless restricted to consumers or to CTS composition.
+2. Keep **simplification** as rising prevalence of species-poor CTS1 (Fig. 3d + A1x/Fig. 3e); do not equate it with a regional rarefied-richness decline (A1). Soften any Abstract/Discussion lines that say “long-term declines in species richness” unless restricted to consumers or to CTS composition.
 3. Restrict early-phase / pristine statements to lakes actually covering that interval (A3).
 4. Soften catchment → regional vegetation (A5).
 5. Keep “earlier in 6 of 9 lakes”; name Caveiro and Santiago as consumer-first (A2/A9).

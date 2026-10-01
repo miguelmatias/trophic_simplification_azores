@@ -1,4 +1,4 @@
-# Run all revision analyses A1–A9
+# Run all revision analyses A1–A9 + A1x
 # Usage (from repo root): Rscript scripts/revision/00_run_all.R
 
 scripts <- c(
@@ -7,13 +7,12 @@ scripts <- c(
   "scripts/revision/A07_split_cts5_cts6.R",
   "scripts/revision/A09_onset_vs_stocking.R",
   "scripts/revision/A01_rarefy_richness.R",
+  "scripts/revision/A1x_fig3e_rarefied_cts.R",
   "scripts/revision/A02_resolution_matched.R",
   "scripts/revision/A03_common_period_coverage.R",
   "scripts/revision/A05_human_vs_climate_vegetation.R",
   "scripts/revision/A06_volcanism_sensitivity.R",
-  "scripts/revision/A08_morphometry_cts.R",
-  "scripts/revision/A10_fig3e_rarefied_cts.R",
-  "scripts/revision/A11_alt_figure5_tephra.R"
+  "scripts/revision/A08_morphometry_cts.R"
 )
 
 # Avoid re-running setup twice when individual scripts bootstrap

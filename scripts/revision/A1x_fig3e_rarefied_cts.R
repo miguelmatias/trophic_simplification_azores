@@ -1,9 +1,10 @@
-# A10 — Fig. 3e analogue: observed vs rarefied species richness by CTS
+# A1x — Fig. 3e analogue: observed vs rarefied species richness by CTS
+# Addresses A1 rarefaction / simplification question (CTS richness gradient).
 # Side-by-side boxplots for each Community Trophic Structure.
 source("scripts/revision/_bootstrap.R")
 shared <- revision_bootstrap()
 
-message("=== A10 Fig 3e observed vs rarefied richness by CTS ===")
+message("=== A1x Fig 3e observed vs rarefied richness by CTS ===")
 
 suppressPackageStartupMessages({
   library(multcompView)
@@ -62,7 +63,7 @@ rarefy_choice <- tibble::tibble(
     mean(chiro$total_count >= chiro_n, na.rm = TRUE)
   )
 )
-revision_write_csv(rarefy_choice, "outputs/revision/A10_sample_rarefy_depths.csv")
+revision_write_csv(rarefy_choice, "outputs/revision/A1x_sample_rarefy_depths.csv")
 print(rarefy_choice)
 
 message("Rarefying diatom samples to n=", diat_n, " ...")
@@ -140,7 +141,7 @@ rank_map <- plot_df %>%
   dplyr::arrange(mean_obs) %>%
   dplyr::mutate(cts_ranked = paste0("CTS", dplyr::row_number()))
 
-revision_write_csv(rank_map, "outputs/revision/A10_cts_richness_rank_map.csv")
+revision_write_csv(rank_map, "outputs/revision/A1x_cts_richness_rank_map.csv")
 
 plot_df <- plot_df %>%
   dplyr::left_join(rank_map %>% dplyr::select(amd_clusts, cts_ranked), by = "amd_clusts") %>%
@@ -176,7 +177,7 @@ revision_write_csv(
       diat_observed, chiro_observed, diat_rarefied, chiro_rarefied,
       diat_count, chiro_count
     ),
-  "outputs/revision/A10_cts_observed_vs_rarefied_richness.csv"
+  "outputs/revision/A1x_cts_observed_vs_rarefied_richness.csv"
 )
 
 # Summary stats
@@ -189,7 +190,7 @@ summ <- long_df %>%
     sd = stats::sd(n_species),
     .groups = "drop"
   )
-revision_write_csv(summ, "outputs/revision/A10_cts_richness_summary.csv")
+revision_write_csv(summ, "outputs/revision/A1x_cts_richness_summary.csv")
 print(summ)
 
 # Letters for observed and rarefied separately (Tukey)
@@ -240,7 +241,7 @@ anova_tbl <- tibble::tibble(
   diat_rarefy_n = diat_n,
   chiro_rarefy_n = chiro_n
 )
-revision_write_csv(anova_tbl, "outputs/revision/A10_anova_pvalues.csv")
+revision_write_csv(anova_tbl, "outputs/revision/A1x_anova_pvalues.csv")
 
 # Primary figure: CTS colours for Observed; lighter companion for Rarefied
 obs_cols <- setNames(viridis::viridis(5, direction = 1), cts_levels)
@@ -314,51 +315,11 @@ p <- ggplot(long_df, aes(x = amd_clusts, y = n_species, fill = pair)) +
   )
 
 ggsave(
-  "outputs/revision/figures/A10_fig3e_observed_vs_rarefied_cts.png",
+  "outputs/revision/figures/A1x_fig3e_observed_vs_rarefied_cts.png",
   p,
   width = 8.5,
   height = 5.5,
   dpi = 200
 )
 
-# Legend-friendly companion (Observed vs Rarefied only)
-p2 <- ggplot(long_df, aes(x = amd_clusts, y = n_species, fill = richness_type)) +
-  geom_boxplot(position = position_dodge(width = 0.75), width = 0.65, outlier.size = 0.7) +
-  geom_text(
-    data = letters_df %>% dplyr::filter(is.finite(y_position)),
-    aes(x = amd_clusts, y = y_position, label = letters, group = richness_type),
-    position = position_dodge(width = 0.75),
-    inherit.aes = FALSE,
-    size = 3.5
-  ) +
-  scale_fill_manual(
-    name = NULL,
-    values = c(Observed = "#440154", Rarefied = "#35B779"),
-    labels = c(
-      Observed = "Observed",
-      Rarefied = paste0("Rarefied (diat n=", diat_n, "; chiro n=", chiro_n, ")")
-    )
-  ) +
-  scale_x_discrete(limits = cts_levels) +
-  labs(
-    title = "Fig. 3e revision: observed vs rarefied richness by CTS",
-    subtitle = "Paired boxplots per CTS (Tukey letters above each series)",
-    x = "Community Trophic Structures",
-    y = "Number of species"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    legend.position = "bottom",
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-  )
-
-ggsave(
-  "outputs/revision/figures/A10_fig3e_observed_vs_rarefied_cts_dodged.png",
-  p2,
-  width = 8.5,
-  height = 5.5,
-  dpi = 200
-)
-
-message("A10 complete")
+message("A1x complete")
