@@ -1,7 +1,8 @@
-# A11 — Alternative Figure 5 with tephra overlay on all panels
-# Rebuilds variance-partitioning panels (Fig. 5 a–c) and overlays the A6
-# tephra signal: ±1×30-yr windows around lake-specific SUPPORTED/TENTATIVE
-# ages (include_sensitivity). Overlay only — no data filtering / dropping.
+# A11 — Fig. 5 rebuild (NO tephra bars)
+# Rebuilds variance-partitioning panels (Fig. 5 a–c) with significance fading.
+# Tephra sensitivity is NOT shown here as taupe bands; see A6
+# (scripts/revision/A06_volcanism_sensitivity.R) for lake-specific tephra
+# as a Condition(lake) varpart predictor with permutation tests.
 source("scripts/revision/_bootstrap.R")
 shared <- revision_bootstrap()
 
@@ -13,98 +14,7 @@ suppressPackageStartupMessages({
   library(dplyr)
 })
 
-message("=== A11 alternative Figure 5 with tephra ===")
-
-# ---- Tephra windows (same logic as A06_volcanism_sensitivity.R) ----
-read_tephra <- function(path = "data/revision/tephra_events.csv") {
-  if (requireNamespace("readr", quietly = TRUE)) {
-    return(as.data.frame(
-      readr::read_csv(path, show_col_types = FALSE,
-                      locale = readr::locale(encoding = "UTF-8")),
-      stringsAsFactors = FALSE
-    ))
-  }
-  raw <- readBin(path, what = "raw", n = file.info(path)$size)
-  if (length(raw) >= 3 && raw[1] == as.raw(0xef) &&
-      raw[2] == as.raw(0xbb) && raw[3] == as.raw(0xbf)) {
-    raw <- raw[-(1:3)]
-  }
-  txt <- rawToChar(raw)
-  Encoding(txt) <- "UTF-8"
-  utils::read.csv(text = txt, stringsAsFactors = FALSE, check.names = FALSE)
-}
-
-tephra_all <- read_tephra() %>%
-  dplyr::mutate(
-    lake = revision_normalize_lake_names(lake),
-    age_ce = as.numeric(age_ce)
-  ) %>%
-  dplyr::filter(!grepl("^none", lake, ignore.case = TRUE))
-
-if ("include_sensitivity" %in% names(tephra_all)) {
-  tephra_all$include_sensitivity <- as.logical(tephra_all$include_sensitivity)
-} else if ("status" %in% names(tephra_all)) {
-  tephra_all$include_sensitivity <-
-    grepl("^(SUPPORTED|TENTATIVE)", tephra_all$status, ignore.case = TRUE) &
-    is.finite(tephra_all$age_ce)
-} else {
-  tephra_all$include_sensitivity <- is.finite(tephra_all$age_ce)
-}
-
-tephra <- tephra_all %>%
-  dplyr::filter(include_sensitivity, is.finite(age_ce))
-
-bin_size <- 30
-tephra_bins <- tephra %>%
-  dplyr::mutate(
-    age_bin = floor(age_ce / bin_size) * bin_size,
-    influence_lo = age_bin - bin_size,
-    influence_hi = age_bin + bin_size
-  )
-
-influence_ages <- sort(unique(c(
-  tephra_bins$age_bin,
-  tephra_bins$influence_lo,
-  tephra_bins$influence_hi
-)))
-influence_ages <- influence_ages[is.finite(influence_ages)]
-
-# Merge contiguous flagged bin centres into continuous shaded ribbons
-# (each 30-yr bin centre spans [age − 15, age + 15])
-merge_tephra_bands <- function(ages, half_width = bin_size / 2) {
-  ages <- sort(unique(ages[is.finite(ages)]))
-  if (length(ages) == 0) {
-    return(tibble::tibble(xmin = numeric(), xmax = numeric()))
-  }
-  gaps <- diff(ages) > bin_size + 1e-8
-  grp <- cumsum(c(TRUE, gaps))
-  tibble::tibble(age = ages, grp = grp) %>%
-    dplyr::group_by(grp) %>%
-    dplyr::summarise(
-      xmin = min(age) - half_width,
-      xmax = max(age) + half_width,
-      .groups = "drop"
-    )
-}
-
-tephra_bands <- merge_tephra_bands(influence_ages) %>%
-  dplyr::mutate(
-    xmin = pmax(xmin, 0),
-    xmax = pmin(xmax, 2010)
-  ) %>%
-  dplyr::filter(xmax > xmin, xmax >= 0, xmin <= 2010)
-
-revision_write_csv(tephra_bands, "outputs/revision/A11_tephra_bands.csv")
-revision_write_csv(
-  tibble::tibble(age_ce = influence_ages[influence_ages >= 0 & influence_ages <= 2010]),
-  "outputs/revision/A11_tephra_influence_ages.csv"
-)
-
-message(
-  "Tephra ages used: ", nrow(tephra),
-  "; influenced bin centres: ", length(influence_ages),
-  "; merged bands: ", nrow(tephra_bands)
-)
+message("=== A11 Fig. 5 rebuild (no tephra overlay; sensitivity = A6) ===")
 
 # ---- Rebuild Fig. 5 varpart data from shared joined table ----
 joined_df_30yr <- shared$joined_df_30yr
@@ -118,7 +28,7 @@ guild_cols <- c(
 A <- "NAO_Median_Value"
 B <- "estimate"
 
-# Faster than published 9999; overlay is the focus. Pattern should match closely.
+# Faster than published 9999 for revision runtime.
 n_perm <- 999
 min_n <- 5
 set.seed(1)
@@ -129,12 +39,6 @@ phase_list <- list(
   "Phase 3" = joined_df_30yr %>% dplyr::filter(age_ce >= 1050 & age_ce < 1450),
   "Phase 4" = joined_df_30yr %>% dplyr::filter(age_ce >= 1450 & age_ce < 1750),
   "Phase 5" = joined_df_30yr %>% dplyr::filter(age_ce >= 1750)
-)
-
-phase_year_bounds <- tibble::tibble(
-  phase = paste("Phase", 1:5),
-  phase_lo = c(0, 750, 1050, 1450, 1750),
-  phase_hi = c(750, 1050, 1450, 1750, 2010)
 )
 
 # Effects (adj. R²)
@@ -321,9 +225,6 @@ effect_colors_split <- c(
   "Climate > VegChange"            = "#F4B942"
 )
 
-tephra_fill <- "#8B7355"
-tephra_alpha <- 0.18
-
 x_min <- floor(min(joined_df_30yr$age_ce, na.rm = TRUE) / 100) * 100
 x_max <- ceiling(max(joined_df_30yr$age_ce, na.rm = TRUE) / 100) * 100
 common_breaks <- seq(x_min, x_max, by = 200)
@@ -351,50 +252,11 @@ panel_theme <- ggplot2::theme_minimal(base_size = base_size) +
     plot.margin       = ggplot2::margin(3, 3, 3, 3)
   )
 
-# Continuous-year tephra layer (panels b–c; also used on panel a timeline strip)
-tephra_layer_year <- ggplot2::geom_rect(
-  data = tephra_bands,
-  ggplot2::aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf),
-  inherit.aes = FALSE,
-  fill = tephra_fill,
-  alpha = tephra_alpha,
-  colour = NA
-)
-
-# Panel (a): categorical phases — shade whole phases that overlap tephra windows
-phase_tephra <- phase_year_bounds %>%
-  dplyr::rowwise() %>%
-  dplyr::mutate(
-    has_tephra = any(tephra_bands$xmin < phase_hi & tephra_bands$xmax > phase_lo)
-  ) %>%
-  dplyr::ungroup() %>%
-  dplyr::filter(has_tephra) %>%
-  dplyr::mutate(
-    phase_label = factor(phase, levels = paste("Phase", 1:5)),
-    xmin = as.numeric(phase_label) - 0.45,
-    xmax = as.numeric(phase_label) + 0.45
-  )
-
-tephra_layer_phase <- ggplot2::geom_rect(
-  data = phase_tephra,
-  ggplot2::aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf),
-  inherit.aes = FALSE,
-  fill = tephra_fill,
-  alpha = tephra_alpha,
-  colour = NA
-)
-
-tephra_legend_df <- data.frame(
-  x = NA_real_, y = NA_real_,
-  band = "Tephra (±1×30-yr)"
-)
-
 # ---- Panel (a): Historical phases ----
 p_a <- ggplot2::ggplot(
   r2_partitioned_sig,
   ggplot2::aes(x = phase_label, y = value, fill = component, alpha = alpha_flag)
 ) +
-  tephra_layer_phase +
   ggplot2::geom_col(width = 0.6) +
   ggplot2::geom_text(
     data = r2_partitioned_sig %>% dplyr::filter(value > 0),
@@ -402,26 +264,11 @@ p_a <- ggplot2::ggplot(
     position = ggplot2::position_stack(vjust = 0.5),
     color = "black", size = 2.4
   ) +
-  # Invisible point for tephra legend key (separate fill scale via new_scale if needed;
-  # here we append tephra as a fill level via a dummy geom + manual values)
-  ggplot2::geom_point(
-    data = tephra_legend_df,
-    ggplot2::aes(x = x, y = y, fill = band),
-    shape = 22, size = 4, colour = NA, alpha = 0, inherit.aes = FALSE
-  ) +
   ggplot2::scale_alpha_identity() +
   ggplot2::scale_fill_manual(
     name = "Variance Component",
-    values = c(component_colors, "Tephra (±1×30-yr)" = tephra_fill),
-    breaks = c("Pure Climate", "Pure Vegetation", "Shared", "Tephra (±1×30-yr)"),
-    guide = ggplot2::guide_legend(
-      nrow = 2, byrow = TRUE,
-      override.aes = list(
-        alpha = c(1, 1, 1, 0.55),
-        shape = c(NA, NA, NA, 22),
-        size = c(NA, NA, NA, 5)
-      )
-    )
+    values = component_colors,
+    breaks = c("Pure Climate", "Pure Vegetation", "Shared")
   ) +
   ggplot2::scale_x_discrete(labels = paste("Phase", 1:5), drop = FALSE) +
   ggplot2::labs(
@@ -433,30 +280,16 @@ p_a <- ggplot2::ggplot(
 
 # ---- Panel (b): Moving window ----
 p_b <- ggplot2::ggplot() +
-  tephra_layer_year +
   ggplot2::geom_col(
     data = r2_windowed_sig,
     ggplot2::aes(x = midpoint, y = value, fill = component, alpha = alpha_flag),
     width = step_size
   ) +
-  ggplot2::geom_point(
-    data = tephra_legend_df,
-    ggplot2::aes(x = x, y = y, fill = band),
-    shape = 22, size = 4, colour = NA, alpha = 0, inherit.aes = FALSE
-  ) +
   ggplot2::scale_alpha_identity() +
   ggplot2::scale_fill_manual(
     name = "Variance Component",
-    values = c(component_colors, "Tephra (±1×30-yr)" = tephra_fill),
-    breaks = c("Pure Climate", "Pure Vegetation", "Shared", "Tephra (±1×30-yr)"),
-    guide = ggplot2::guide_legend(
-      nrow = 2, byrow = TRUE,
-      override.aes = list(
-        alpha = c(1, 1, 1, 0.55),
-        shape = c(NA, NA, NA, 22),
-        size = c(NA, NA, NA, 5)
-      )
-    )
+    values = component_colors,
+    breaks = c("Pure Climate", "Pure Vegetation", "Shared")
   ) +
   ggplot2::scale_x_continuous(
     limits = c(x_min, x_max),
@@ -476,33 +309,18 @@ p_c <- ggplot2::ggplot(
   effect_diff,
   ggplot2::aes(x = midpoint, y = effect_diff, fill = effect_group, alpha = alpha_flag)
 ) +
-  tephra_layer_year +
   ggplot2::geom_col(width = step_size) +
   ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
-  ggplot2::geom_point(
-    data = tephra_legend_df,
-    ggplot2::aes(x = x, y = y, fill = band),
-    shape = 22, size = 4, colour = NA, alpha = 0, inherit.aes = FALSE
-  ) +
   ggplot2::scale_alpha_identity() +
   ggplot2::scale_fill_manual(
     name = "Dominant Driver",
-    values = c(effect_colors_split, "Tephra (±1×30-yr)" = tephra_fill),
+    values = effect_colors_split,
     breaks = c(
       "Climate > VegChange",
       "VegChange > Climate (post-750)",
-      "VegChange > Climate (pre-750)",
-      "Tephra (±1×30-yr)"
+      "VegChange > Climate (pre-750)"
     ),
-    drop = FALSE,
-    guide = ggplot2::guide_legend(
-      nrow = 2, byrow = TRUE,
-      override.aes = list(
-        alpha = c(1, 1, 1, 0.55),
-        shape = c(NA, NA, NA, 22),
-        size = c(NA, NA, NA, 5)
-      )
-    )
+    drop = FALSE
   ) +
   ggplot2::scale_x_continuous(
     limits = c(x_min, x_max),
@@ -515,9 +333,9 @@ p_c <- ggplot2::ggplot(
     y = "Effect size (Vegetation − Climate)",
     title = "(c) Climate vs VegChange",
     caption = paste0(
-      "Bands = lake-specific tephra ages (±1×30-yr bin around SUPPORTED/TENTATIVE ",
-      "events; same coding as A6). Panel (a): phases overlapping any tephra window ",
-      "are shaded; (b–c): vertical year bands. Overlay only — no bins dropped. ",
+      "Fig. 5 rebuild without tephra shading. Volcanism sensitivity is A6 ",
+      "(lake-specific tephra predictor + Condition(lake) varpart with ",
+      "permutation tests), not taupe year bands. ",
       "Significance fading uses n_perm = ", n_perm, " (published Fig. 5 used 9999)."
     )
   ) +
@@ -549,4 +367,4 @@ if (!file.exists(out_pdf)) {
 } else {
   message("Saved ", out_png, " and ", out_pdf)
 }
-message("A11 complete")
+message("A11 complete (no tephra bars; see A6 for volcanism sensitivity)")
