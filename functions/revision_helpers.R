@@ -482,15 +482,39 @@ revision_cts_colours <- function(k = 5L) {
   stats::setNames(cols, paste0("CTS", seq_len(k)))
 }
 
-#' Assign AMD clusters at fixed k without lumping
-#' Clusters are relabelled by mean euplanctonic relative abundance
-#' (highest → CTS1), matching the original MS yellow/euplanctonic CTS1 logic.
-revision_assign_cts <- function(norm_abund, k = 6L, iterations = 400L) {
-  mat <- norm_abund %>%
+revision_amd_feature_matrix <- function(norm_abund) {
+  norm_abund %>%
     dplyr::select(dplyr::all_of(revision_guild_cols)) %>%
-    replace(is.na(.), 0)
+    replace(is.na(.), 0) %>%
+    dplyr::select(where(~ sum(.) > 0))
+}
+
+#' Raw fuzzy AMD cluster ids (1..k), matching main_script.Rmd preprocessing.
+revision_run_amd_raw <- function(norm_abund, k = 6L, iterations = 400L) {
+  mat <- revision_amd_feature_matrix(norm_abund)
   cl <- getAMDclusters(mat, .iterations = iterations, .opt_num_clusts = k)
-  assign_vec <- as.integer(cl[[1]])
+  as.integer(cl[[1]])
+}
+
+revision_load_fgroups_glob_div <- function() {
+  e <- new.env(parent = emptyenv())
+  load("data/clean_source_data_files.RData", envir = e)
+  if (!exists("df_fgroups_glob_div", envir = e, inherits = FALSE)) {
+    stop("df_fgroups_glob_div not found in clean_source_data_files.RData")
+  }
+  get("df_fgroups_glob_div", envir = e) %>%
+    dplyr::select(core_depth_id, total_nspp_by_lake_core) %>%
+    dplyr::filter(is.finite(total_nspp_by_lake_core)) %>%
+    dplyr::group_by(core_depth_id) %>%
+    dplyr::summarise(
+      total_nspp_by_lake_core = max(total_nspp_by_lake_core, na.rm = TRUE),
+      .groups = "drop"
+    )
+}
+
+#' Euplanctonic reordering for a fixed raw AMD partition (highest euplanctonic → CTS1).
+revision_relabel_cts_euplanctonic <- function(norm_abund, assign_vec, k) {
+  k <- as.integer(k)
   out <- norm_abund %>%
     dplyr::mutate(amd_raw = factor(assign_vec))
 
@@ -502,7 +526,6 @@ revision_assign_cts <- function(norm_abund, k = 6L, iterations = 400L) {
       n = dplyr::n(),
       .groups = "drop"
     ) %>%
-    # Highest euplanctonic → CTS1 (yellow); consumers break remaining ties
     dplyr::arrange(dplyr::desc(mean_euplanktonic), mean_consumer) %>%
     dplyr::mutate(rank = dplyr::row_number())
 
@@ -512,6 +535,120 @@ revision_assign_cts <- function(norm_abund, k = 6L, iterations = 400L) {
       amd_clusts = as.integer(map_rank[as.character(amd_raw)]),
       amd_clusts = factor(amd_clusts, levels = seq_len(k), labels = paste0("CTS", seq_len(k)))
     )
+}
+
+#' Assign AMD clusters at fixed k without lumping
+#' Clusters are relabelled by mean euplanctonic relative abundance
+#' (highest → CTS1), matching the original MS yellow/euplanctonic CTS1 logic.
+revision_assign_cts <- function(norm_abund, k = 6L, iterations = 400L) {
+  assign_vec <- revision_run_amd_raw(norm_abund, k = k, iterations = iterations)
+  revision_relabel_cts_euplanctonic(norm_abund, assign_vec, k = k)
+}
+
+#' Manuscript k=6 → k=5 merge (main_script.Rmd): rank raw clusters by mean
+#' total_nspp_by_lake_core, then merge richness ranks 6 into 5; finally relabel
+#' the five merged groups by euplanctonic abundance (CTS1 = highest euplanctonic).
+revision_manuscript_k6_merged_to_k5 <- function(
+    norm_abund,
+    assign_vec_k6,
+    richness = NULL
+) {
+  if (is.null(richness)) {
+    richness <- revision_load_fgroups_glob_div()
+  }
+  out <- norm_abund %>%
+    dplyr::ungroup() %>%
+    dplyr::select(
+      dplyr::any_of(c("lake", "core_depth_id", "age_ce")),
+      dplyr::all_of(revision_guild_cols)
+    ) %>%
+    dplyr::mutate(amd_raw = as.integer(assign_vec_k6)) %>%
+    dplyr::left_join(richness, by = "core_depth_id")
+
+  key_rich <- out %>%
+    dplyr::group_by(amd_raw) %>%
+    dplyr::summarise(
+      n = dplyr::n(),
+      mean_euplanktonic = mean(euplanktonic, na.rm = TRUE),
+      mean_total_nspp_by_lake_core = mean(total_nspp_by_lake_core, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::arrange(mean_total_nspp_by_lake_core) %>%
+    dplyr::mutate(rich_rank = dplyr::row_number())
+
+  merge_key <- key_rich %>%
+    dplyr::mutate(
+      merged_rich_rank = if_else(rich_rank == 6L, 5L, rich_rank),
+      merged_in_manuscript = rich_rank %in% c(5L, 6L)
+    )
+
+  map_raw_merged <- stats::setNames(merge_key$merged_rich_rank, as.character(merge_key$amd_raw))
+  out <- out %>%
+    dplyr::mutate(merged_rich_rank = as.integer(map_raw_merged[as.character(amd_raw)]))
+
+  key_eu <- out %>%
+    dplyr::group_by(merged_rich_rank) %>%
+    dplyr::summarise(
+      mean_euplanktonic = mean(euplanktonic, na.rm = TRUE),
+      mean_consumer = mean(algivore + detritivore + plantivore + predator, na.rm = TRUE),
+      mean_total_nspp_by_lake_core = mean(total_nspp_by_lake_core, na.rm = TRUE),
+      n = dplyr::n(),
+      .groups = "drop"
+    ) %>%
+    dplyr::arrange(dplyr::desc(mean_euplanktonic), mean_consumer) %>%
+    dplyr::mutate(
+      eu_rank = dplyr::row_number(),
+      amd_clusts = paste0("CTS", eu_rank)
+    )
+
+  map_merged_cts <- stats::setNames(key_eu$amd_clusts, as.character(key_eu$merged_rich_rank))
+  k6_eu <- revision_relabel_cts_euplanctonic(norm_abund, assign_vec_k6, k = 6L)
+  eu_map <- k6_eu %>%
+    dplyr::distinct(amd_raw, k6_euplanctonic = amd_clusts)
+
+  merge_map <- merge_key %>%
+    dplyr::left_join(
+      eu_map %>% dplyr::mutate(amd_raw = as.integer(as.character(amd_raw))),
+      by = "amd_raw"
+    ) %>%
+    dplyr::left_join(
+      key_eu %>%
+        dplyr::select(merged_rich_rank, final_cts_label = amd_clusts),
+      by = "merged_rich_rank"
+    )
+
+  out <- out %>%
+    dplyr::mutate(
+      amd_clusts = factor(
+        map_merged_cts[as.character(merged_rich_rank)],
+        levels = paste0("CTS", 1:5)
+      )
+    )
+
+  list(
+    data = out,
+    merge_map = merge_map,
+    rich_rank_key = key_rich,
+    eu_rank_key = key_eu
+  )
+}
+
+revision_cts_diversity_summary <- function(cts_df, richness = NULL, scheme_label) {
+  if (is.null(richness)) {
+    richness <- revision_load_fgroups_glob_div()
+  }
+  cts_df %>%
+    dplyr::select(dplyr::any_of(c("lake", "core_depth_id")), amd_clusts, dplyr::any_of(revision_guild_cols)) %>%
+    dplyr::left_join(richness, by = "core_depth_id") %>%
+    dplyr::group_by(amd_clusts) %>%
+    dplyr::summarise(
+      n = dplyr::n(),
+      mean_total_nspp_by_lake_core = mean(total_nspp_by_lake_core, na.rm = TRUE),
+      sd_total_nspp_by_lake_core = stats::sd(total_nspp_by_lake_core, na.rm = TRUE),
+      mean_euplanktonic = mean(euplanktonic, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::mutate(scheme = scheme_label)
 }
 
 revision_cts_occupancy <- function(cts_df) {

@@ -8,7 +8,7 @@ meta <- shared$lake_meta
 trophic <- read.csv("data/revision/lake_trophic_state.csv", stringsAsFactors = FALSE) %>%
   dplyr::mutate(lake = revision_normalize_lake_names(lake))
 
-# Prefer k=6 CTS1 occupancy if available; else compute quickly
+# k=6 euplanctonic-labelled assignments from A7 (independent AMD at k=6; not manuscript k=5 merge)
 cts_path <- "outputs/revision/A7_sample_cts6_assignments.csv"
 if (!file.exists(cts_path)) {
   message("A7 assignments missing; running A7 first...")

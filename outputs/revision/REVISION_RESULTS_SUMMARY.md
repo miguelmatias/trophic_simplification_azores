@@ -165,9 +165,27 @@ Script: `scripts/revision/A06_volcanism_sensitivity.R`; tephra build: `scripts/r
 
 ## A7 — CTS5/CTS6 split (R3#4)
 
-**CTS labelling (corrected):** After AMD clustering, clusters are **reordered by mean euplanctonic relative abundance** (highest → **CTS1**), with the MS viridis palette (**CTS1 = yellow**). CTS1 mean euplanctonic ≈ 0.79–0.80 under both k = 5 and k = 6. Temporal occupancy is normalised **within each 30-yr Age(CE) bin** (proportions sum to 1; see `A7_cts_temporal_bin_sums.csv`).
+**What was wrong (initial revision):** A7 **re-ran AMD separately at k = 5 and k = 6** (300 iterations) and compared those partitions in the temporal/guild figures. That is **not** the published workflow in `main_script.Rmd`, which runs **one k = 6** solution (asymptote-selected), **relabels raw clusters by mean `total_nspp_by_lake_core`**, then **merges richness ranks 6 into 5** (`amd_clusts[amd_clusts == 6] <- 5`). The old script only wrote a naive `CTS6 → CTS5` lump on euplanctonic labels to CSV (`k6_lumped_to_5`) and **did not** use it in the figures—so guild profiles for “k = 5” in the plot were from an **independent k = 5 AMD**, not the manuscript merge.
 
-Before 750 CE, early samples are dominated by **low-euplanctonic** classes (k = 5: CTS5 ≈ 69%, CTS4 ≈ 26%; k = 6: CTS4 ≈ 67%, plus a distinct CTS6 ≈ 16%). Euplanctonic **CTS1** rises mainly after ~1200 CE. k = 6 still recovers structure that k = 5 / lumping hides; “relative early stability” can be kept if qualified as dominance of non-CTS1 (non-euplanctonic) states.
+**Corrected comparison (three schemes):**
+
+| Scheme | Definition |
+|--------|------------|
+| **k = 5 (independent AMD)** | Separate fuzzy AMD at k = 5, euplanctonic CTS labels |
+| **k = 6** | Single k = 6 AMD partition (5000 iterations, same seed as merge path) |
+| **k = 5 (merged from k = 6, manuscript)** | Same k = 6 partition → richness rank → merge ranks 6+5 → euplanctonic CTS1–5 |
+
+**CTS display labels:** Euplanctonic reordering (highest → **CTS1**, viridis **yellow**) for all panels. Manuscript **merge criterion** uses **`total_nspp_by_lake_core`** on raw k = 6 clusters (`A7_k6_manuscript_merge_map.csv`, `A7_cts_diversity_by_scheme.csv`).
+
+**Downstream:** `A7_sample_cts5_assignments.csv` is now the **manuscript merged k = 5** (for A1x / Fig. 3e). **A8** still uses **k = 6** assignments for euplanctonic **CTS1** vs morphometry.
+
+Temporal occupancy is normalised **within each 30-yr Age(CE) bin** (proportions sum to 1; `A7_cts_temporal_bin_sums.csv`).
+
+**Interpretation:** Independent k = 5 AMD can split guild structure differently from k = 6 (e.g. CTS3 mean profiles need not match). The **merged** k = 5 reuses the k = 6 sample partition and only collapses the two **lowest-richness** raw clusters (per manuscript rule); guild means for merged CTS5 are **mixtures** of those two k = 6 euplanctonic classes, not equal to naive `CTS5`+`CTS6` relabelling.
+
+Figures: `outputs/revision/figures/A7_cts_guild_profiles_k5_k6_merged.png` (alias of updated guild plot), `A7_cts_temporal.png` (three facets).  
+CSVs: `A7_cts_guild_profiles.csv`, `A7_k6_manuscript_merge_map.csv`, `A7_cts_diversity_by_scheme.csv`, assignment files `A7_sample_cts5_*` / `A7_sample_cts6_assignments.csv`.  
+Script: `scripts/revision/A07_split_cts5_cts6.R`
 
 ---
 

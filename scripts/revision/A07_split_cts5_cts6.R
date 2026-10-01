@@ -1,8 +1,8 @@
-# A7 — Split CTS5/CTS6 (compare k=5 lumped vs k=6 unlumped)
+# A7 — Compare k=5 (independent AMD), k=6, and manuscript k=6→k=5 merge
 source("scripts/revision/_bootstrap.R")
 shared <- revision_bootstrap()
 
-message("=== A7 CTS5/CTS6 split ===")
+message("=== A7 CTS schemes: independent k=5, k=6, manuscript merge ===")
 
 # Rebuild normalized abundances from df_fgroups (same as main_script)
 fg <- shared$df_fgroups %>%
@@ -19,13 +19,30 @@ norm_abund <- dplyr::bind_cols(
     as.data.frame(cbind(prod, cons))
   }
 ) %>%
-  replace(is.na(.), 0)
+  replace(is.na(.), 0) %>%
+  dplyr::ungroup()
 
+# Match main_script AMD iterations at fixed k (asymptote there typically yields k = 6)
+amd_iterations <- 5000L
 set.seed(42)
-message("Clustering k=6 (no lumping)...")
-cts6 <- revision_assign_cts(norm_abund, k = 6L, iterations = 300L)
-message("Clustering k=5...")
-cts5 <- revision_assign_cts(norm_abund, k = 5L, iterations = 300L)
+message("Clustering k=6 (single partition for k=6 + manuscript merge)...")
+assign_k6 <- revision_run_amd_raw(norm_abund, k = 6L, iterations = amd_iterations)
+cts6 <- revision_relabel_cts_euplanctonic(norm_abund, assign_k6, k = 6L)
+
+merged <- revision_manuscript_k6_merged_to_k5(norm_abund, assign_k6)
+cts5_merged <- merged$data
+
+message("Clustering k=5 (independent AMD)...")
+assign_k5 <- revision_run_amd_raw(norm_abund, k = 5L, iterations = amd_iterations)
+cts5_indep <- revision_relabel_cts_euplanctonic(norm_abund, assign_k5, k = 5L)
+
+scheme_labels <- c(
+  k5_independent_amd = "k=5 (independent AMD)",
+  k6 = "k=6",
+  k5_merged_manuscript = "k=5 (merged from k=6, manuscript)"
+)
+
+revision_write_csv(merged$merge_map, "outputs/revision/A7_k6_manuscript_merge_map.csv")
 
 # Ranking keys (euplanctonic-ordered) for audit
 rank_key <- function(df, label) {
@@ -40,18 +57,15 @@ rank_key <- function(df, label) {
     dplyr::arrange(amd_clusts) %>%
     dplyr::mutate(scheme = label)
 }
+
 revision_write_csv(
-  dplyr::bind_rows(rank_key(cts5, "k5"), rank_key(cts6, "k6")),
+  dplyr::bind_rows(
+    rank_key(cts5_indep, scheme_labels[["k5_independent_amd"]]),
+    rank_key(cts6, scheme_labels[["k6"]]),
+    rank_key(cts5_merged, scheme_labels[["k5_merged_manuscript"]])
+  ),
   "outputs/revision/A7_cts_euplanctonic_rank_key.csv"
 )
-
-# Also create lumped version of k=6 (CTS6 -> CTS5) to mimic manuscript decision
-cts6_lumped <- cts6 %>%
-  dplyr::mutate(
-    amd_clusts = as.character(amd_clusts),
-    amd_clusts = ifelse(amd_clusts == "CTS6", "CTS5", amd_clusts),
-    amd_clusts = factor(amd_clusts, levels = paste0("CTS", 1:5))
-  )
 
 profiles <- function(df, label) {
   df %>%
@@ -65,21 +79,26 @@ profiles <- function(df, label) {
 }
 
 prof <- dplyr::bind_rows(
-  profiles(cts5, "k5"),
-  profiles(cts6, "k6"),
-  profiles(cts6_lumped, "k6_lumped_to_5")
+  profiles(cts5_indep, scheme_labels[["k5_independent_amd"]]),
+  profiles(cts6, scheme_labels[["k6"]]),
+  profiles(cts5_merged, scheme_labels[["k5_merged_manuscript"]])
 )
 revision_write_csv(prof, "outputs/revision/A7_cts_guild_profiles.csv")
 
+div_sum <- dplyr::bind_rows(
+  revision_cts_diversity_summary(cts5_indep, scheme_label = scheme_labels[["k5_independent_amd"]]),
+  revision_cts_diversity_summary(cts6, scheme_label = scheme_labels[["k6"]]),
+  revision_cts_diversity_summary(cts5_merged, scheme_label = scheme_labels[["k5_merged_manuscript"]])
+)
+revision_write_csv(div_sum, "outputs/revision/A7_cts_diversity_by_scheme.csv")
+
 occ <- dplyr::bind_rows(
-  revision_cts_occupancy(cts5) %>% dplyr::mutate(scheme = "k5"),
-  revision_cts_occupancy(cts6) %>% dplyr::mutate(scheme = "k6")
+  revision_cts_occupancy(cts5_merged) %>% dplyr::mutate(scheme = scheme_labels[["k5_merged_manuscript"]]),
+  revision_cts_occupancy(cts5_indep) %>% dplyr::mutate(scheme = scheme_labels[["k5_independent_amd"]]),
+  revision_cts_occupancy(cts6) %>% dplyr::mutate(scheme = scheme_labels[["k6"]])
 )
 revision_write_csv(occ, "outputs/revision/A7_cts_occupancy_by_lake.csv")
 
-# Temporal occupancy: regional proportion of samples per CTS in 30-yr bins,
-# normalised within each age bin (and scheme) so props sum to 1.
-# Complete CTS × bin grid with zeros so geom_area stacking does not inflate.
 temporal <- function(df, label, k) {
   levels_k <- paste0("CTS", seq_len(k))
   df %>%
@@ -96,8 +115,11 @@ temporal <- function(df, label, k) {
     dplyr::rename(age_ce = age_bin)
 }
 
-temp <- dplyr::bind_rows(temporal(cts5, "k5", 5L), temporal(cts6, "k6", 6L))
-# Sanity: per-bin sums must be 1
+temp <- dplyr::bind_rows(
+  temporal(cts5_indep, scheme_labels[["k5_independent_amd"]], 5L),
+  temporal(cts6, scheme_labels[["k6"]], 6L),
+  temporal(cts5_merged, scheme_labels[["k5_merged_manuscript"]], 5L)
+)
 bin_sums <- temp %>%
   dplyr::group_by(scheme, age_ce) %>%
   dplyr::summarise(prop_sum = sum(prop), .groups = "drop")
@@ -105,10 +127,16 @@ stopifnot(all(abs(bin_sums$prop_sum - 1) < 1e-9))
 revision_write_csv(temp, "outputs/revision/A7_cts_temporal_proportions.csv")
 revision_write_csv(bin_sums, "outputs/revision/A7_cts_temporal_bin_sums.csv")
 
-# Early-phase stability: fraction of samples in "simple" CTS classes before 750 CE
+pick_cts <- function(df, scheme) {
+  df %>%
+    dplyr::select(lake, core_depth_id, age_ce, amd_clusts) %>%
+    dplyr::mutate(scheme = scheme)
+}
+
 early_stability <- dplyr::bind_rows(
-  cts5 %>% dplyr::mutate(scheme = "k5"),
-  cts6 %>% dplyr::mutate(scheme = "k6")
+  pick_cts(cts5_indep, scheme_labels[["k5_independent_amd"]]),
+  pick_cts(cts6, scheme_labels[["k6"]]),
+  pick_cts(cts5_merged, scheme_labels[["k5_merged_manuscript"]])
 ) %>%
   dplyr::filter(age_ce > 0, age_ce < 750) %>%
   dplyr::count(scheme, amd_clusts) %>%
@@ -118,37 +146,68 @@ early_stability <- dplyr::bind_rows(
 revision_write_csv(early_stability, "outputs/revision/A7_early_phase_cts_composition.csv")
 print(early_stability)
 
-# Save sample assignments for downstream A8 / A1x
+# Sample assignments (manuscript k=5 = merged; A1x / Fig. 3e)
 revision_write_csv(
   cts6 %>% dplyr::select(lake, core_depth_id, age_ce, amd_clusts),
   "outputs/revision/A7_sample_cts6_assignments.csv"
 )
 revision_write_csv(
-  cts5 %>% dplyr::select(lake, core_depth_id, age_ce, amd_clusts),
+  cts5_merged %>% dplyr::select(lake, core_depth_id, age_ce, amd_clusts),
   "outputs/revision/A7_sample_cts5_assignments.csv"
 )
+revision_write_csv(
+  cts5_merged %>% dplyr::select(lake, core_depth_id, age_ce, amd_clusts),
+  "outputs/revision/A7_sample_cts5_merged_assignments.csv"
+)
+revision_write_csv(
+  cts5_indep %>% dplyr::select(lake, core_depth_id, age_ce, amd_clusts),
+  "outputs/revision/A7_sample_cts5_independent_amd_assignments.csv"
+)
 
-cts_cols <- revision_cts_colours(6L)
+cts_cols_6 <- revision_cts_colours(6L)
+cts_cols_5 <- revision_cts_colours(5L)
 
 p <- ggplot(temp, aes(x = age_ce, y = prop, fill = amd_clusts)) +
   geom_area(position = "stack", alpha = 0.9) +
-  scale_fill_manual(values = cts_cols, name = "amd_clusts", drop = FALSE) +
+  scale_fill_manual(values = cts_cols_6, name = "amd_clusts", drop = FALSE) +
   scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
   facet_wrap(~scheme, ncol = 1) +
   theme_minimal(base_size = 11) +
-  labs(title = "A7: CTS temporal occupancy (k=5 vs k=6)", x = "Age (CE)", y = "Proportion")
-ggsave("outputs/revision/figures/A7_cts_temporal.png", p, width = 9, height = 7, dpi = 150)
+  labs(
+    title = "A7: CTS temporal occupancy (three clustering schemes)",
+    x = "Age (CE)",
+    y = "Proportion"
+  )
+ggsave("outputs/revision/figures/A7_cts_temporal.png", p, width = 9, height = 10, dpi = 150)
 
-p2 <- prof %>%
-  dplyr::filter(scheme %in% c("k5", "k6")) %>%
+prof_long <- prof %>%
   tidyr::pivot_longer(dplyr::all_of(revision_guild_cols), names_to = "guild", values_to = "mean_rel") %>%
-  ggplot(aes(x = guild, y = mean_rel, fill = amd_clusts)) +
+  dplyr::mutate(
+    scheme = factor(scheme, levels = unname(scheme_labels)),
+    k_fill = dplyr::if_else(scheme == scheme_labels[["k6"]], 6L, 5L)
+  )
+
+p2 <- ggplot(prof_long, aes(x = guild, y = mean_rel, fill = amd_clusts)) +
   geom_col(position = "dodge") +
-  scale_fill_manual(values = cts_cols, name = "amd_clusts", drop = FALSE) +
+  scale_fill_manual(values = cts_cols_6, name = "amd_clusts", drop = FALSE) +
   facet_wrap(~scheme, ncol = 1) +
   theme_minimal(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "A7: Guild profiles by CTS (CTS1 = highest euplanctonic)", y = "Mean relative abundance")
-ggsave("outputs/revision/figures/A7_cts_guild_profiles.png", p2, width = 10, height = 7, dpi = 150)
+  labs(
+    title = "A7: Guild profiles by CTS (CTS1 = highest euplanctonic)",
+    subtitle = paste(
+      "Manuscript merge: rank k=6 raw clusters by mean total_nspp_by_lake_core;",
+      "merge richness ranks 6 into 5 (main_script.Rmd); then euplanctonic CTS labels"
+    ),
+    y = "Mean relative abundance"
+  )
+ggsave("outputs/revision/figures/A7_cts_guild_profiles.png", p2, width = 10, height = 9, dpi = 150)
+ggsave(
+  "outputs/revision/figures/A7_cts_guild_profiles_k5_k6_merged.png",
+  p2,
+  width = 10,
+  height = 9,
+  dpi = 150
+)
 
-message("A7 complete (CTS ordered by mean euplanctonic; temporal props sum to 1)")
+message("A7 complete (three schemes; manuscript k=5 = merged from shared k=6 partition)")

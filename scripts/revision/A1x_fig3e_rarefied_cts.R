@@ -16,7 +16,7 @@ core_lakes <- c(
   "Funda", "Ginjal", "Peixinho", "Prata", "Santiago"
 )
 
-# ---- CTS assignments (k = 5, matching manuscript Fig. 3) ----
+# ---- CTS assignments (manuscript k=5 = k=6 merge, main_script.Rmd) ----
 cts_path <- "outputs/revision/A7_sample_cts5_assignments.csv"
 if (!file.exists(cts_path)) {
   message("CTS assignments missing; running A7...")
